@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <AppDisplayName>Hylian Grimoire</AppDisplayName>
+    <AppAssemblyName>Hylian Grimoire</AppAssemblyName>
+    <AppStorageName>HylianGrimoire</AppStorageName>
+    <AppVersion>1.0</AppVersion>
+    <AppAssemblyVersion>1.0.0.0</AppAssemblyVersion>
+    <AppFileVersion>1.0.0.0</AppFileVersion>
+  </PropertyGroup>
+</Project>

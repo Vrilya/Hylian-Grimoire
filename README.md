@@ -1,23 +1,99 @@
-# OoT Text Editor
+# Hylian Grimoire
 
-OoT Text Editor is a Windows desktop application for editing message and dialogue text in Ocarina of Time. It was created as part of my Swedish translation of the game. This repository primarily serves to document my work. More feature complete and polished text editors for OoT are available within the community. The goal of this project was to build every part of the toolchain independently, without relying on existing tools. The editor was originally prototyped in Python and later rewritten in C#.
+Hylian Grimoire is a Windows desktop editor for Ocarina of Time message data. I originally built it while working on my own translation of the game, and the project has been rewritten from the ground up several times. The current version focuses on exact binary round-tripping, readable editor syntax, and a modern Windows 11 interface.
 
-## Usage
+The editor works with extracted `.bin` and `.tbl` message files. It does not load ROM files directly.
 
-1. Build the project with Visual Studio or `dotnet build`.
-2. Launch the application.
-3. Go to **File → Load** and select your `.tbl` and `.bin` files.
-4. Select a message from the list, edit the text, and adjust metadata as needed.
-5. Go to **File → Save** or **File → Save As...** when done.
+## Features
 
-Requires Windows and the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
+- Load and save message `.bin` / `.tbl` files.
+- Import and export C message headers.
+- Search message IDs by ID or message text.
+- Add, rename, delete, and reorder message IDs.
+- Edit textbox type and position metadata.
+- Preview message boxes with game-style text rendering, item icons, colors, choices, highscore tokens, ocarina staff display, credits text, and multi-box messages.
+- Open the preview in a separate window with zoom, column layout, alignment guides, and always-on-top support.
+- Override editor glyph display characters, glyph images, and preview glyph widths without changing the underlying byte values.
+- Follow Windows light/dark mode through WinUI 3 and Windows App SDK.
 
-## Project structure
+## Editor Syntax
 
-    OoTEditor/
-      Program.cs          Entry point
-      MainForm.cs         UI layout and event handling
-      MessageCodec.cs     Binary encode/decode and table parsing
-      MessageEntry.cs     Data model for a single message
+Messages are shown as editable text with bracketed tags for control codes. For example:
 
-Feel free to use or adapt this project however you like if you want to build something of your own from it.
+```text
+[unskippable][item:30][quicktexton]Du bytte [color:red]Kojiro[color:default]!
+[break]
+Denna konstiga svamp försvinner
+om du inte levererar den i tid!
+```
+
+Common tags include:
+
+- `[break]`
+- `[breakdelay:xx]`
+- `[color:red]`
+- `[color:default]`
+- `[item:30]`
+- `[sfx:Laugh2]`
+- `[Triangle]`
+- `[twochoice]`
+- `[threechoice]`
+
+The editor syntax is intended to be readable while preserving the original encoded data as closely as possible.
+
+## Character Overrides
+
+The Character Overrides window lets you customize how individual glyph bytes appear while editing and previewing messages.
+
+Overrides can change:
+
+- the editor display character
+- the preview glyph image
+- the preview glyph width
+
+The byte value itself does not change. This is useful for translation work where a project may want to display certain original glyph bytes as language-specific characters while still saving the expected original byte values.
+
+Overrides are stored outside the bundled files and can be reset per character.
+
+## Build
+
+Requirements:
+
+- Windows 10 1809 or newer, Windows 11 recommended
+- .NET 8 SDK
+
+Build from the repository root:
+
+```powershell
+dotnet build .\HylianGrimoire.slnx -c Release
+```
+
+Run from source:
+
+```powershell
+dotnet run --project .\src\HylianGrimoire\HylianGrimoire.csproj -c Release
+```
+
+Run tests:
+
+```powershell
+dotnet test .\HylianGrimoire.slnx -c Release
+```
+
+## Project Structure
+
+```text
+src/HylianGrimoire/              WinUI 3 application
+src/HylianGrimoire/Codecs/       Message byte encoding, decoding, token maps, and editor syntax
+src/HylianGrimoire/Glyphs/       Glyph metadata, overrides, and the Character Overrides window
+src/HylianGrimoire/Headers/      C header import/export
+src/HylianGrimoire/Interop/      Windows window theming, icons, sizing, and native interop helpers
+src/HylianGrimoire/Models/       Message entries, message tokens, and UI list models
+src/HylianGrimoire/Preview/      Game-style message preview renderer and preview window
+src/HylianGrimoire/Services/     File operations, searching, message list operations, and catalogs
+tests/HylianGrimoire.Tests/      xUnit tests for codec, import/export, preview-adjacent behavior, and file parity
+```
+
+## Notes
+
+Hylian Grimoire is a standalone editor project. It is meant for extracted message files and project workflows where exact save/export behavior matters. Keep backups of your source `.bin`, `.tbl`, and header files when working on real translation or modding projects.

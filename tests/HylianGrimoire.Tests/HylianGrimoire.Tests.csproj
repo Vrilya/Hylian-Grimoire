@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\src\HylianGrimoire\Codecs\MessageTokenMaps.cs" Link="MessageTokenMaps.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Codecs\DictionaryMaps.cs" Link="DictionaryMaps.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Codecs\MessageSfxMaps.cs" Link="MessageSfxMaps.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Codecs\MessageEncodingProfile.cs" Link="MessageEncodingProfile.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Codecs\MessageCodec.cs" Link="MessageCodec.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Codecs\MessageCodec.Tokens.cs" Link="MessageCodec.Tokens.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Codecs\MessageTableCodec.cs" Link="MessageTableCodec.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Codecs\MessageTextSyntax.cs" Link="MessageTextSyntax.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Models\MessageEntry.cs" Link="MessageEntry.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Models\MessageTypeItem.cs" Link="MessageTypeItem.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Models\MessageToken.cs" Link="MessageToken.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Services\MessageFileService.cs" Link="MessageFileService.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Services\MessageListService.cs" Link="MessageListService.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Services\MessageSearch.cs" Link="MessageSearch.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Services\MessageTypeCatalog.cs" Link="MessageTypeCatalog.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Preview\OotPreviewStyle.cs" Link="OotPreviewStyle.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Preview\OotPreviewTextPage.cs" Link="OotPreviewTextPage.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Glyphs\OotGlyphMetrics.cs" Link="OotGlyphMetrics.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Glyphs\GlyphOverride.cs" Link="GlyphOverride.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Glyphs\GlyphOverrideStore.cs" Link="GlyphOverrideStore.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Glyphs\OotGlyphCatalog.cs" Link="OotGlyphCatalog.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Headers\CHeaderImporter.cs" Link="CHeaderImporter.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Headers\CHeaderExporter.cs" Link="CHeaderExporter.cs" />
+    <Compile Include="ExportParityTests.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Fixtures\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

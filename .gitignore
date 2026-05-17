@@ -1,14 +1,61 @@
 # Build output
 bin/
 obj/
+bin.Tests/
+obj.Tests/
+src/**/bin/
+src/**/obj/
+tests/**/bin/
+tests/**/obj/
 
-# Visual Studio
+# Visual Studio / Rider / VS Code user state
 .vs/
-*.user
-
-# Rider
 .idea/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
 
-# OS
+# .NET tooling
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+*.nupkg
+*.snupkg
+project.lock.json
+artifacts/
+
+# Windows App SDK / packaging output
+AppPackages/
+BundleArtifacts/
+Package.StoreAssociation.xml
+*.appx
+*.appxbundle
+*.msix
+*.msixbundle
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+~$*
 Thumbs.db
-.DS_Store
+ehthumbs.db
+Desktop.ini
+
+# Local publish output
+publish/
+*.pubxml.user
+
+# Local game/editor data
+*.z64
+*.n64
+*.v64
+*.rom
+*_message_data_static.bin
+*_message_data_static.tbl
+message_data_static_*.h
