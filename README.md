@@ -21,9 +21,10 @@ The editor works with extracted `.bin` and `.tbl` message files. It does not loa
 Messages are shown as editable text with bracketed tags for control codes. For example:
 
 ```text
-[unskippable][item:30][quicktexton]Du bytte [color:red]Kojiro[color:default]!
+[unskippable][item:30][quicktexton]Du bytte [color:red]Kojiro [color:default][quicktextoff]mot en [color:red]konstig
+svamp[color:default]![quicktextoff]
 [break]
-Denna konstiga svamp försvinner
+[unskippable][item:30][quicktexton]Denna konstiga svamp försvinner
 om du inte levererar den i tid!
 ```
 
