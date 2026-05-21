@@ -1,7 +1,11 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using HylianGrimoire.Codecs;
+using HylianGrimoire.Glyphs;
 using HylianGrimoire.Models;
+using HylianGrimoire.Rom;
+using HylianGrimoire.Services;
+using HylianGrimoire.TitleText;
 
 namespace HylianGrimoire;
 
@@ -95,15 +99,306 @@ public sealed partial class MainWindow
         }
     }
 
-    private void OnOpenGlyphOverrides(object sender, RoutedEventArgs e)
+    private void OnOpenCharacterProfiles(object sender, RoutedEventArgs e)
     {
-        if (_glyphOverrideWindow is null)
+        if (_characterProfileWindow is null)
         {
-            _glyphOverrideWindow = new Glyphs.GlyphOverrideWindow();
-            _glyphOverrideWindow.Closed += (_, _) => _glyphOverrideWindow = null;
+            _characterProfileWindow = new Glyphs.CharacterProfileWindow(CreateRomGlyphSession());
+            _characterProfileWindow.GlyphDataChanged += OnGlyphWindowDataChanged;
+            _characterProfileWindow.Closed += (_, _) => _characterProfileWindow = null;
+        }
+        else
+        {
+            _characterProfileWindow.SetRomSession(CreateRomGlyphSession());
         }
 
-        _glyphOverrideWindow.Activate();
+        _characterProfileWindow.Activate();
+    }
+
+    private async void OnOpenGlyphRemap(object sender, RoutedEventArgs e)
+    {
+        if (_entries.Count == 0)
+        {
+            return;
+        }
+
+        CommitCurrent();
+        IOotGlyphSource glyphSource = _romData is null
+            ? OotGlyphSources.ActiveProfile
+            : new RomGlyphSource(_romData.DecompressedRom, _romData.FontResources);
+
+        _glyphRemapWindow?.Close();
+        _glyphRemapWindow = new GlyphRemapWindow(_entries, glyphSource, ApplyGlyphRemap);
+        _glyphRemapWindow.Closed += (_, _) => _glyphRemapWindow = null;
+        _glyphRemapWindow.Activate();
+    }
+
+    private async void OnOpenFontOrder(object sender, RoutedEventArgs e)
+    {
+        MessageEntry? entry = FontOrderService.FindEntry(_entries, _romData);
+        if (entry is null)
+        {
+            return;
+        }
+
+        var editor = new TextBox
+        {
+            AcceptsReturn = true,
+            FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Cascadia Mono"),
+            MinWidth = 520,
+            MinHeight = 220,
+            TextWrapping = TextWrapping.NoWrap,
+        };
+        editor.Text = FontOrderService.GetEditorText(entry, _romData);
+        ScrollViewer.SetHorizontalScrollBarVisibility(editor, ScrollBarVisibility.Auto);
+        ScrollViewer.SetVerticalScrollBarVisibility(editor, ScrollBarVisibility.Auto);
+
+        var resetStandardButton = new Button
+        {
+            Content = "Reset to standard",
+        };
+        resetStandardButton.Click += (_, _) =>
+        {
+            editor.Text = FontOrderCodec.GetStandardEditorText();
+        };
+
+        var resetLoadedButton = new Button
+        {
+            Content = "Reset to loaded",
+        };
+        resetLoadedButton.Click += (_, _) =>
+        {
+            editor.Text = FontOrderService.GetLoadedEditorText(entry, _romData);
+        };
+
+        var resetButtons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 8,
+        };
+        resetButtons.Children.Add(resetLoadedButton);
+        resetButtons.Children.Add(resetStandardButton);
+
+        var content = new StackPanel
+        {
+            Spacing = 12,
+        };
+        content.Children.Add(editor);
+        content.Children.Add(resetButtons);
+
+        var dialog = new ContentDialog
+        {
+            Title = "Font order (0xFFFC)",
+            Content = content,
+            PrimaryButtonText = "Apply",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = Content.XamlRoot,
+        };
+
+        ContentDialogResult result = await dialog.ShowAsync();
+        if (result == ContentDialogResult.Primary)
+        {
+            await ApplyFontOrderTextAsync(entry, editor.Text);
+        }
+    }
+
+    private void OnOpenTweaks(object sender, RoutedEventArgs e)
+    {
+        if (!CanUseTweaksTool())
+        {
+            return;
+        }
+
+        if (_tweaksWindow is null)
+        {
+            _tweaksWindow = new Tweaks.TweaksWindow(_romData, OnRomTweakChanged);
+            _tweaksWindow.Closed += (_, _) => _tweaksWindow = null;
+        }
+        else
+        {
+            _tweaksWindow.SetRomData(_romData);
+        }
+
+        _tweaksWindow.Activate();
+    }
+
+    private void OnOpenTitleText(object sender, RoutedEventArgs e)
+    {
+        if (!CanUseTitleTextTool())
+        {
+            return;
+        }
+
+        if (_titleTextWindow is null)
+        {
+            _titleTextWindow = new TitleText.TitleTextWindow(_romData, OnTitleTextChanged);
+            _titleTextWindow.Closed += (_, _) => _titleTextWindow = null;
+        }
+        else
+        {
+            _titleTextWindow.SetRomData(_romData);
+        }
+
+        _titleTextWindow.Activate();
+    }
+
+    private void OnTitleTextChanged(string status)
+    {
+        MarkRomBankDirty();
+        SetStatus(status);
+    }
+
+    private void OnRomTweakChanged(string status)
+    {
+        MarkRomBankDirty();
+        SetStatus(status);
+    }
+
+    private int ApplyGlyphRemap(byte source, byte target)
+    {
+        CommitCurrent();
+        int replacements = MessageGlyphRemapper.Replace(_entries, source, target);
+        if (replacements == 0)
+        {
+            SetStatus($"No 0x{source:X2} glyphs found in the loaded script.");
+            return 0;
+        }
+
+        MarkDirty();
+        PopulateList();
+        if (_currentIdx >= 0 && _currentIdx < _entries.Count)
+        {
+            ShowEntry(_currentIdx);
+        }
+
+        UpdatePreview();
+        SetStatus($"Remapped {replacements} glyphs from 0x{source:X2} to 0x{target:X2}.");
+        return replacements;
+    }
+
+    private void OnGlyphWindowDataChanged(object? sender, EventArgs e)
+    {
+        MarkDirty();
+        UpdatePreview();
+    }
+
+    private void RemapEditorTextForCharacterProfileChange(CharacterProfileSelectionChangedEventArgs args)
+    {
+        if (string.Equals(_activeCharacterProfileName, args.SelectedProfileName, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        CommitCurrent();
+        bool wasDirty = _hasUnsavedChanges;
+        foreach (MessageEntry entry in _entries)
+        {
+            entry.Text = CharacterProfileStore.Current.RemapEditorText(entry.Text, args.PreviousProfile, args.SelectedProfileName);
+        }
+
+        _activeCharacterProfileName = args.SelectedProfileName;
+        PopulateList();
+        if (_currentIdx >= 0 && _currentIdx < _entries.Count)
+        {
+            ShowEntry(_currentIdx);
+        }
+
+        if (wasDirty)
+        {
+            _hasUnsavedChanges = true;
+        }
+        else
+        {
+            MarkClean();
+        }
+    }
+
+    private RomGlyphEditorSession? CreateRomGlyphSession()
+    {
+        return _romData is null
+            ? null
+            : new RomGlyphEditorSession(
+                _romData.DecompressedRom,
+                _romData.FontResources,
+                _romData.Profile.FontBaseline);
+    }
+
+    private void RefreshAuxiliaryWindowsForLoadedDocument()
+    {
+        _characterProfileWindow?.SetRomSession(CreateRomGlyphSession());
+        UpdateRomToolState();
+
+        if (CanUseTweaksTool())
+        {
+            _tweaksWindow?.SetRomData(_romData);
+        }
+        else
+        {
+            CloseTweaksWindow();
+        }
+
+        if (CanUseTitleTextTool())
+        {
+            _titleTextWindow?.SetRomData(_romData);
+        }
+        else
+        {
+            CloseTitleTextWindow();
+        }
+    }
+
+    private void UpdateRomToolState()
+    {
+        SaveMenu.IsEnabled = _documentKind != DocumentKind.None || _entries.Count > 0;
+        SaveAsRomItem.IsEnabled = _romData is not null;
+        RemapGlyphBytesItem.IsEnabled = _entries.Count > 0;
+        FontOrderToolItem.IsEnabled = CanUseFontOrderTool();
+        ImportHeaderIntoRomItem.IsEnabled = _romData is not null;
+        TitleTextToolItem.IsEnabled = CanUseTitleTextTool();
+        TweaksToolItem.IsEnabled = CanUseTweaksTool();
+    }
+
+    private bool CanUseTweaksTool() => _romData?.Profile.IsRetail == true;
+
+    private bool CanUseFontOrderTool()
+        => FontOrderService.CanEdit(_entries, _romData);
+
+    private async Task ApplyFontOrderTextAsync(MessageEntry entry, string editorText)
+    {
+        FontOrderUpdateResult result = FontOrderService.ApplyEditorText(entry, editorText);
+        if (result.ErrorMessage is not null)
+        {
+            await ShowErrorAsync("Invalid font order", result.ErrorMessage);
+            return;
+        }
+
+        if (!result.Changed)
+        {
+            return;
+        }
+
+        MarkDirty();
+        PopulateList();
+        SetStatus("Updated font order (0xFFFC).");
+    }
+
+    private bool CanUseTitleTextTool() =>
+        _romData is not null
+        && _romData.Profile.IsRetail
+        && TitleTextService.TryGetProfile(_romData.Profile, out _);
+
+    private void CloseTweaksWindow()
+    {
+        _tweaksWindow?.Close();
+        _tweaksWindow = null;
+    }
+
+    private void CloseTitleTextWindow()
+    {
+        _titleTextWindow?.Close();
+        _titleTextWindow = null;
     }
 
     private void SetStatus(string message) => StatusText.Text = message;

@@ -14,52 +14,111 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <CommandBar
+        <Grid
             Grid.Row="0"
-            DefaultLabelPosition="Right"
-            IsOpen="False"
-            MinHeight="44">
-            <AppBarButton Label="Load" Click="OnLoadFiles">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="OpenFile" />
-                </AppBarButton.Icon>
-                <AppBarButton.KeyboardAccelerators>
-                    <KeyboardAccelerator Key="O" Modifiers="Control" />
-                </AppBarButton.KeyboardAccelerators>
-            </AppBarButton>
-            <AppBarButton Label="Save" Click="OnSaveFiles">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="Save" />
-                </AppBarButton.Icon>
-                <AppBarButton.KeyboardAccelerators>
-                    <KeyboardAccelerator Key="S" Modifiers="Control" />
-                </AppBarButton.KeyboardAccelerators>
-            </AppBarButton>
-            <AppBarButton Label="Save As" Click="OnSaveAsFiles">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="Save" />
-                </AppBarButton.Icon>
-            </AppBarButton>
-            <AppBarSeparator />
-            <AppBarButton Label="Import Header" Click="OnImportHeader">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="Download" />
-                </AppBarButton.Icon>
-            </AppBarButton>
-            <AppBarButton Label="Export Header" Click="OnExportAsHeader">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="Share" />
-                </AppBarButton.Icon>
-            </AppBarButton>
-            <AppBarToggleButton
-                x:Name="PreviewToggle"
-                Label="Preview"
-                Click="OnTogglePreview">
-                <AppBarToggleButton.Icon>
+            MinHeight="52"
+            Padding="16,8,16,4">
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Spacing="8">
+                <DropDownButton ToolTipService.ToolTip="Load menu">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="OpenFile" />
+                        <TextBlock Text="Load" />
+                    </StackPanel>
+                    <DropDownButton.Flyout>
+                        <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                            <MenuFlyoutItem Text="Load..." Click="OnLoadDocument">
+                                <MenuFlyoutItem.KeyboardAccelerators>
+                                    <KeyboardAccelerator Key="O" Modifiers="Control" />
+                                </MenuFlyoutItem.KeyboardAccelerators>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem x:Name="ImportHeaderIntoRomItem" Text="Import .h into ROM" Click="OnImportHeaderIntoRom" />
+                        </MenuFlyout>
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+
+                <DropDownButton x:Name="SaveMenu" ToolTipService.ToolTip="Save menu">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="Save" />
+                        <TextBlock Text="Save" />
+                    </StackPanel>
+                    <DropDownButton.Flyout>
+                        <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                            <MenuFlyoutItem Text="Save" Click="OnSaveFiles">
+                                <MenuFlyoutItem.KeyboardAccelerators>
+                                    <KeyboardAccelerator Key="S" Modifiers="Control" />
+                                </MenuFlyoutItem.KeyboardAccelerators>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem Text="Save as data files" Click="OnSaveAsFiles" />
+                            <MenuFlyoutItem x:Name="SaveAsRomItem" Text="Save as ROM" Click="OnSaveAsRom" />
+                            <MenuFlyoutItem Text="Export to .h" Click="OnExportAsHeader" />
+                        </MenuFlyout>
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+
+                <DropDownButton ToolTipService.ToolTip="Tools menu">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="Setting" />
+                        <TextBlock Text="Tools" />
+                    </StackPanel>
+                    <DropDownButton.Flyout>
+                        <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                            <MenuFlyoutSubItem x:Name="GlyphProfileMenu" Text="Glyph profile" />
+                            <MenuFlyoutSeparator />
+                            <MenuFlyoutItem x:Name="RemapGlyphBytesItem" Text="Remap glyph bytes" Click="OnOpenGlyphRemap" />
+                            <MenuFlyoutItem x:Name="TitleTextToolItem" Text="Title Text" Click="OnOpenTitleText" />
+                            <MenuFlyoutItem x:Name="TweaksToolItem" Text="Tweaks" Click="OnOpenTweaks" />
+                            <MenuFlyoutSeparator />
+                            <MenuFlyoutItem x:Name="FontOrderToolItem" Text="Font order (0xFFFC)" Click="OnOpenFontOrder" />
+                        </MenuFlyout>
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+
+                <Rectangle
+                    Width="1"
+                    Height="28"
+                    Margin="4,0"
+                    Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                <DropDownButton
+                    x:Name="LanguageMenu"
+                    IsEnabled="False"
+                    MinWidth="44"
+                    AutomationProperties.Name="ROM Language"
+                    ToolTipService.ToolTip="ROM Language">
+                    <SymbolIcon Symbol="Globe" />
+                    <DropDownButton.Flyout>
+                        <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                            <MenuFlyoutItem x:Name="Language1Item" Text="Language 1" Click="OnSelectLanguage1" />
+                            <MenuFlyoutItem x:Name="Language2Item" Text="Language 2" Click="OnSelectLanguage2" />
+                            <MenuFlyoutItem x:Name="Language3Item" Text="Language 3" Click="OnSelectLanguage3" />
+                        </MenuFlyout>
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+
+                <ToggleButton
+                    x:Name="CreditsModeItem"
+                    Click="OnToggleCreditsMode"
+                    IsEnabled="False"
+                    MinWidth="44"
+                    AutomationProperties.Name="Credits"
+                    ToolTipService.ToolTip="Credits">
+                    <SymbolIcon Symbol="Contact" />
+                </ToggleButton>
+
+                <ToggleButton
+                    x:Name="PreviewToggle"
+                    Click="OnTogglePreview"
+                    MinWidth="44"
+                    AutomationProperties.Name="Preview"
+                    ToolTipService.ToolTip="Preview">
                     <SymbolIcon Symbol="View" />
-                </AppBarToggleButton.Icon>
-            </AppBarToggleButton>
-        </CommandBar>
+                </ToggleButton>
+            </StackPanel>
+        </Grid>
 
         <Grid Grid.Row="1" Padding="16,4,16,0" ColumnSpacing="16">
             <Grid.ColumnDefinitions>
@@ -226,11 +285,16 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock
-                    x:Name="StatusText"
-                    Text="Load a table (.tbl) and data (.bin) file to begin."
-                    Style="{ThemeResource CaptionTextBlockStyle}"
-                    VerticalAlignment="Center" />
+                <StackPanel
+                    Orientation="Horizontal"
+                    Spacing="12"
+                    VerticalAlignment="Center">
+                    <TextBlock
+                        x:Name="StatusText"
+                        Text=""
+                        Style="{ThemeResource CaptionTextBlockStyle}"
+                        VerticalAlignment="Center" />
+                </StackPanel>
 
                 <StackPanel
                     Grid.Column="1"
@@ -275,11 +339,57 @@
                     </StackPanel>
 
                     <Button
-                        Content="Characters"
-                        Click="OnOpenGlyphOverrides"
+                        Content="Glyph Manager"
+                        Click="OnOpenCharacterProfiles"
                         VerticalAlignment="Center" />
                 </StackPanel>
             </Grid>
         </Border>
+
+        <Grid
+            x:Name="ProgressOverlay"
+            Grid.RowSpan="3"
+            Background="#99000000"
+            Visibility="Collapsed"
+            Canvas.ZIndex="10">
+            <Border
+                Width="340"
+                Padding="24"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+                BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8">
+                <Grid RowSpacing="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock
+                        x:Name="ProgressTitleText"
+                        Text="Saving ROM"
+                        Style="{ThemeResource SubtitleTextBlockStyle}"
+                        HorizontalAlignment="Center" />
+
+                    <TextBlock
+                        x:Name="ProgressPercentText"
+                        Grid.Row="1"
+                        Text="0%"
+                        Style="{ThemeResource BodyStrongTextBlockStyle}"
+                        HorizontalAlignment="Center" />
+
+                    <ProgressBar
+                        x:Name="ProgressModalBar"
+                        Grid.Row="2"
+                        Height="4"
+                        Minimum="0"
+                        Maximum="100"
+                        Value="0" />
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

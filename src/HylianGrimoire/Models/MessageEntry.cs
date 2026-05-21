@@ -16,6 +16,7 @@ public class MessageEntry
     public int Bank { get; set; }
     public int Offset { get; set; }
     public int TableEndMarkerId { get; set; } = 0xfffd;
+    public bool TableHasFinalEndMarker { get; set; } = true;
     public bool PreserveOffsetWithoutMessageData { get; set; }
     public string Text
     {
@@ -36,6 +37,9 @@ public class MessageEntry
     // This keeps exact untouched messages intact, including padding/unknown byte details.
     public string? OriginalText { get; set; }
     public byte[]? OriginalEncodedBytes { get; set; }
+    public byte[]? EncodedBytesOverride { get; set; }
+    public byte[]? OriginalTrailingMessageData { get; set; }
+    public int? OriginalMessageDataSize { get; set; }
 
     public MessageEntry(int id, int type, int position, int bank, int offset)
     {

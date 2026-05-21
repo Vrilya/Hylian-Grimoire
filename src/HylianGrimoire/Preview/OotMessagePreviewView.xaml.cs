@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using HylianGrimoire.Codecs;
+using HylianGrimoire.Glyphs;
 using HylianGrimoire.Models;
 
 namespace HylianGrimoire.Preview;
@@ -38,10 +39,17 @@ public sealed partial class OotMessagePreviewView : UserControl
         ArrangeImages();
     }
 
-    public void Render(OotPreviewStyle style, IReadOnlyList<MessageToken> messageTokens, bool showAlignmentGuides)
+    public void Render(
+        OotPreviewStyle style,
+        IReadOnlyList<MessageToken> messageTokens,
+        bool showAlignmentGuides,
+        IOotGlyphSource? glyphSource = null,
+        MessageEncodingProfile? encodingProfile = null)
     {
+        glyphSource ??= OotGlyphSources.ActiveProfile;
+        encodingProfile ??= MessageEncodingProfile.Default;
         bool darkText = style == OotPreviewStyle.NoneDarkText;
-        var pages = OotPreviewTextPage.FromMessageTokensPages(messageTokens);
+        var pages = OotPreviewTextPage.FromMessageTokensPages(messageTokens, encodingProfile);
 
         _previewImages.Clear();
         PreviewGrid.Children.Clear();
@@ -51,7 +59,7 @@ public sealed partial class OotMessagePreviewView : UserControl
             {
                 Stretch = Stretch.Uniform,
                 Tag = style,
-                Source = new BitmapImage(OotBitmapCache.RenderPreview(style, pages[i], darkText, i == pages.Count - 1, showAlignmentGuides)),
+                Source = new BitmapImage(OotBitmapCache.RenderPreview(style, pages[i], darkText, i == pages.Count - 1, showAlignmentGuides, glyphSource)),
             };
             ApplyImageSize(image);
             _previewImages.Add(image);

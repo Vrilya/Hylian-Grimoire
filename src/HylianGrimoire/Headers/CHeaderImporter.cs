@@ -7,31 +7,55 @@ namespace HylianGrimoire.Headers;
 
 public static class CHeaderImporter
 {
+    private static readonly string[] MessageMacroNames =
+    [
+        "DEFINE_MESSAGE_FFFC",
+        "DEFINE_MESSAGE_NES",
+        "DEFINE_MESSAGE_JPN",
+        "DEFINE_MESSAGE",
+    ];
+
     private static readonly IReadOnlyDictionary<string, int> BoxTypes = MessageTokenMaps.HeaderBoxTypeValues;
     private static readonly IReadOnlyDictionary<string, int> BoxPositions = MessageTokenMaps.HeaderBoxPositionValues;
     private static readonly IReadOnlyDictionary<string, string> NoArgTags = MessageTokenMaps.HeaderCommandTags;
     private static readonly IReadOnlyDictionary<string, string> Colors = MessageTokenMaps.HeaderColorTags;
     private static readonly IReadOnlyDictionary<string, int> Highscores = MessageTokenMaps.HeaderHighscoreValues;
+    private static readonly IReadOnlyDictionary<string, int> ItemIds = MessageTokenMaps.HeaderItemValues;
+    private static readonly IReadOnlyDictionary<string, int> Backgrounds = MessageTokenMaps.HeaderBackgroundValues;
+    private static readonly IReadOnlyDictionary<string, int> BackgroundForegroundColors = MessageTokenMaps.HeaderBackgroundForegroundColorValues;
+    private static readonly IReadOnlyDictionary<string, int> BackgroundColors = MessageTokenMaps.HeaderBackgroundColorValues;
+    private static readonly IReadOnlyDictionary<string, int> BackgroundYOffsets = MessageTokenMaps.HeaderBackgroundYOffsetValues;
     private static readonly MessageEncodingProfile EncodingProfile = MessageEncodingProfile.Default;
 
-    public static List<MessageEntry> Import(string content)
+    public static List<MessageEntry> Import(
+        string content,
+        CHeaderMessageSlot preferredSlot = CHeaderMessageSlot.Nes,
+        bool allowWesternFallback = true)
     {
         var entries = new List<MessageEntry>();
         int index = 0;
 
-        while (TryFindCall(content, "DEFINE_MESSAGE", ref index, out HeaderCall call))
+        while (TryFindMessageCall(content, ref index, out HeaderCall call))
         {
             int? id = null;
             try
             {
-                var args = SplitTopLevel(call.Text, expectedParts: 4);
-                if (args.Count != 4)
-                    throw new InvalidDataException("DEFINE_MESSAGE must have four arguments.");
+                var args = SplitTopLevel(call.Text);
+                if (args.Count is not 4 and not 7)
+                    throw new InvalidDataException($"{call.Name} must have four legacy arguments or seven modern arguments.");
 
                 id = ParseInt(args[0]);
                 int type = ParseBoxType(args[1]);
                 int position = ParseBoxPosition(args[2]);
-                string text = ParseMessageBody(args[3]);
+                string? body = args.Count == 4
+                    ? args[3]
+                    : SelectModernMessageBody(call.Name, args, preferredSlot, allowWesternFallback);
+                if (body is null)
+                {
+                    continue;
+                }
+
+                string text = ParseMessageBody(UnwrapMsgBody(body));
 
                 entries.Add(new MessageEntry(id.Value, type, position, 0x07, 0)
                 {
@@ -50,13 +74,44 @@ public static class CHeaderImporter
         return entries;
     }
 
-    private static bool TryFindCall(string text, string name, ref int index, out HeaderCall call)
+    private static bool TryFindMessageCall(string text, ref int index, out HeaderCall call)
     {
         call = default;
 
-        int start = text.IndexOf(name, index, StringComparison.Ordinal);
-        if (start < 0)
-            return false;
+        int bestStart = -1;
+        string? bestName = null;
+        foreach (string name in MessageMacroNames)
+        {
+            int start = FindIdentifier(text, name, index);
+            if (start >= 0 && (bestStart < 0 || start < bestStart))
+            {
+                bestStart = start;
+                bestName = name;
+            }
+        }
+
+        return bestName is not null && TryReadCallAt(text, bestName, bestStart, ref index, out call);
+    }
+
+    private static int FindIdentifier(string text, string name, int startIndex)
+    {
+        int search = startIndex;
+        while (true)
+        {
+            int found = text.IndexOf(name, search, StringComparison.Ordinal);
+            if (found < 0)
+                return -1;
+
+            if (IsIdentifierAt(text, found, name))
+                return found;
+
+            search = found + name.Length;
+        }
+    }
+
+    private static bool TryReadCallAt(string text, string name, int start, ref int index, out HeaderCall call)
+    {
+        call = default;
 
         int startLine = GetLineNumber(text, start);
         int open = text.IndexOf('(', start + name.Length);
@@ -102,7 +157,7 @@ public static class CHeaderImporter
                 depth--;
                 if (depth == 0)
                 {
-                    call = new HeaderCall(text[(open + 1)..i], startLine);
+                    call = new HeaderCall(name, text[(open + 1)..i], startLine);
                     index = i + 1;
                     return true;
                 }
@@ -153,7 +208,7 @@ public static class CHeaderImporter
         return line;
     }
 
-    private readonly record struct HeaderCall(string Text, int StartLine);
+    private readonly record struct HeaderCall(string Name, string Text, int StartLine);
 
     private static List<string> SplitTopLevel(string text, int expectedParts = int.MaxValue)
     {
@@ -200,6 +255,84 @@ public static class CHeaderImporter
         return MessageTextSyntax.ToEditorText(ParseMessageBodyTokens(body));
     }
 
+    private static string? SelectModernMessageBody(
+        string macroName,
+        List<string> args,
+        CHeaderMessageSlot preferredSlot,
+        bool allowWesternFallback)
+    {
+        int preferredIndex = 3 + (int)preferredSlot;
+        if (macroName.Equals("DEFINE_MESSAGE_JPN", StringComparison.OrdinalIgnoreCase))
+        {
+            if (preferredSlot != CHeaderMessageSlot.Jpn)
+            {
+                return null;
+            }
+
+            preferredIndex = 3;
+        }
+        else if (macroName.Equals("DEFINE_MESSAGE_NES", StringComparison.OrdinalIgnoreCase))
+        {
+            if (preferredSlot == CHeaderMessageSlot.Jpn)
+            {
+                return null;
+            }
+        }
+
+        if (preferredIndex >= 3 && preferredIndex < args.Count && !IsMissingMsg(args[preferredIndex]))
+        {
+            return args[preferredIndex];
+        }
+
+        if (preferredSlot == CHeaderMessageSlot.Jpn || !allowWesternFallback)
+        {
+            return null;
+        }
+
+        // Western imports may fall back to another western slot, but never to JPN.
+        for (int i = 4; i < args.Count; i++)
+        {
+            if (!IsMissingMsg(args[i]))
+            {
+                return args[i];
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsMissingMsg(string body)
+    {
+        string unwrapped = UnwrapMsgBody(body).Trim();
+        return unwrapped.Length == 0
+            || unwrapped.Equals("None", StringComparison.OrdinalIgnoreCase)
+            || unwrapped.Contains("MISSING", StringComparison.OrdinalIgnoreCase)
+            || unwrapped.Contains("UNUSED", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string UnwrapMsgBody(string body)
+    {
+        int index = 0;
+        while (index < body.Length && char.IsWhiteSpace(body[index]))
+            index++;
+
+        int identifierStart = index;
+        if (identifierStart >= body.Length || !char.IsLetter(body[identifierStart]))
+            return body;
+
+        string identifier = ReadIdentifier(body, ref index);
+        if (!identifier.Equals("MSG", StringComparison.OrdinalIgnoreCase))
+            return body;
+
+        while (index < body.Length && char.IsWhiteSpace(body[index]))
+            index++;
+
+        if (index >= body.Length || body[index] != '(')
+            return body;
+
+        return ReadParenthesized(body, ref index);
+    }
+
     private static List<MessageToken> ParseMessageBodyTokens(string body)
     {
         var tokens = new List<MessageToken>();
@@ -211,6 +344,11 @@ public static class CHeaderImporter
         while (i < body.Length)
         {
             char ch = body[i];
+
+            if (ch == '/' && TrySkipComment(body, ref i))
+            {
+                continue;
+            }
 
             if (char.IsWhiteSpace(ch))
             {
@@ -235,10 +373,49 @@ public static class CHeaderImporter
                 continue;
             }
 
+            if (char.IsDigit(ch))
+            {
+                AppendRawByte(tokens, (byte)ParseNumericToken(body, ref i));
+                continue;
+            }
+
             i++;
         }
 
         return tokens;
+    }
+
+    private static bool TrySkipComment(string text, ref int index)
+    {
+        if (index + 1 >= text.Length || text[index] != '/')
+        {
+            return false;
+        }
+
+        if (text[index + 1] == '/')
+        {
+            index += 2;
+            while (index < text.Length && text[index] != '\n')
+            {
+                index++;
+            }
+
+            return true;
+        }
+
+        if (text[index + 1] == '*')
+        {
+            index += 2;
+            while (index + 1 < text.Length && (text[index] != '*' || text[index + 1] != '/'))
+            {
+                index++;
+            }
+
+            index = Math.Min(index + 2, text.Length);
+            return true;
+        }
+
+        return false;
     }
 
     private static string NormalizeInlineTags(string text)
@@ -263,6 +440,11 @@ public static class CHeaderImporter
     private static void AppendText(List<MessageToken> tokens, string text)
     {
         tokens.AddRange(MessageTextSyntax.FromEditorText(EncodingProfile.HeaderTextToEditorText(NormalizeInlineTags(text))));
+    }
+
+    private static void AppendRawByte(List<MessageToken> tokens, byte value)
+    {
+        tokens.AddRange(MessageCodec.DecodeMessageTokens([value, 0x02], 0, 2));
     }
 
     private static void AppendMacro(List<MessageToken> tokens, string macro, string argumentText)
@@ -307,14 +489,16 @@ public static class CHeaderImporter
         else if (macro.Equals("SFX", StringComparison.OrdinalIgnoreCase))
         {
             string argument = argumentText.Trim();
-            int value = MessageSfxMaps.Values.TryGetValue(argument, out int mapped)
+            int value = MessageSfxMaps.HeaderValues.TryGetValue(argument, out int headerMapped)
+                ? headerMapped
+                : MessageSfxMaps.Values.TryGetValue(argument, out int mapped)
                 ? mapped
                 : ParseArgumentWord(argumentText);
             tokens.Add(new SfxToken((ushort)value));
         }
         else if (macro.Equals("ITEM_ICON", StringComparison.OrdinalIgnoreCase))
         {
-            tokens.Add(new IconToken((byte)ParseArgumentByte(argumentText)));
+            tokens.Add(new IconToken((byte)ParseItemArgument(argumentText)));
         }
         else if (macro.Equals("TEXT_SPEED", StringComparison.OrdinalIgnoreCase))
         {
@@ -323,11 +507,14 @@ public static class CHeaderImporter
         else if (macro.Equals("BACKGROUND", StringComparison.OrdinalIgnoreCase))
         {
             var args = SplitTopLevel(argumentText);
-            if (args.Count != 3)
-                throw new InvalidDataException("BACKGROUND must have three arguments.");
-            int value = ParseArgumentByte(args[0]) << 16
-                | ParseArgumentByte(args[1]) << 8
-                | ParseArgumentByte(args[2]);
+            int value = args.Count switch
+            {
+                3 => ParseArgumentByte(args[0]) << 16
+                    | ParseArgumentByte(args[1]) << 8
+                    | ParseArgumentByte(args[2]),
+                5 => ParseBackground(args),
+                _ => throw new InvalidDataException("BACKGROUND must have three legacy arguments or five modern arguments."),
+            };
             tokens.Add(new BackgroundToken(value));
         }
         else if (macro.Equals("HIGHSCORE", StringComparison.OrdinalIgnoreCase))
@@ -501,6 +688,56 @@ public static class CHeaderImporter
         }
 
         return result;
+    }
+
+    private static int ParseItemArgument(string value)
+    {
+        string argument = value.Trim();
+        if (ItemIds.TryGetValue(argument, out int itemId))
+        {
+            return itemId;
+        }
+
+        return ParseArgumentByte(value);
+    }
+
+    private static int ParseBackground(List<string> args)
+    {
+        int bgIndex = ParseNamedByte(args[0], Backgrounds);
+        int foreground = ParseNamedByte(args[1], BackgroundForegroundColors);
+        int background = ParseNamedByte(args[2], BackgroundColors);
+        int yOffset = ParseNamedByte(args[3], BackgroundYOffsets);
+        int unknown = ParseArgumentByte(args[4]);
+        return (bgIndex << 16) | ((foreground << 4 | background) << 8) | (yOffset << 4 | unknown);
+    }
+
+    private static int ParseNamedByte(string value, IReadOnlyDictionary<string, int> names)
+    {
+        string argument = value.Trim();
+        if (names.TryGetValue(argument, out int named))
+        {
+            return named;
+        }
+
+        return ParseArgumentByte(value);
+    }
+
+    private static int ParseNumericToken(string text, ref int index)
+    {
+        int start = index;
+        while (index < text.Length && (IsHex(text[index]) || text[index] is 'x' or 'X'))
+        {
+            index++;
+        }
+
+        string token = text[start..index];
+        int value = ParseInt(token);
+        if (value is < 0 or > 0xff)
+        {
+            throw new InvalidDataException($"Expected byte-sized raw value, got 0x{value:X}.");
+        }
+
+        return value;
     }
 
     private static int ParseArgumentWord(string value)

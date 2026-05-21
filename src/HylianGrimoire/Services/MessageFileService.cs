@@ -21,15 +21,32 @@ public static class MessageFileService
         File.WriteAllBytes(binPath, msgBytes);
     }
 
-    public static List<MessageEntry> ImportHeader(string path)
+    public static List<MessageEntry> ImportHeader(
+        string path,
+        CHeaderMessageSlot preferredSlot = CHeaderMessageSlot.Nes,
+        bool allowWesternFallback = true)
     {
         string content = File.ReadAllText(path);
-        return CHeaderImporter.Import(content);
+        return CHeaderImporter.Import(content, preferredSlot, allowWesternFallback);
     }
 
-    public static void ExportHeader(List<MessageEntry> entries, string path)
+    public static void ExportHeader(
+        List<MessageEntry> entries,
+        string path,
+        CHeaderExportFormat format = CHeaderExportFormat.Legacy)
     {
-        string content = CHeaderExporter.Export(entries);
+        string content = CHeaderExporter.Export(entries, format);
+        File.WriteAllText(path, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+    }
+
+    public static void ExportHeaderLanguages(
+        IReadOnlyList<MessageEntry>? jpnEntries,
+        IReadOnlyList<MessageEntry>? nesEntries,
+        IReadOnlyList<MessageEntry>? gerEntries,
+        IReadOnlyList<MessageEntry>? fraEntries,
+        string path)
+    {
+        string content = CHeaderExporter.ExportModernLanguages(jpnEntries, nesEntries, gerEntries, fraEntries);
         File.WriteAllText(path, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
     }
 }

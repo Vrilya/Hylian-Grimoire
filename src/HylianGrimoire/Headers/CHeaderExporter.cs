@@ -19,6 +19,13 @@ public static class CHeaderExporter
     private static readonly IReadOnlyDictionary<int, string> BoxPosStr = MessageTokenMaps.HeaderBoxPositions;
     private static readonly IReadOnlyDictionary<int, string> ColorStr = MessageTokenMaps.HeaderColors;
     private static readonly IReadOnlyDictionary<int, string> HighscoreStr = MessageTokenMaps.HeaderHighscores;
+    private static readonly IReadOnlyDictionary<int, string> ModernHighscoreStr = MessageTokenMaps.ModernHeaderHighscores;
+    private static readonly IReadOnlyDictionary<int, string> ItemStr = MessageTokenMaps.HeaderItems;
+    private static readonly IReadOnlyDictionary<int, string> SfxStr = MessageSfxMaps.HeaderNames;
+    private static readonly IReadOnlyDictionary<int, string> BackgroundStr = MessageTokenMaps.HeaderBackgrounds;
+    private static readonly IReadOnlyDictionary<int, string> BackgroundForegroundStr = MessageTokenMaps.HeaderBackgroundForegroundColors;
+    private static readonly IReadOnlyDictionary<int, string> BackgroundColorStr = MessageTokenMaps.HeaderBackgroundColors;
+    private static readonly IReadOnlyDictionary<int, string> BackgroundYOffsetStr = MessageTokenMaps.HeaderBackgroundYOffsets;
     private static readonly MessageEncodingProfile EncodingProfile = MessageEncodingProfile.Default;
 
     private static readonly Dictionary<byte, string> HeaderButtonText = new()
@@ -86,36 +93,232 @@ public static class CHeaderExporter
     /// <summary>
     /// Produces an OoT C header file from the given message entries.
     /// </summary>
-    public static string Export(List<MessageEntry> entries)
+    public static string Export(
+        List<MessageEntry> entries,
+        CHeaderExportFormat format = CHeaderExportFormat.Legacy)
     {
         var parts = new List<string>(entries.Count);
 
         foreach (var entry in entries)
         {
-            string decoded;
-            try
-            {
-                decoded = DecodeMessageHeader(MessageTextSyntax.FromEditorText(entry.Text));
-            }
-            catch (InvalidDataException ex)
-            {
-                throw new InvalidDataException($"Message 0x{entry.Id:x4}: {ex.Message}", ex);
-            }
-
             string boxType = BoxTypeStr.TryGetValue(entry.Type,     out var bt) ? bt : $"TEXTBOX_TYPE_UNK_{entry.Type:X}";
             string boxPos  = BoxPosStr .TryGetValue(entry.Position, out var bp) ? bp : $"TEXTBOX_POS_UNK_{entry.Position:X}";
+            bool modern = format == CHeaderExportFormat.Modern;
+            bool otrMod = format == CHeaderExportFormat.OTRMod;
+            string decoded = DecodeEntry(entry, modern, otrMod);
 
-            parts.Add($"DEFINE_MESSAGE(0x{entry.Id:X4}, {boxType}, {boxPos},\n{decoded}\n)\n");
+            parts.Add(format == CHeaderExportFormat.Modern
+                ? ExportModernSelectedEntry(entry, boxType, boxPos, decoded)
+                : $"DEFINE_MESSAGE(0x{entry.Id:X4}, {boxType}, {boxPos},\n{decoded}\n)\n");
         }
 
         return string.Join("\n", parts);
     }
 
+    public static string ExportModernLanguages(
+        IReadOnlyList<MessageEntry>? jpnEntries,
+        IReadOnlyList<MessageEntry>? nesEntries,
+        IReadOnlyList<MessageEntry>? gerEntries,
+        IReadOnlyList<MessageEntry>? fraEntries)
+    {
+        Dictionary<int, MessageEntry> jpn = ToEntryMap(jpnEntries);
+        Dictionary<int, MessageEntry> nes = ToEntryMap(nesEntries);
+        Dictionary<int, MessageEntry> ger = ToEntryMap(gerEntries);
+        Dictionary<int, MessageEntry> fra = ToEntryMap(fraEntries);
+        var parts = new List<string>();
+
+        foreach (int id in EnumerateOrderedIds(nesEntries, gerEntries, fraEntries, jpnEntries))
+        {
+            if (id == 0xfffc)
+            {
+                continue;
+            }
+
+            MessageEntry entry = GetFirstEntry(id, jpn, nes, ger, fra);
+            string boxType = BoxTypeStr.TryGetValue(entry.Type,     out var bt) ? bt : $"TEXTBOX_TYPE_UNK_{entry.Type:X}";
+            string boxPos  = BoxPosStr .TryGetValue(entry.Position, out var bp) ? bp : $"TEXTBOX_POS_UNK_{entry.Position:X}";
+
+            bool hasJpn = jpn.TryGetValue(id, out MessageEntry? jpnEntry);
+            bool hasNes = nes.TryGetValue(id, out MessageEntry? nesEntry);
+            bool hasGer = ger.TryGetValue(id, out MessageEntry? gerEntry);
+            bool hasFra = fra.TryGetValue(id, out MessageEntry? fraEntry);
+
+            var slots = new ModernMessageSlots(
+                Jpn: hasJpn ? DecodeModernSlot(jpnEntry!) : null,
+                Nes: hasNes ? DecodeModernSlot(nesEntry!) : null,
+                Ger: hasGer ? DecodeModernSlot(gerEntry!) : null,
+                Fra: hasFra ? DecodeModernSlot(fraEntry!) : null);
+
+            if (hasJpn
+                && hasNes
+                && !hasGer
+                && !hasFra
+                && (jpnEntry!.Type != nesEntry!.Type || jpnEntry.Position != nesEntry.Position))
+            {
+                string jpnBoxType = BoxTypeStr.TryGetValue(jpnEntry.Type, out var jbt) ? jbt : $"TEXTBOX_TYPE_UNK_{jpnEntry.Type:X}";
+                string jpnBoxPos = BoxPosStr.TryGetValue(jpnEntry.Position, out var jbp) ? jbp : $"TEXTBOX_POS_UNK_{jpnEntry.Position:X}";
+                string nesBoxType = BoxTypeStr.TryGetValue(nesEntry.Type, out var nbt) ? nbt : $"TEXTBOX_TYPE_UNK_{nesEntry.Type:X}";
+                string nesBoxPos = BoxPosStr.TryGetValue(nesEntry.Position, out var nbp) ? nbp : $"TEXTBOX_POS_UNK_{nesEntry.Position:X}";
+
+                string jpnMessage = ExportModernEntry(
+                    jpnEntry,
+                    jpnBoxType,
+                    jpnBoxPos,
+                    slots with { Nes = null },
+                    fullLanguageSet: true,
+                    macroOverride: "DEFINE_MESSAGE_JPN").TrimEnd('\r', '\n');
+                string nesMessage = ExportModernEntry(
+                    nesEntry,
+                    nesBoxType,
+                    nesBoxPos,
+                    slots with { Jpn = null },
+                    fullLanguageSet: true,
+                    macroOverride: "DEFINE_MESSAGE_NES");
+                parts.Add($"{jpnMessage}\n{nesMessage}");
+            }
+            else
+            {
+                parts.Add(ExportModernEntry(entry, boxType, boxPos, slots, fullLanguageSet: true));
+            }
+        }
+
+        return string.Join("\n", parts);
+    }
+
+    private static string DecodeEntry(MessageEntry entry, bool modern = false, bool otrMod = false)
+    {
+        try
+        {
+            return DecodeMessageHeader(MessageTextSyntax.FromEditorText(entry.Text), modern, otrMod);
+        }
+        catch (InvalidDataException ex)
+        {
+            throw new InvalidDataException($"Message 0x{entry.Id:x4}: {ex.Message}", ex);
+        }
+    }
+
+    private static string ExportModernEntry(
+        MessageEntry entry,
+        string boxType,
+        string boxPos,
+        ModernMessageSlots slots,
+        bool fullLanguageSet,
+        string? macroOverride = null)
+    {
+        if (entry.Type == 0x0b)
+        {
+            string staffBody = FormatModernMsg(slots.Nes ?? slots.Ger ?? slots.Fra ?? slots.Jpn);
+            return $"DEFINE_MESSAGE(0x{entry.Id:X4}, {boxType}, {boxPos},\n{staffBody}\n)\n";
+        }
+
+        string macro = macroOverride ?? (entry.Id == 0xfffc
+            ? "DEFINE_MESSAGE_FFFC"
+            : fullLanguageSet ? ChooseModernLanguageMacro(slots) : "DEFINE_MESSAGE_NES");
+        return $"""
+{macro}(0x{entry.Id:X4}, {boxType}, {boxPos},
+{FormatModernMsg(slots.Jpn)}
+,
+{FormatModernMsg(slots.Nes)}
+,
+{FormatModernMsg(slots.Ger)}
+,
+{FormatModernMsg(slots.Fra)}
+)
+
+""";
+    }
+
+    private static string ChooseModernLanguageMacro(ModernMessageSlots slots)
+    {
+        bool hasJpn = slots.Jpn is not null;
+        bool hasNes = slots.Nes is not null;
+        bool hasGer = slots.Ger is not null;
+        bool hasFra = slots.Fra is not null;
+
+        if (hasJpn && !hasNes && !hasGer && !hasFra)
+        {
+            return "DEFINE_MESSAGE_JPN";
+        }
+
+        if (!hasJpn && hasNes && !hasGer && !hasFra)
+        {
+            return "DEFINE_MESSAGE_NES";
+        }
+
+        return "DEFINE_MESSAGE";
+    }
+
+    private static string ExportModernSelectedEntry(MessageEntry entry, string boxType, string boxPos, string decoded)
+    {
+        string macro = entry.Id == 0xfffc ? "DEFINE_MESSAGE_FFFC" : "DEFINE_MESSAGE";
+        return $"{macro}(0x{entry.Id:X4}, {boxType}, {boxPos},\n{decoded}\n)\n";
+    }
+
+    private static string FormatModernMsg(string? decoded)
+        => decoded is null
+            ? "MSG(/* MISSING */)"
+            : decoded.Length == 0 ? "MSG()" : $"MSG(\n{decoded}\n)";
+
+    private static string DecodeModernSlot(MessageEntry entry)
+        => entry.Bank == 0x08 ? CHeaderJapaneseExporter.DecodeRawEntry(entry) : DecodeEntry(entry, modern: true);
+
+    private static Dictionary<int, MessageEntry> ToEntryMap(IReadOnlyList<MessageEntry>? entries)
+        => entries?.ToDictionary(entry => entry.Id) ?? [];
+
+    private static IEnumerable<int> EnumerateOrderedIds(params IReadOnlyList<MessageEntry>?[] entrySets)
+    {
+        var seen = new SortedSet<int>();
+        foreach (IReadOnlyList<MessageEntry>? entries in entrySets)
+        {
+            if (entries is null)
+            {
+                continue;
+            }
+
+            foreach (MessageEntry entry in entries)
+            {
+                seen.Add(entry.Id);
+            }
+        }
+
+        foreach (int id in seen)
+        {
+            yield return id;
+        }
+    }
+
+    private static MessageEntry GetFirstEntry(
+        int id,
+        Dictionary<int, MessageEntry> jpn,
+        Dictionary<int, MessageEntry> nes,
+        Dictionary<int, MessageEntry> ger,
+        Dictionary<int, MessageEntry> fra)
+    {
+        if (nes.TryGetValue(id, out MessageEntry? nesEntry))
+        {
+            return nesEntry;
+        }
+
+        if (ger.TryGetValue(id, out MessageEntry? gerEntry))
+        {
+            return gerEntry;
+        }
+
+        if (fra.TryGetValue(id, out MessageEntry? fraEntry))
+        {
+            return fraEntry;
+        }
+
+        return jpn[id];
+    }
+
+    private readonly record struct ModernMessageSlots(string? Jpn, string? Nes, string? Ger, string? Fra);
+
     // --------------------------------------------------------
     // Decoder
     // --------------------------------------------------------
 
-    private static string DecodeMessageHeader(IEnumerable<MessageToken> messageTokens)
+    private static string DecodeMessageHeader(IEnumerable<MessageToken> messageTokens, bool modern, bool otrMod = false)
     {
         var tokens = new List<(string TokType, string Data)>();
         var textRun = new StringBuilder();
@@ -153,64 +356,64 @@ public static class CHeaderExporter
                     break;
                 case ShiftToken shift:
                     FlushText();
-                    tokens.Add(("SHIFT", $"SHIFT({FormatByteString(shift.Pixels)})"));
+                    tokens.Add(("SHIFT", $"SHIFT({FormatByteArgument(shift.Pixels, modern)})"));
                     break;
                 case TextIdToken textId:
                     FlushText();
-                    tokens.Add(("TEXTID", $"TEXTID({FormatTwoByteString(textId.Id)})"));
+                    tokens.Add(("TEXTID", $"TEXTID({FormatWordArgument(textId.Id, modern)})"));
                     break;
                 case BreakDelayToken breakDelay:
                     FlushText();
-                    tokens.Add(("BOX_BREAK_DELAYED", $"BOX_BREAK_DELAYED({FormatByteString(breakDelay.Frames)})"));
+                    tokens.Add(("BOX_BREAK_DELAYED", $"BOX_BREAK_DELAYED({FormatByteArgument(breakDelay.Frames, modern)})"));
                     break;
                 case FadeToken fade:
                     FlushText();
-                    tokens.Add(("FADE", $"FADE({FormatByteString(fade.Frames)})"));
+                    tokens.Add(("FADE", $"FADE({FormatByteArgument(fade.Frames, modern)})"));
                     break;
                 case EndFadeToken endFade:
                     FlushText();
-                    tokens.Add(("FADE2", $"FADE2({FormatTwoByteString(endFade.Frames)})"));
+                    tokens.Add(("FADE2", $"FADE2({FormatWordArgument(endFade.Frames, modern)})"));
                     break;
                 case SfxToken sfx:
                     FlushText();
-                    tokens.Add(("SFX", $"SFX({FormatTwoByteString(sfx.Id)})"));
+                    tokens.Add(("SFX", $"SFX({FormatSfx(sfx.Id, modern)})"));
                     break;
                 case IconToken icon:
                     FlushText();
-                    tokens.Add(("ITEM_ICON", $"ITEM_ICON({FormatByteString(icon.Id)})"));
+                    tokens.Add(("ITEM_ICON", $"ITEM_ICON({FormatItem(icon.Id, modern)})"));
                     break;
                 case TextSpeedToken textSpeed:
                     FlushText();
-                    tokens.Add(("TEXT_SPEED", $"TEXT_SPEED({FormatByteString(textSpeed.Speed)})"));
+                    tokens.Add(("TEXT_SPEED", $"TEXT_SPEED({FormatByteArgument(textSpeed.Speed, modern)})"));
                     break;
                 case BackgroundToken background:
                     FlushText();
-                    tokens.Add(("BACKGROUND", $"BACKGROUND({FormatByteString((background.Rgb >> 16) & 0xff)}, {FormatByteString((background.Rgb >> 8) & 0xff)}, {FormatByteString(background.Rgb & 0xff)})"));
+                    tokens.Add(("BACKGROUND", FormatBackground(background.Rgb, modern)));
                     break;
                 case HighscoreToken highscore:
                     FlushText();
-                    tokens.Add(("HIGHSCORE", $"HIGHSCORE({FormatHighscore(highscore.Id)})"));
+                    tokens.Add(("HIGHSCORE", $"HIGHSCORE({FormatHighscore(highscore.Id, modern)})"));
                     break;
                 case ButtonToken button:
-                    textRun.Append(ToHeaderByteText(button.Code));
+                    textRun.Append(ToHeaderByteText(button.Code, modern, otrMod));
                     break;
             }
         }
 
         FlushText();
-        return EmitTokens(tokens);
+        return CHeaderTokenEmitter.Emit(tokens, modern, otrMod);
     }
 
     private static string ToHeaderText(string text)
         => EncodingProfile.ToHeaderText(text);
 
-    private static string ToHeaderByteText(byte value)
+    private static string ToHeaderByteText(byte value, bool modern, bool otrMod)
     {
         if (value is >= 0x80 and <= 0x9e)
             return EncodingProfile.GetHeaderText(value);
 
         if (value == 0xa9)
-            return "[Triangle]";
+            return modern || otrMod ? "▼" : "[Triangle]";
 
         return HeaderButtonText.TryGetValue(value, out string? text) ? text : ((char)value).ToString();
     }
@@ -219,79 +422,53 @@ public static class CHeaderExporter
 
     private static string FormatTwoByteString(int value) => $"\"\\x{(value >> 8) & 0xff:X2}\\x{value & 0xff:X2}\"";
 
+    private static string FormatByteArgument(int value, bool modern)
+        => modern ? $"{value & 0xff}" : FormatByteString(value);
+
+    private static string FormatWordArgument(int value, bool modern)
+        => modern ? $"0x{value & 0xffff:X4}" : FormatTwoByteString(value);
+
+    private static string FormatItem(int value, bool modern)
+        => modern && ItemStr.TryGetValue(value, out string? item)
+            ? item
+            : FormatByteString(value);
+
+    private static string FormatSfx(int value, bool modern)
+        => modern && SfxStr.TryGetValue(value, out string? sfx)
+            ? sfx
+            : modern ? $"0x{value & 0xffff:X4}" : FormatTwoByteString(value);
+
+    private static string FormatBackground(int value, bool modern)
+    {
+        int bgIndex = (value >> 16) & 0xff;
+        int colors = (value >> 8) & 0xff;
+        int y = value & 0xff;
+        if (!modern)
+        {
+            return $"BACKGROUND({FormatByteString(bgIndex)}, {FormatByteString(colors)}, {FormatByteString(y)})";
+        }
+
+        int foreground = (colors >> 4) & 0xf;
+        int background = colors & 0xf;
+        int yOffset = (y >> 4) & 0xf;
+        int unknown = y & 0xf;
+        return "BACKGROUND("
+            + $"{FormatNamedByte(bgIndex, BackgroundStr)}, "
+            + $"{FormatNamedByte(foreground, BackgroundForegroundStr)}, "
+            + $"{FormatNamedByte(background, BackgroundColorStr)}, "
+            + $"{FormatNamedByte(yOffset, BackgroundYOffsetStr)}, "
+            + $"{unknown})";
+    }
+
+    private static string FormatNamedByte(int value, IReadOnlyDictionary<int, string> names)
+        => names.TryGetValue(value, out string? name) ? name : $"{value}";
+
     private static string FormatColor(int value) => ColorStr.TryGetValue(value, out string? color) ? color : $"0x{value:02X}";
 
-    private static string FormatHighscore(int value) => HighscoreStr.TryGetValue(value, out string? highscore) ? highscore : $"{value}";
-
-    /// <summary>
-    /// Formats a token list into the C string literal style used by header.
-    /// </summary>
-    private static string EmitTokens(List<(string TokType, string Data)> tokens)
+    private static string FormatHighscore(int value, bool modern)
     {
-        if (tokens.Count == 0)
-            return "\"\"";
-
-        var sb = new StringBuilder();
-        bool qState = false;  // currently inside an open "
-        bool sState = false;  // need a space before next non-break token
-
-        void MaybeEnterQ()
-        {
-            if (!qState) { sb.Append('"'); qState = true; }
-        }
-
-        void MaybeExitQ(bool space = false)
-        {
-            if (qState)
-            {
-                sb.Append('"');
-                if (space) sb.Append(' ');
-                qState = false;
-            }
-        }
-
-        foreach (var (tokType, tokDat) in tokens)
-        {
-            if (tokType is "BOX_BREAK" or "BOX_BREAK_DELAYED")
-            {
-                MaybeExitQ();
-                sState = false;
-                sb.Append('\n');
-                sb.Append(tokDat);
-                sb.Append('\n');
-                continue;
-            }
-
-            if (sState) { sb.Append(' '); sState = false; }
-
-            if (tokType == "NEWLINE")
-            {
-                MaybeEnterQ();
-                sb.Append("\\n\"\n");
-                qState = false;
-            }
-            else if (tokType == "TEXT")
-            {
-                MaybeEnterQ();
-                sb.Append(tokDat);
-            }
-            else
-            {
-                MaybeExitQ(space: true);
-                sb.Append(tokDat);
-                if (tokType is "TWO_CHOICE" or "THREE_CHOICE")
-                    sb.Append('\n');
-                else
-                    sState = true;
-            }
-        }
-
-        MaybeExitQ();
-
-        string result = sb.ToString();
-        if (result.Length > 0 && result[^1] == '\n')
-            result = result[..^1];
-
-        return result;
+        IReadOnlyDictionary<int, string> map = modern ? ModernHighscoreStr : HighscoreStr;
+        return map.TryGetValue(value, out string? highscore) ? highscore : $"{value}";
     }
+
 }

@@ -5,8 +5,13 @@ namespace HylianGrimoire.Codecs;
 
 public static partial class MessageCodec
 {
-    public static List<MessageToken> DecodeMessageTokens(byte[] raw, int startOffset, int byteCount)
+    public static List<MessageToken> DecodeMessageTokens(
+        byte[] raw,
+        int startOffset,
+        int byteCount,
+        MessageEncodingProfile? encodingProfile = null)
     {
+        encodingProfile ??= MessageEncodingProfile.Default;
         var tokens = new List<MessageToken>();
         if (startOffset < 0 || startOffset >= raw.Length || byteCount <= 0)
             return tokens;
@@ -148,7 +153,7 @@ public static partial class MessageCodec
                 FlushText();
                 tokens.Add(new ButtonToken((MessageButton)b));
             }
-            else if (EncodingProfile.TryGetEditorChar(b, out char specialCh))
+            else if (encodingProfile.TryGetEditorChar(b, out char specialCh))
             {
                 text.Append(specialCh);
             }
@@ -164,8 +169,11 @@ public static partial class MessageCodec
         return tokens;
     }
 
-    public static byte[] EncodeMessageTokens(IEnumerable<MessageToken> tokens)
+    public static byte[] EncodeMessageTokens(
+        IEnumerable<MessageToken> tokens,
+        MessageEncodingProfile? encodingProfile = null)
     {
+        encodingProfile ??= MessageEncodingProfile.Default;
         var output = new List<byte>();
 
         foreach (MessageToken token in tokens)
@@ -173,7 +181,7 @@ public static partial class MessageCodec
             switch (token)
             {
                 case TextToken text:
-                    AddTextBytes(output, text.Text);
+                    AddTextBytes(output, text.Text, encodingProfile);
                     break;
                 case LineBreakToken:
                     output.Add(0x01);
@@ -244,15 +252,15 @@ public static partial class MessageCodec
         return output.ToArray();
     }
 
-    private static void AddTextBytes(List<byte> output, string text)
+    private static void AddTextBytes(List<byte> output, string text, MessageEncodingProfile encodingProfile)
     {
         foreach (char ch in text)
         {
-            if (EncodingProfile.TryGetByte(ch, out byte specialByte))
+            if (encodingProfile.TryGetByte(ch, out byte specialByte))
             {
                 output.Add(specialByte);
             }
-            else if (ch <= '\u00ff')
+            else if (ch is >= '\u0020' and <= '\u007e')
             {
                 output.Add((byte)ch);
             }

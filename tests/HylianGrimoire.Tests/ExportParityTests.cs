@@ -1,4 +1,5 @@
-﻿using HylianGrimoire.Codecs;
+﻿using System.Drawing;
+using HylianGrimoire.Codecs;
 using HylianGrimoire.Glyphs;
 using HylianGrimoire.Headers;
 using HylianGrimoire.Models;
@@ -14,9 +15,8 @@ public sealed class ExportParityTests
 {
     public ExportParityTests()
     {
-        Environment.SetEnvironmentVariable("OOT_EDITOR_DISABLE_GLYPH_OVERRIDES", null);
         Environment.SetEnvironmentVariable(
-            "OOT_EDITOR_GLYPH_OVERRIDE_CONFIG_DIR",
+            "OOT_EDITOR_CHARACTER_PROFILE_CONFIG_DIR",
             Path.Combine(Path.GetTempPath(), "HylianGrimoireTests", Guid.NewGuid().ToString("N")));
     }
 
@@ -176,6 +176,320 @@ public sealed class ExportParityTests
         "Tryck <TRIANGLE>"
         )
         """)[0].Text);
+
+        string otrModHeader = CHeaderExporter.Export(triangleEntry, CHeaderExportFormat.OTRMod);
+        Assert.Contains('▼', otrModHeader);
+        Assert.DoesNotContain("[Triangle]", otrModHeader);
+        Assert.Equal(triangleEntry[0].Text, CHeaderImporter.Import(otrModHeader)[0].Text);
+
+        var adjacentMacroEntry = new List<MessageEntry>
+        {
+            new(0x0102, 2, 3, 7, 0)
+            {
+                Text = "[unskippable][item:2d][quicktexton]Text",
+            },
+        };
+        string adjacentMacroHeader = CHeaderExporter.Export(adjacentMacroEntry, CHeaderExportFormat.OTRMod);
+        Assert.Contains("UNSKIPPABLE  ITEM_ICON(\"\\x2D\")  QUICKTEXT_ENABLE \"Text\"", adjacentMacroHeader);
+        Assert.Equal(adjacentMacroEntry[0].Text, CHeaderImporter.Import(adjacentMacroHeader)[0].Text);
+
+        var fontOrderEntry = new List<MessageEntry>
+        {
+            new(0xfffc, 0, 0, 7, 0)
+            {
+                Text = FontOrderCodec.GetStandardEditorText() + "\n",
+            },
+        };
+        string otrModFontOrder = CHeaderExporter.Export(fontOrderEntry, CHeaderExportFormat.OTRMod);
+        Assert.Contains("DEFINE_MESSAGE(0xFFFC, TEXTBOX_TYPE_BLACK, TEXTBOX_POS_VARIABLE,", otrModFontOrder);
+        Assert.Contains("\"0123456789\\n\"", otrModFontOrder);
+        Assert.Contains("\" -.\\n\"", otrModFontOrder);
+        Assert.Equal(fontOrderEntry[0].Text, CHeaderImporter.Import(otrModFontOrder)[0].Text);
+    }
+
+    [Fact]
+    public void ModernHeaderImportSelectsRequestedLanguageSlot()
+    {
+        const string modernHeader = """
+        DEFINE_MESSAGE_NES(0x0002, TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+        MSG(/* MISSING */)
+        ,
+        MSG(
+        UNSKIPPABLE ITEM_ICON(ITEM_POCKET_EGG) QUICKTEXT_ENABLE "You borrowed a " COLOR(RED) "Pocket Egg" COLOR(DEFAULT) "!" QUICKTEXT_DISABLE 0x01,
+        "It will hatch overnight."
+        )
+        ,
+        MSG(
+        UNSKIPPABLE "Deutsch"
+        )
+        ,
+        MSG(
+        UNSKIPPABLE "Francais"
+        )
+        )
+        """;
+
+        var nes = CHeaderImporter.Import(modernHeader, CHeaderMessageSlot.Nes);
+        Assert.Equal("[unskippable][item:2d][quicktexton]You borrowed a [color:red]Pocket Egg[color:default]![quicktextoff]\nIt will hatch overnight.", nes[0].Text);
+
+        var ger = CHeaderImporter.Import(modernHeader, CHeaderMessageSlot.Ger);
+        Assert.Equal("[unskippable]Deutsch", ger[0].Text);
+
+        var fra = CHeaderImporter.Import(modernHeader, CHeaderMessageSlot.Fra);
+        Assert.Equal("[unskippable]Francais", fra[0].Text);
+
+        var commented = CHeaderImporter.Import("""
+        DEFINE_MESSAGE_NES(0x0003, TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+        MSG(/* MISSING */), MSG("Text" /* comment */), MSG(/* UNUSED */), MSG(/* UNUSED */))
+        """);
+        Assert.Equal("Text", commented[0].Text);
+    }
+
+    [Fact]
+    public void ModernHeaderImportSkipsLanguageSpecificMacrosOutsideRequestedSlot()
+    {
+        const string modernHeader = """
+        DEFINE_MESSAGE_JPN(0x0100, TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+        MSG("JPN only"), MSG(/* MISSING */), MSG(/* MISSING */), MSG(/* MISSING */))
+
+        DEFINE_MESSAGE_NES(0x0101, TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+        MSG(/* MISSING */), MSG("NES only"), MSG(/* MISSING */), MSG(/* MISSING */))
+        """;
+
+        var nes = CHeaderImporter.Import(modernHeader, CHeaderMessageSlot.Nes);
+        Assert.Single(nes);
+        Assert.Equal(0x0101, nes[0].Id);
+        Assert.Equal("NES only", nes[0].Text);
+
+        var jpn = CHeaderImporter.Import(modernHeader, CHeaderMessageSlot.Jpn);
+        Assert.Single(jpn);
+        Assert.Equal(0x0100, jpn[0].Id);
+        Assert.Equal("JPN only", jpn[0].Text);
+    }
+
+    [Fact]
+    public void ModernHeaderImportNeverFallsBackToJapaneseForWesternSlots()
+    {
+        const string modernHeader = """
+        DEFINE_MESSAGE(0x5072, TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+        MSG("ゴ")
+        ,
+        MSG(/* MISSING */)
+        ,
+        MSG(/* MISSING */)
+        ,
+        MSG(/* MISSING */)
+        )
+
+        DEFINE_MESSAGE(0x5073, TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+        MSG("日本語")
+        ,
+        MSG("English")
+        ,
+        MSG(/* MISSING */)
+        ,
+        MSG(/* MISSING */)
+        )
+        """;
+
+        var nes = CHeaderImporter.Import(modernHeader, CHeaderMessageSlot.Nes);
+        Assert.Single(nes);
+        Assert.Equal(0x5073, nes[0].Id);
+        Assert.Equal("English", nes[0].Text);
+
+        var ger = CHeaderImporter.Import(modernHeader, CHeaderMessageSlot.Ger);
+        Assert.Single(ger);
+        Assert.Equal(0x5073, ger[0].Id);
+        Assert.Equal("English", ger[0].Text);
+
+        var fra = CHeaderImporter.Import(modernHeader, CHeaderMessageSlot.Fra);
+        Assert.Single(fra);
+        Assert.Equal(0x5073, fra[0].Id);
+        Assert.Equal("English", fra[0].Text);
+
+        var jpn = CHeaderImporter.Import(modernHeader, CHeaderMessageSlot.Jpn);
+        Assert.Equal([0x5072, 0x5073], jpn.Select(entry => entry.Id).ToArray());
+        Assert.Equal("ゴ", jpn[0].Text);
+        Assert.Equal("日本語", jpn[1].Text);
+    }
+
+    [Fact]
+    public void ModernHeaderExportUsesMsgSlots()
+    {
+        var entries = new List<MessageEntry>
+        {
+            new(0x0001, 0, 3, 7, 0)
+            {
+                Text = "[unskippable][item:2d]Hello[Triangle][shift:13][sfx:Laugh2][fish]",
+            },
+        };
+
+        string exported = CHeaderExporter.Export(entries, CHeaderExportFormat.Modern);
+        Assert.Contains("DEFINE_MESSAGE(0x0001, TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,", exported);
+        Assert.DoesNotContain("MSG(", exported);
+        Assert.Contains("UNSKIPPABLE", exported);
+        Assert.Contains("ITEM_ICON(ITEM_POCKET_EGG)", exported);
+        Assert.Contains("SHIFT(19)", exported);
+        Assert.Contains("SFX(NA_SE_VO_Z0_SMILE_0)", exported);
+        Assert.Contains("HIGHSCORE(HS_FISHING)", exported);
+        Assert.Contains("\"Hello▼\"", exported);
+        Assert.DoesNotContain("[Triangle]", exported);
+        Assert.Equal(1, CountOccurrences(exported, "UNSKIPPABLE"));
+        Assert.DoesNotContain("MSG(/* MISSING */)", exported);
+    }
+
+    [Fact]
+    public void ModernHeaderExportCanWriteAllRomLanguageSlots()
+    {
+        var nes = new List<MessageEntry>
+        {
+            new(0x0001, 0, 3, 7, 0) { Text = "English" },
+        };
+        var ger = new List<MessageEntry>
+        {
+            new(0x0001, 0, 3, 7, 0) { Text = "Deutsch" },
+        };
+        var fra = new List<MessageEntry>
+        {
+            new(0x0001, 0, 3, 7, 0) { Text = "Francais" },
+        };
+
+        string exported = CHeaderExporter.ExportModernLanguages(null, nes, ger, fra);
+        Assert.StartsWith("DEFINE_MESSAGE(0x0001", exported);
+        Assert.Contains("\"English\"", exported);
+        Assert.Contains("\"Deutsch\"", exported);
+        Assert.Contains("\"Francais\"", exported);
+        Assert.Contains("MSG(/* MISSING */)\n,\nMSG(", exported);
+        Assert.Equal(1, CountOccurrences(exported, "MSG(/* MISSING */)"));
+    }
+
+    [Fact]
+    public void ModernHeaderExportCanWriteJapaneseSlot()
+    {
+        var jpn = new List<MessageEntry>
+        {
+            new(0x0001, 2, 3, 0x08, 0)
+            {
+                OriginalEncodedBytes = [0x81, 0x99, 0x82, 0x50, 0x81, 0x70, 0x00, 0x00],
+            },
+        };
+        var nes = new List<MessageEntry>
+        {
+            new(0x0001, 2, 3, 0x07, 0)
+            {
+                Text = "Hello!",
+            },
+        };
+
+        string exported = CHeaderExporter.ExportModernLanguages(jpn, nes, null, null);
+
+        Assert.Contains("DEFINE_MESSAGE(0x0001", exported);
+        Assert.Contains("MSG(\nUNSKIPPABLE \"１\"\n)", exported);
+        Assert.Contains("MSG(\n\"Hello!\"", exported);
+        Assert.DoesNotContain("0x70", exported);
+    }
+
+    [Fact]
+    public void ModernHeaderExportUsesLanguageSpecificMacrosForSingleLanguageEntries()
+    {
+        var jpn = new List<MessageEntry>
+        {
+            new(0x0347, 4, 2, 0x08, 0)
+            {
+                OriginalEncodedBytes = [0x82, 0x51, 0x81, 0x70],
+            },
+        };
+        var nes = new List<MessageEntry>
+        {
+            new(0x0346, 4, 2, 0x07, 0)
+            {
+                Text = "English only",
+            },
+        };
+
+        string exported = CHeaderExporter.ExportModernLanguages(jpn, nes, null, null);
+
+        Assert.Contains("DEFINE_MESSAGE_NES(0x0346", exported);
+        Assert.Contains("DEFINE_MESSAGE_JPN(0x0347", exported);
+        Assert.True(exported.IndexOf("0x0346", StringComparison.Ordinal) < exported.IndexOf("0x0347", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ModernHeaderExportUsesDecompJapaneseWaveDash()
+    {
+        var jpn = new List<MessageEntry>
+        {
+            new(0x0002, 2, 3, 0x08, 0)
+            {
+                OriginalEncodedBytes = [0x81, 0x60, 0x81, 0x70],
+            },
+        };
+
+        string exported = CHeaderExporter.ExportModernLanguages(jpn, null, null, null);
+
+        Assert.Contains("\"〜\"", exported);
+        Assert.DoesNotContain("～", exported);
+    }
+
+    [Fact]
+    public void ModernHeaderExportKeepsJapaneseArgumentsEndingInZero()
+    {
+        var jpn = new List<MessageEntry>
+        {
+            new(0x0006, 0, 3, 0x08, 0)
+            {
+                OriginalEncodedBytes =
+                [
+                    0x81, 0x89, 0x83, 0x6F, 0x83, 0x4E, 0x83, 0x5F, 0x83, 0x93, 0x81, 0x40,
+                    0x82, 0x51, 0x82, 0x4F, 0x83, 0x52, 0x81, 0x40, 0x82, 0x57, 0x82, 0x4F,
+                    0x83, 0x8B, 0x83, 0x73, 0x81, 0x5B, 0x81, 0x8A, 0x00, 0x0A, 0x81, 0xBC,
+                    0x00, 0x0B, 0x0C, 0x02, 0x82, 0xA9, 0x82, 0xA4, 0x00, 0x0A, 0x82, 0xE2,
+                    0x82, 0xDF, 0x82, 0xC6, 0x82, 0xAD, 0x00, 0x0B, 0x0C, 0x00, 0x81, 0x70,
+                ],
+            },
+        };
+
+        string exported = CHeaderExporter.ExportModernLanguages(jpn, null, null, null);
+
+        Assert.Contains("QUICKTEXT_ENABLE \"バクダン", exported);
+        Assert.Contains("TWO_CHOICE", exported);
+        Assert.Contains("COLOR(ADJUSTABLE) \"かう\\n\"", exported);
+        Assert.Contains("\"やめとく\" COLOR(DEFAULT)", exported);
+        Assert.DoesNotContain("0x81, 0x89", exported);
+    }
+
+    [Fact]
+    public void ModernHeaderExportDecodesJapaneseBackground()
+    {
+        var jpn = new List<MessageEntry>
+        {
+            new(0x0300, 4, 2, 0x08, 0)
+            {
+                OriginalEncodedBytes = [0x86, 0xB3, 0x00, 0x00, 0x01, 0x10, 0x81, 0x70],
+            },
+        };
+
+        string exported = CHeaderExporter.ExportModernLanguages(jpn, null, null, null);
+
+        Assert.Contains("BACKGROUND(X_LEFT, WHITE, GOLD, 2, 0)", exported);
+        Assert.DoesNotContain("0x86, 0xB3", exported);
+    }
+
+    [Fact]
+    public void ModernHeaderExportDecodesJapaneseBackgroundBeforePersistent()
+    {
+        var jpn = new List<MessageEntry>
+        {
+            new(0x088b, 5, 2, 0x08, 0)
+            {
+                OriginalEncodedBytes = [0x86, 0xB3, 0x00, 0x00, 0x20, 0x00, 0x86, 0xC8, 0x81, 0x70],
+            },
+        };
+
+        string exported = CHeaderExporter.ExportModernLanguages(jpn, null, null, null);
+
+        Assert.Contains("BACKGROUND(X_LEFT, ORANGE, BLACK, 1, 0) PERSISTENT", exported);
+        Assert.DoesNotContain("0x86, 0xB3", exported);
     }
 
     [Fact]
@@ -341,7 +655,7 @@ public sealed class ExportParityTests
     }
 
     [Fact]
-    public void EncodingProfileAndGlyphOverridesPreserveUnderlyingBytes()
+    public void EncodingProfileAndCharacterProfilesPreserveUnderlyingBytes()
     {
         var encodingProfile = MessageEncodingProfile.Default;
         Assert.True(encodingProfile.TryGetByte('â', out byte lowerRing));
@@ -351,17 +665,177 @@ public sealed class ExportParityTests
         Assert.Equal("âÂ", encodingProfile.ToHeaderText("âÂ"));
         Assert.Equal("âÂ", encodingProfile.HeaderTextToEditorText("âÂ"));
 
-        GlyphOverrideStore.Current.SetDisplayChar(0x92, 'å');
-        Assert.Equal("å", DecodeEditorText([0x92, 0x02, 0x00, 0x00]));
-        Assert.Equal([0x92, 0x02, 0x00, 0x00], EncodeEditorText("å"));
-        GlyphOverrideStore.Current.ResetDisplayChar(0x92);
+        string profileName = $"Swedish {Guid.NewGuid():N}";
+        CharacterProfileStore.Current.CreateProfile(profileName);
+        try
+        {
+            CharacterProfileStore.Current.SetDisplayChar(0x92, 'å');
+            Assert.Equal("å", DecodeEditorText([0x92, 0x02, 0x00, 0x00]));
+            Assert.Equal([0x92, 0x02, 0x00, 0x00], EncodeEditorText("å"));
+            Assert.Equal("å", encodingProfile.HeaderTextToEditorText("â"));
+            Assert.Equal("â", encodingProfile.ToHeaderText("å"));
+            Assert.Equal("Profil å", CHeaderImporter.Import("""
+                DEFINE_MESSAGE(0x0001, TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
+                "Profil â"
+                )
+                """)[0].Text);
+            Assert.True(MessageEncodingProfile.Original.TryGetByte('â', out byte originalLowerCircumflex));
+            Assert.Equal(0x92, originalLowerCircumflex);
+            Assert.False(MessageEncodingProfile.Original.TryGetByte('å', out _));
+        }
+        finally
+        {
+            CharacterProfileStore.Current.ResetDisplayChar(0x92);
+            CharacterProfileStore.Current.DeleteSelectedProfile();
+        }
         Assert.Equal("â", DecodeEditorText([0x92, 0x02, 0x00, 0x00]));
     }
 
     [Fact]
-    public void GlyphOverrideStoreExposesLoadWarnings()
+    public void OriginalEncodingProfileIgnoresCharacterProfilesForRomData()
     {
-        Assert.Null(GlyphOverrideStore.Current.LoadWarning);
+        CharacterProfileStore.Current.CreateProfile("Swedish ROM");
+        CharacterProfileStore.Current.SetDisplayChar(0x92, 'å');
+        try
+        {
+            Assert.Equal("â", DecodeEditorText([0x92, 0x02, 0x00, 0x00], MessageEncodingProfile.Original));
+            Assert.Equal([0x92, 0x02, 0x00, 0x00], EncodeEditorText("â", MessageEncodingProfile.Original));
+            Assert.Throws<InvalidDataException>(() => EncodeEditorText("å", MessageEncodingProfile.Original));
+        }
+        finally
+        {
+            CharacterProfileStore.Current.ResetDisplayChar(0x92);
+            CharacterProfileStore.Current.DeleteSelectedProfile();
+        }
+    }
+
+    [Fact]
+    public void CharacterProfileRemapKeepsBytesButUpdatesEditorCharacters()
+    {
+        CharacterProfileStore.Current.CreateProfile("Swedish Remap");
+        CharacterProfileStore.Current.SetDisplayChar(0x82, 'Å');
+        CharacterProfileStore.Current.SetDisplayChar(0x92, 'å');
+        try
+        {
+            string swedish = CharacterProfileStore.Current.RemapEditorText(
+                "Ââ [color:red]Ââ",
+                CharacterProfileStore.DefaultProfileName,
+                "Swedish Remap");
+            Assert.Equal("Åå [color:red]Åå", swedish);
+
+            string defaultText = CharacterProfileStore.Current.RemapEditorText(
+                swedish,
+                "Swedish Remap",
+                CharacterProfileStore.DefaultProfileName);
+            Assert.Equal("Ââ [color:red]Ââ", defaultText);
+        }
+        finally
+        {
+            CharacterProfileStore.Current.ResetDisplayChar(0x82);
+            CharacterProfileStore.Current.ResetDisplayChar(0x92);
+            CharacterProfileStore.Current.DeleteSelectedProfile();
+        }
+    }
+
+    [Fact]
+    public void DeletedCharacterProfileCanStillRemapBackToDefault()
+    {
+        CharacterProfileStore.Current.CreateProfile("Deleted Swedish");
+        CharacterProfileStore.Current.SetDisplayChar(0x92, 'å');
+        CharacterProfile? deletedProfile = null;
+        CharacterProfileStore.Current.SelectionChanged += (_, args) => deletedProfile = args.PreviousProfile;
+        CharacterProfileStore.Current.DeleteSelectedProfile();
+
+        Assert.NotNull(deletedProfile);
+        string defaultText = CharacterProfileStore.Current.RemapEditorText(
+            "å",
+            deletedProfile,
+            CharacterProfileStore.DefaultProfileName);
+        Assert.Equal("â", defaultText);
+    }
+
+    [Fact]
+    public void CharacterProfileWidthUsesCallerBaselineDefault()
+    {
+        CharacterProfileStore.Current.CreateProfile("PAL baseline");
+        try
+        {
+            CharacterProfileStore.Current.SetWidth(0x81, 6.0, 6.0);
+            Assert.False(CharacterProfileStore.Current.TryGetWidth(0x81, out _));
+
+            CharacterProfileStore.Current.SetWidth(0x81, 12.0, 6.0);
+            Assert.True(CharacterProfileStore.Current.TryGetWidth(0x81, out double width));
+            Assert.Equal(12.0, width);
+        }
+        finally
+        {
+            CharacterProfileStore.Current.ResetWidth(0x81);
+            CharacterProfileStore.Current.DeleteSelectedProfile();
+        }
+    }
+
+    [Fact]
+    public void CharacterProfileImagesAreStoredInsideProfileConfig()
+    {
+        string profileName = $"Image profile {Guid.NewGuid():N}";
+        string sourcePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.png");
+        using (var bitmap = new Bitmap(16, 16))
+        {
+            bitmap.SetPixel(0, 0, Color.White);
+            bitmap.Save(sourcePath);
+        }
+
+        CharacterProfileStore.Current.CreateProfile(profileName);
+        try
+        {
+            CharacterProfileStore.Current.SetImage(0x82, sourcePath);
+            Assert.True(CharacterProfileStore.Current.TryGetImagePath(0x82, out string? storedPath));
+            Assert.NotNull(storedPath);
+            File.Delete(storedPath);
+
+            Assert.True(CharacterProfileStore.Current.TryGetImagePath(0x82, out string? restoredPath));
+            Assert.True(File.Exists(restoredPath));
+        }
+        finally
+        {
+            CharacterProfileStore.Current.ResetImage(0x82);
+            CharacterProfileStore.Current.DeleteSelectedProfile();
+            if (File.Exists(sourcePath))
+            {
+                File.Delete(sourcePath);
+            }
+        }
+    }
+
+    [Fact]
+    public void GlyphRemapperReplacesUnderlyingBytesInTextTokensOnly()
+    {
+        CharacterProfileStore.Current.CreateProfile("Swedish Remapper");
+        CharacterProfileStore.Current.SetDisplayChar(0x82, 'Å');
+        try
+        {
+            var entries = new List<MessageEntry>
+            {
+                new(0x0001, 0, 0, 0, 0)
+                {
+                    Text = "Å [item:82] }",
+                },
+            };
+
+            Assert.Equal(1, MessageGlyphRemapper.CountOccurrences(entries, 0x82));
+            Assert.Equal(1, MessageGlyphRemapper.CountOccurrences(entries, 0x7d));
+
+            int replacements = MessageGlyphRemapper.Replace(entries, 0x82, 0x7d);
+            Assert.Equal(1, replacements);
+            Assert.Equal("} [item:82] }", entries[0].Text);
+            Assert.Equal(0, MessageGlyphRemapper.CountOccurrences(entries, 0x82));
+            Assert.Equal(2, MessageGlyphRemapper.CountOccurrences(entries, 0x7d));
+        }
+        finally
+        {
+            CharacterProfileStore.Current.ResetDisplayChar(0x82);
+            CharacterProfileStore.Current.DeleteSelectedProfile();
+        }
     }
 
     [Fact]
@@ -404,6 +878,22 @@ public sealed class ExportParityTests
         var ex = Assert.Throws<InvalidDataException>(() => EncodeEditorText("Unsupported 😀"));
         Assert.Contains("Unsupported character", ex.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("U+D83D", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void UnsupportedLatin1CharactersFailWithMessageIdContext()
+    {
+        var entries = new List<MessageEntry>
+        {
+            new(0x0001, 0, 0, 0, 0)
+            {
+                Text = "Otillåtet å",
+            },
+        };
+
+        var ex = Assert.Throws<InvalidDataException>(() => MessageTableCodec.BuildFiles(entries, MessageEncodingProfile.Original));
+        Assert.Contains("Message 0x0001", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Unsupported character 'å'", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -470,7 +960,7 @@ public sealed class ExportParityTests
         [
             new MessageEntry(0x6004, 0, 0, 7, 0)
             {
-                Text = "[unskippable]Jag observerade hur du smet fÃ¶rbi\nvÃ¢ra vakter. Du Ã¤r bÃ¢de stark och\nsnabb.[break]",
+                Text = "[unskippable]Jag observerade hur du smet förbi\nvâra vakter. Du är bâde stark och\nsnabb.[break]",
             },
             new MessageEntry(0x6005, 2, 3, 7, 0)
             {
@@ -491,6 +981,19 @@ public sealed class ExportParityTests
         Assert.Contains(expectedMessagePart, ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    private static int CountOccurrences(string text, string value)
+    {
+        int count = 0;
+        int index = 0;
+        while ((index = text.IndexOf(value, index, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            index += value.Length;
+        }
+
+        return count;
+    }
+
     private static string PreviewGlyphText(string text)
     {
         return new string(
@@ -500,14 +1003,14 @@ public sealed class ExportParityTests
                 .ToArray());
     }
 
-    private static string DecodeEditorText(byte[] raw)
+    private static string DecodeEditorText(byte[] raw, MessageEncodingProfile? encodingProfile = null)
     {
-        return MessageTextSyntax.ToEditorText(MessageCodec.DecodeMessageTokens(raw, 0, raw.Length));
+        return MessageTextSyntax.ToEditorText(MessageCodec.DecodeMessageTokens(raw, 0, raw.Length, encodingProfile));
     }
 
-    private static byte[] EncodeEditorText(string text)
+    private static byte[] EncodeEditorText(string text, MessageEncodingProfile? encodingProfile = null)
     {
-        return MessageCodec.EncodeMessageTokens(MessageTextSyntax.FromEditorText(text));
+        return MessageCodec.EncodeMessageTokens(MessageTextSyntax.FromEditorText(text), encodingProfile);
     }
 
     private static string FixturePath(string fileName)

@@ -25,6 +25,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260508005" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.13" />
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,7 +33,9 @@
     <Content Remove="Assets\AppIcon.png" />
     <None Update="Assets\AppIcon.ico" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
     <None Update="Assets\AppIcon.png" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
+    <Content Include="Assets\Title\**\*.png" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Preview\Oot\**\*.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Preview\Oot\**\*.bin" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

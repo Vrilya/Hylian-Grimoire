@@ -183,8 +183,13 @@ public static class OotBitmapCache
 
     public static Uri GetGlyph(byte value, Windows.UI.Color color, bool shadow = false)
     {
-        string source = ResolveGlyphAsset(value);
-        return GetMaskImage(source, $"glyph-{GlyphOverrideStore.Current.Version}-{value:x2}", color, brighten: !shadow);
+        return GetGlyph(value, color, OotGlyphSources.ActiveProfile, shadow);
+    }
+
+    public static Uri GetGlyph(byte value, Windows.UI.Color color, IOotGlyphSource glyphSource, bool shadow = false)
+    {
+        string source = glyphSource.GetGlyphPath(value);
+        return GetMaskImage(source, $"glyph-{glyphSource.CacheKey}-{value:x2}", color, brighten: !shadow);
     }
 
     public static Uri GetMarker(bool lastBox)
@@ -195,13 +200,20 @@ public static class OotBitmapCache
         return GetMaskImage(source, Path.GetFileName(source), Windows.UI.Color.FromArgb(255, 50, 170, 255), brighten: false);
     }
 
-    public static Uri RenderPreview(OotPreviewStyle style, IReadOnlyList<OotPreviewToken> tokens, bool darkText, bool lastBox, bool showAlignmentGuides)
+    public static Uri RenderPreview(
+        OotPreviewStyle style,
+        IReadOnlyList<OotPreviewToken> tokens,
+        bool darkText,
+        bool lastBox,
+        bool showAlignmentGuides,
+        IOotGlyphSource? glyphSource = null)
     {
+        glyphSource ??= OotGlyphSources.ActiveProfile;
         string tokenKey = string.Join('-', tokens.Select(token => $"{(int)token.Kind:x}{token.Value:x2}"));
         string guideKey = showAlignmentGuides
             ? $"guides-{AlignmentGuideCount}-{AlignmentGuideHalfSpan:0.###}-{AlignmentGuideCenterOffset:0.###}"
             : "guides-off";
-        string output = GetCachePath($"preview-v15-glyph-{GlyphOverrideStore.Current.Version}-{style}-{darkText}-{lastBox}-{guideKey}-{tokenKey}");
+        string output = GetCachePath($"preview-v16-glyph-{glyphSource.CacheKey}-{style}-{darkText}-{lastBox}-{guideKey}-{tokenKey}");
         if (File.Exists(output))
         {
             return new Uri(output);
@@ -218,7 +230,7 @@ public static class OotBitmapCache
             graphics.InterpolationMode = InterpolationMode.High;
             graphics.PixelOffsetMode = PixelOffsetMode.Half;
             DrawBox(graphics, style);
-            DrawText(graphics, style, tokens, darkText, lastBox);
+            DrawText(graphics, style, tokens, darkText, lastBox, glyphSource);
             if (showAlignmentGuides)
             {
                 DrawAlignmentGuides(graphics, canvas.Width, canvas.Height);
@@ -254,7 +266,13 @@ public static class OotBitmapCache
         graphics.DrawImage(box, 0, 0, 256, 64);
     }
 
-    private static void DrawText(Graphics graphics, OotPreviewStyle style, IReadOnlyList<OotPreviewToken> tokens, bool darkText, bool lastBox)
+    private static void DrawText(
+        Graphics graphics,
+        OotPreviewStyle style,
+        IReadOnlyList<OotPreviewToken> tokens,
+        bool darkText,
+        bool lastBox,
+        IOotGlyphSource glyphSource)
     {
         float scale = style == OotPreviewStyle.Credits ? 0.85f : TextScale;
         float x = style == OotPreviewStyle.Credits ? 20 : 32;
@@ -287,7 +305,7 @@ public static class OotBitmapCache
                     continue;
 
                 case OotPreviewTokenKind.Center:
-                    x = 128 - (GetLineWidth(tokens, tokenIndex, scale) / 2.0f);
+                    x = 128 - (GetLineWidth(tokens, tokenIndex, scale, glyphSource) / 2.0f);
                     continue;
 
                 case OotPreviewTokenKind.Choice:
@@ -300,8 +318,8 @@ public static class OotBitmapCache
                     continue;
 
                 case OotPreviewTokenKind.Glyph:
-                    DrawGlyph(graphics, token.Value, currentColor, x, y, drawShadow, scale);
-                    x += GetGlyphAdvance(token.Value, scale);
+                    DrawGlyph(graphics, token.Value, currentColor, x, y, drawShadow, scale, glyphSource);
+                    x += GetGlyphAdvance(token.Value, scale, glyphSource);
                     continue;
             }
         }
@@ -347,7 +365,7 @@ public static class OotBitmapCache
         }
     }
 
-    private static float GetLineWidth(IReadOnlyList<OotPreviewToken> tokens, int centerIndex, float scale)
+    private static float GetLineWidth(IReadOnlyList<OotPreviewToken> tokens, int centerIndex, float scale, IOotGlyphSource glyphSource)
     {
         float width = 0;
         for (int i = centerIndex + 1; i < tokens.Count; i++)
@@ -360,7 +378,7 @@ public static class OotBitmapCache
 
             if (token.Kind == OotPreviewTokenKind.Glyph)
             {
-                width += GetGlyphAdvance(token.Value, scale);
+                width += GetGlyphAdvance(token.Value, scale, glyphSource);
             }
         }
 
@@ -403,9 +421,9 @@ public static class OotBitmapCache
         graphics.DrawImage(icon, (int)x, (int)y, size, size);
     }
 
-    private static void DrawGlyph(Graphics graphics, byte value, Color color, float x, float y, bool shadow, float scale)
+    private static void DrawGlyph(Graphics graphics, byte value, Color color, float x, float y, bool shadow, float scale, IOotGlyphSource glyphSource)
     {
-        string path = ResolveGlyphAsset(value);
+        string path = glyphSource.GetGlyphPath(value);
         if (!File.Exists(path) || value == 0x20)
         {
             return;
@@ -420,14 +438,14 @@ public static class OotBitmapCache
         DrawMaskImage(graphics, path, color, (int)x, (int)y, size, size, brighten: true);
     }
 
-    private static float GetGlyphAdvance(byte value, float scale)
+    private static float GetGlyphAdvance(byte value, float scale, IOotGlyphSource glyphSource)
     {
         if (value == 0x20)
         {
             return 6.0f;
         }
 
-        return (int)(OotGlyphMetrics.GetAdvance(value) * scale);
+        return (int)(glyphSource.GetAdvance(value) * scale);
     }
 
     private static void DrawMaskImage(Graphics graphics, string source, Color color, int x, int y, int width, int height, bool brighten)
@@ -561,18 +579,6 @@ public static class OotBitmapCache
         byte[] hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(key));
         string name = Convert.ToHexString(hash)[..16].ToLowerInvariant();
         return Path.Combine(CacheRoot, $"{name}.png");
-    }
-
-    private static string ResolveGlyphAsset(byte value)
-    {
-        if (value == 0x7f)
-        {
-            value = 0x20;
-        }
-
-        return GlyphOverrideStore.Current.TryGetImagePath(value, out string? overridePath)
-            ? overridePath!
-            : OotGlyphCatalog.GetOriginalGlyphPath(value);
     }
 
     private static string ResolveIconAsset(byte value)

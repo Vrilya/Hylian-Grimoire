@@ -2,6 +2,8 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using HylianGrimoire.Codecs;
+using HylianGrimoire.Glyphs;
 using HylianGrimoire.Interop;
 using HylianGrimoire.Models;
 using WinRT.Interop;
@@ -22,14 +24,16 @@ public sealed partial class OotPreviewWindow : Window
     private double _zoomScale = 1.0;
     private bool _initialized;
     private OotPreviewStyle _style = OotPreviewStyle.Black;
+    private MessageEncodingProfile _encodingProfile = MessageEncodingProfile.Default;
+    private IOotGlyphSource _glyphSource = OotGlyphSources.ActiveProfile;
     private IReadOnlyList<MessageToken> _messageTokens = [];
 
     public OotPreviewWindow()
     {
         InitializeComponent();
         SystemBackdrop = new MicaBackdrop();
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(740, 700));
-        WindowSizeLimits.SetMinimumSize(this, 740, 700);
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(800, 730));
+        WindowSizeLimits.SetMinimumSize(this, 740, 350);
         WindowIcon.Apply(this);
         WindowTheme.Register(this);
         RowsPerColumnBox.SelectedIndex = 4;
@@ -41,6 +45,31 @@ public sealed partial class OotPreviewWindow : Window
     {
         _style = style;
         _messageTokens = messageTokens;
+        RenderCurrentMessage();
+    }
+
+    public void SetMessage(
+        OotPreviewStyle style,
+        IReadOnlyList<MessageToken> messageTokens,
+        IOotGlyphSource glyphSource,
+        MessageEncodingProfile encodingProfile)
+    {
+        _style = style;
+        _messageTokens = messageTokens;
+        _glyphSource = glyphSource;
+        _encodingProfile = encodingProfile;
+        RenderCurrentMessage();
+    }
+
+    public void SetGlyphSource(IOotGlyphSource glyphSource)
+    {
+        _glyphSource = glyphSource;
+        RenderCurrentMessage();
+    }
+
+    public void SetEncodingProfile(MessageEncodingProfile encodingProfile)
+    {
+        _encodingProfile = encodingProfile;
         RenderCurrentMessage();
     }
 
@@ -96,7 +125,7 @@ public sealed partial class OotPreviewWindow : Window
 
     private void RenderCurrentMessage()
     {
-        PreviewView.Render(_style, _messageTokens, GuideOverlayButton.IsChecked == true);
+        PreviewView.Render(_style, _messageTokens, GuideOverlayButton.IsChecked == true, _glyphSource, _encodingProfile);
     }
 
     private void SetZoom(double zoomScale)

@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using HylianGrimoire.Codecs;
 using HylianGrimoire.Models;
+using HylianGrimoire.Rom;
 using HylianGrimoire.Services;
 
 namespace HylianGrimoire;
@@ -198,7 +199,7 @@ public sealed partial class MainWindow
             TextEditor.Text = MessageTextSyntax.ToDisplay(entry.Text);
             UpdatePreview();
 
-            SetStatus($"Editing message 0x{entry.Id:x4}  ({idx + 1} / {_entries.Count})");
+            SetStatus($"Editing message 0x{entry.Id:x4}  ({GetVisibleMessageOrdinal(idx) + 1} / {CountVisibleMessageEntries()})");
         }
         finally
         {
@@ -277,6 +278,8 @@ public sealed partial class MainWindow
         {
             SetStatus(result.Status);
         }
+
+        UpdateRomToolState();
     }
 
     private async Task ApplyMessageListOperationAsync(MessageListOperationResult result)
@@ -297,14 +300,15 @@ public sealed partial class MainWindow
         _items.Clear();
         for (int idx = 0; idx < _entries.Count; idx++)
         {
-            if (MessageSearch.Matches(_entries[idx], _searchText))
+            if (IsVisibleMessageEntry(_entries[idx])
+                && MessageSearch.Matches(_entries[idx], _searchText))
             {
                 _items.Add(new MessageItem(_entries[idx], idx));
             }
         }
 
         SearchStatusText.Text = string.IsNullOrWhiteSpace(_searchText)
-            ? $"{_entries.Count} messages"
+            ? $"{CountVisibleMessageEntries()} messages"
             : $"{_items.Count} matches";
 
         if (selectedEntryIndex >= 0)
@@ -332,6 +336,55 @@ public sealed partial class MainWindow
         TextEditor.Text = string.Empty;
         UpdatePreview();
     }
+
+    private bool IsVisibleMessageEntry(MessageEntry entry)
+        => !ShouldHideFontOrderEntry() || entry.Id != FontOrderCodec.MessageId;
+
+    private int CountVisibleMessageEntries()
+        => ShouldHideFontOrderEntry()
+            ? _entries.Count(entry => entry.Id != FontOrderCodec.MessageId)
+            : _entries.Count;
+
+    private int GetVisibleMessageOrdinal(int entryIndex)
+    {
+        int ordinal = 0;
+        for (int i = 0; i < _entries.Count; i++)
+        {
+            if (!IsVisibleMessageEntry(_entries[i]))
+            {
+                continue;
+            }
+
+            if (i == entryIndex)
+            {
+                return ordinal;
+            }
+
+            ordinal++;
+        }
+
+        return Math.Max(0, ordinal - 1);
+    }
+
+    private int GetSelectedVisibleOrdinal()
+        => _currentIdx >= 0 ? GetVisibleMessageOrdinal(_currentIdx) : 0;
+
+    private void SelectVisibleOrdinal(int ordinal)
+    {
+        if (_items.Count == 0)
+        {
+            ClearEditor();
+            return;
+        }
+
+        MessageItem item = _items[Math.Clamp(ordinal, 0, _items.Count - 1)];
+        MessageList.SelectedItem = item;
+        ScrollMessageItemIntoView(item);
+        ShowEntry(item.Index);
+    }
+
+    private bool ShouldHideFontOrderEntry()
+        => MessageExportService.ShouldHideFontOrderEntry(_entries, _romData);
 
     private static void ResetCursorToArrow()
     {

@@ -6,14 +6,18 @@ namespace HylianGrimoire.Codecs;
 
 public sealed class MessageEncodingProfile
 {
-    public static MessageEncodingProfile Default { get; } = new();
+    public static MessageEncodingProfile Default { get; } = new(useCharacterProfiles: true);
+    public static MessageEncodingProfile Original { get; } = new(useCharacterProfiles: false);
 
+    private readonly bool _useCharacterProfiles;
     private readonly IReadOnlyDictionary<byte, char> _editorChars;
     private readonly IReadOnlyDictionary<char, byte> _editorBytes;
     private readonly IReadOnlyDictionary<byte, string> _headerChars;
+    private readonly IReadOnlyDictionary<string, byte> _headerBytes;
 
-    private MessageEncodingProfile()
+    private MessageEncodingProfile(bool useCharacterProfiles)
     {
+        _useCharacterProfiles = useCharacterProfiles;
         _editorChars = new Dictionary<byte, char>
         {
             { 0x80, 'À' }, { 0x81, 'î' }, { 0x82, 'Â' }, { 0x83, 'Ä' }, { 0x84, 'Ç' },
@@ -36,11 +40,12 @@ public sealed class MessageEncodingProfile
             { 0x99, "ï" }, { 0x9a, "ô" }, { 0x9b, "ö" }, { 0x9c, "ù" }, { 0x9d, "û" },
             { 0x9e, "ü" },
         };
+        _headerBytes = DictionaryMaps.Reverse(_headerChars);
     }
 
     public bool TryGetEditorChar(byte value, out char ch)
     {
-        if (GlyphOverrideStore.Current.TryGetDisplayChar(value, out ch))
+        if (_useCharacterProfiles && CharacterProfileStore.Current.TryGetDisplayChar(value, out ch))
         {
             return true;
         }
@@ -50,7 +55,7 @@ public sealed class MessageEncodingProfile
 
     public bool TryGetByte(char ch, out byte value)
     {
-        if (GlyphOverrideStore.Current.TryGetByte(ch, out value))
+        if (_useCharacterProfiles && CharacterProfileStore.Current.TryGetByte(ch, out value))
         {
             return true;
         }
@@ -97,9 +102,21 @@ public sealed class MessageEncodingProfile
 
     public string HeaderTextToEditorText(string headerText)
     {
-        // Header text and editor text intentionally share the same default glyph characters.
-        // Glyph overrides are applied by byte mapping, not by changing imported header text.
-        return headerText;
+        var result = new StringBuilder();
+        foreach (char ch in headerText)
+        {
+            string text = ch.ToString();
+            if (_headerBytes.TryGetValue(text, out byte value) && TryGetEditorChar(value, out char editorChar))
+            {
+                result.Append(editorChar);
+            }
+            else
+            {
+                result.Append(ch);
+            }
+        }
+
+        return result.ToString();
     }
 
 }

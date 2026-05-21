@@ -33,6 +33,15 @@ internal static partial class WindowSizeLimits
         window.Closed += (_, _) => Remove(hwnd);
     }
 
+    public static void SetFixedSize(Window window, int width, int height)
+    {
+        IntPtr hwnd = WindowNative.GetWindowHandle(window);
+        MinimumSizes[hwnd] = new SizeLimits(width, height, width, height, SuppressMaximize: true);
+
+        _ = SetWindowSubclass(hwnd, Callback, UIntPtr.Zero, UIntPtr.Zero);
+        window.Closed += (_, _) => Remove(hwnd);
+    }
+
     private static IntPtr WndProc(
         IntPtr hwnd,
         uint message,

@@ -19,8 +19,11 @@ public readonly record struct OotPreviewToken(OotPreviewTokenKind Kind, byte Val
 
 public static partial class OotPreviewTextPage
 {
-    public static IReadOnlyList<IReadOnlyList<OotPreviewToken>> FromMessageTokensPages(IEnumerable<MessageToken> messageTokens)
+    public static IReadOnlyList<IReadOnlyList<OotPreviewToken>> FromMessageTokensPages(
+        IEnumerable<MessageToken> messageTokens,
+        MessageEncodingProfile? encodingProfile = null)
     {
+        encodingProfile ??= MessageEncodingProfile.Default;
         var tokens = new List<OotPreviewToken>();
         var pages = new List<IReadOnlyList<OotPreviewToken>>();
 
@@ -33,7 +36,7 @@ public static partial class OotPreviewTextPage
             }
             else
             {
-                AddMessageToken(tokens, messageToken);
+                AddMessageToken(tokens, messageToken, encodingProfile);
             }
         }
 
@@ -41,16 +44,18 @@ public static partial class OotPreviewTextPage
         return pages.Count > 0 ? pages : [Array.Empty<OotPreviewToken>()];
     }
 
-    public static IReadOnlyList<OotPreviewToken> FromMessageTokens(IEnumerable<MessageToken> messageTokens)
+    public static IReadOnlyList<OotPreviewToken> FromMessageTokens(
+        IEnumerable<MessageToken> messageTokens,
+        MessageEncodingProfile? encodingProfile = null)
     {
-        return FromMessageTokensPages(messageTokens).FirstOrDefault() ?? [];
+        return FromMessageTokensPages(messageTokens, encodingProfile).FirstOrDefault() ?? [];
     }
 
-    private static void AddStaticText(List<OotPreviewToken> tokens, string text)
+    private static void AddStaticText(List<OotPreviewToken> tokens, string text, MessageEncodingProfile encodingProfile)
     {
         foreach (char ch in text)
         {
-            if (TryGetGlyphByte(ch, out byte glyph))
+            if (TryGetGlyphByte(ch, encodingProfile, out byte glyph))
             {
                 tokens.Add(new OotPreviewToken(OotPreviewTokenKind.Glyph, glyph));
             }
@@ -62,12 +67,12 @@ public static partial class OotPreviewTextPage
         tokens.Add(new OotPreviewToken(OotPreviewTokenKind.LineBreak, 0));
     }
 
-    private static void AddMessageToken(List<OotPreviewToken> tokens, MessageToken messageToken)
+    private static void AddMessageToken(List<OotPreviewToken> tokens, MessageToken messageToken, MessageEncodingProfile encodingProfile)
     {
         switch (messageToken)
         {
             case TextToken text:
-                AddStaticText(tokens, text.Text);
+                AddStaticText(tokens, text.Text, encodingProfile);
                 break;
             case LineBreakToken:
                 AddLineBreak(tokens);
@@ -85,15 +90,15 @@ public static partial class OotPreviewTextPage
                 tokens.Add(new OotPreviewToken(OotPreviewTokenKind.Icon, icon.Id));
                 break;
             case HighscoreToken highscore:
-                AddStaticText(tokens, GetMinigamePreviewText(highscore.Id));
+                AddStaticText(tokens, GetMinigamePreviewText(highscore.Id), encodingProfile);
                 break;
             case CommandToken command:
-                AddCommandToken(tokens, command.Code);
+                AddCommandToken(tokens, command.Code, encodingProfile);
                 break;
         }
     }
 
-    private static void AddCommandToken(List<OotPreviewToken> tokens, byte code)
+    private static void AddCommandToken(List<OotPreviewToken> tokens, byte code, MessageEncodingProfile encodingProfile)
     {
         if (!MessageTokenMaps.CommandTags.TryGetValue(code, out string? tag))
             return;
@@ -105,7 +110,7 @@ public static partial class OotPreviewTextPage
         else if (tag.Equals("threechoice", StringComparison.OrdinalIgnoreCase))
             tokens.Add(new OotPreviewToken(OotPreviewTokenKind.Choice, 3));
         else if (StaticTextTag().IsMatch(tag))
-            AddStaticText(tokens, GetStaticText(tag));
+            AddStaticText(tokens, GetStaticText(tag), encodingProfile);
     }
 
     private static void AddPage(List<IReadOnlyList<OotPreviewToken>> pages, List<OotPreviewToken> tokens)
@@ -148,7 +153,7 @@ public static partial class OotPreviewTextPage
         return value is >= 0x40 and <= 0x47 ? (byte)(value - 0x40) : (byte)0;
     }
 
-    private static bool TryGetGlyphByte(char ch, out byte value)
+    private static bool TryGetGlyphByte(char ch, MessageEncodingProfile encodingProfile, out byte value)
     {
         if (ch >= 0x20 && ch <= 0x7f)
         {
@@ -156,7 +161,7 @@ public static partial class OotPreviewTextPage
             return true;
         }
 
-        return MessageEncodingProfile.Default.TryGetByte(ch, out value);
+        return encodingProfile.TryGetByte(ch, out value);
     }
 
     [GeneratedRegex("^(name|points|fishinfo|skulltulas|marathontime|racetime|time)$", RegexOptions.IgnoreCase)]

@@ -15,22 +15,6 @@ public static class OotGlyphMetrics
         14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14
     ];
 
-    public static double GetAdvance(byte glyph)
-    {
-        int index = glyph - 0x20;
-        if (GlyphOverrideStore.Current.TryGetWidth(glyph, out double width))
-        {
-            return width;
-        }
-
-        if (index >= 0 && index < DefaultWidths.Length)
-        {
-            return DefaultWidths[index];
-        }
-
-        return 10;
-    }
-
     public static double GetDefaultAdvance(byte glyph)
     {
         int index = glyph - 0x20;

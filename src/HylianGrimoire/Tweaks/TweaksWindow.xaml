@@ -1,0 +1,249 @@
+<Window
+    x:Class="HylianGrimoire.Tweaks.TweaksWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Hylian Grimoire - Tweaks">
+
+    <Grid
+        Padding="20"
+        RowSpacing="16"
+        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock
+            Text="Tweaks"
+            Style="{ThemeResource TitleTextBlockStyle}" />
+
+        <TextBlock
+            Grid.Row="1"
+            MaxWidth="560"
+            TextWrapping="Wrap"
+            Text="Small ROM patches for supported builds. Tweaks are applied to the loaded ROM and saved with it." />
+
+        <ScrollViewer
+            Grid.Row="2"
+            VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="12">
+                <Border
+                    Padding="16"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            Text="Nintendo boot logo"
+                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        <TextBlock
+                            x:Name="BootLogoStatusText"
+                            Grid.Row="1"
+                            Margin="0,4,0,0"
+                            TextWrapping="Wrap" />
+
+                        <ToggleSwitch
+                            x:Name="BootLogoSwitch"
+                            Grid.Column="1"
+                            Grid.RowSpan="2"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnBootLogoToggled" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            Text="N64 interface colors"
+                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        <TextBlock
+                            x:Name="ColorStatusText"
+                            Grid.Row="1"
+                            Margin="0,4,0,0"
+                            TextWrapping="Wrap" />
+
+                        <ToggleSwitch
+                            x:Name="ColorSwitch"
+                            Grid.Column="1"
+                            Grid.RowSpan="2"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnColorToggled" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            Text="PAL video timing"
+                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        <TextBlock
+                            x:Name="ViPalStatusText"
+                            Grid.Row="1"
+                            Margin="0,4,0,0"
+                            TextWrapping="Wrap" />
+
+                        <ToggleSwitch
+                            x:Name="ViPalSwitch"
+                            Grid.Column="1"
+                            Grid.RowSpan="2"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnViPalToggled" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            Text="No controller message"
+                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        <TextBlock
+                            x:Name="NoControllerStatusText"
+                            Grid.Row="1"
+                            Margin="0,4,0,0"
+                            TextWrapping="Wrap" />
+
+                        <ToggleSwitch
+                            x:Name="NoControllerSwitch"
+                            Grid.Column="1"
+                            Grid.RowSpan="2"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnNoControllerToggled" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            Text="N64 credits crash fix"
+                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        <TextBlock
+                            x:Name="CreditsStatusText"
+                            Grid.Row="1"
+                            Margin="0,4,0,0"
+                            TextWrapping="Wrap" />
+
+                        <ToggleSwitch
+                            x:Name="CreditsSwitch"
+                            Grid.Column="1"
+                            Grid.RowSpan="2"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnCreditsToggled" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            Text="Disable anti-piracy checks"
+                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        <TextBlock
+                            x:Name="AntiPiracyStatusText"
+                            Grid.Row="1"
+                            Margin="0,4,0,0"
+                            TextWrapping="Wrap" />
+
+                        <ToggleSwitch
+                            x:Name="AntiPiracySwitch"
+                            Grid.Column="1"
+                            Grid.RowSpan="2"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnAntiPiracyToggled" />
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>

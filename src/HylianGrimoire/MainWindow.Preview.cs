@@ -1,7 +1,9 @@
 ﻿using Microsoft.UI.Xaml;
 using HylianGrimoire.Codecs;
+using HylianGrimoire.Glyphs;
 using HylianGrimoire.Models;
 using HylianGrimoire.Preview;
+using HylianGrimoire.Rom;
 using HylianGrimoire.Services;
 
 namespace HylianGrimoire;
@@ -52,9 +54,15 @@ public sealed partial class MainWindow
         var entry = _entries[_currentIdx];
         try
         {
+            IOotGlyphSource glyphSource = _romData is null
+                ? OotGlyphSources.ActiveProfile
+                : new RomGlyphSource(_romData.DecompressedRom, _romData.FontResources);
+
             _previewWindow.SetMessage(
                 MessageTypeCatalog.ToPreviewStyle(entry.Type),
-                MessageTextSyntax.FromEditorText(MessageTextSyntax.FromDisplay(GetEditorText())));
+                MessageTextSyntax.FromEditorText(MessageTextSyntax.FromDisplay(GetEditorText())),
+                glyphSource,
+                MessageEncodingProfile.Default);
         }
         catch (InvalidDataException ex)
         {
