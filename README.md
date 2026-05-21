@@ -29,6 +29,12 @@ The editor works with extracted `.bin` / `.tbl` message files, C message headers
 
 The main editor is built around fast navigation, readable message syntax, and exact save/export behavior. Messages can be searched by ID or text, edited directly, reordered, imported from headers, exported back to headers, or written into supported ROM message banks.
 
+## Message Preview
+
+![Message preview window](media/preview.png)
+
+The preview window renders message boxes with game-style glyphs, colors, item icons, choices, ocarina staff display, credits text, multi-box messages, zoom controls, columns, and alignment guides.
+
 ## Glyph Manager
 
 ![Glyph Manager](media/glyphmanager.png)
