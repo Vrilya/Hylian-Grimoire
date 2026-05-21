@@ -23,6 +23,30 @@ The editor works with extracted `.bin` / `.tbl` message files, C message headers
 - Apply supported ROM tweaks from the Tools menu.
 - Follow Windows light/dark mode through WinUI 3 and Windows App SDK.
 
+## Message Editing
+
+![Main editor window](media/mainwindow.png)
+
+The main editor is built around fast navigation, readable message syntax, and exact save/export behavior. Messages can be searched by ID or text, edited directly, reordered, imported from headers, exported back to headers, or written into supported ROM message banks.
+
+## Glyph Manager
+
+![Glyph Manager](media/glyphmanager.png)
+
+The Glyph Manager is designed for translation projects that need custom characters. A glyph profile can change which character a byte displays as, replace the preview image, and adjust the glyph width while keeping the underlying byte value stable. This makes it possible to work with language-specific characters without losing control over the actual encoded data.
+
+## Title Text
+
+![Title text editor](media/titletext.png)
+
+Supported retail ROMs can edit title-screen text with a live preview. The tool keeps the title text constraints visible so changes can be made deliberately instead of by trial and error.
+
+## Tweaks
+
+![ROM tweaks](media/tweaks.png)
+
+The Tweaks window exposes supported ROM patches as simple on/off switches. Each tweak is version-aware, so unsupported ROMs keep unavailable options disabled instead of applying unsafe changes.
+
 ## Editor Syntax
 
 Messages are shown as editable text with bracketed tags for control codes. For example:
