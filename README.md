@@ -46,7 +46,7 @@ The preview window renders message boxes with game-style glyphs, colors, item ic
 
 ![Glyph Manager](media/glyphmanager.png)
 
-The Glyph Manager is designed for translation projects that need custom characters. Glyph profiles can change which character a byte displays as, replace the preview image, and adjust the preview width while keeping the underlying byte value stable. For example, a profile can make byte `0x92` appear as `å` in the editor while still saving byte `0x92` to the message data.
+The Glyph Manager is designed for translation projects that need custom characters. Glyph profiles can change which character a byte displays as, replace the preview image, and adjust the preview width while keeping the underlying byte value stable. For example, a profile can make byte `0x7D` appear as `å` in the editor while still saving byte `0x7D` to the message data.
 
 In ROM mode, Hylian Grimoire can read glyph images and widths directly from the loaded ROM, compare them against the expected baseline, and write image or width changes back into the ROM. This makes it possible to inspect and edit custom ROM fonts without treating them as separate loose assets.
 
