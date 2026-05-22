@@ -2,9 +2,9 @@
 
 ![Hylian Grimoire running on Windows 11](media/screenshot1.png)
 
-Hylian Grimoire is a Windows desktop editor for Ocarina of Time message data. I originally built it while working on my own translation of the game, and the project has been rewritten from the ground up several times. The current version focuses on exact binary round-tripping, readable editor syntax, ROM workflows, and a modern Windows 11 interface.
+Hylian Grimoire is a Windows desktop editor for Ocarina of Time message data. I originally built it while working on my own translation of the game, and the project has been rewritten from the ground up several times. The current version focuses on exact binary round-tripping, readable editor syntax, decomp-friendly C header workflows, ROM workflows, and a modern Windows 11 interface.
 
-The editor works with extracted `.bin` / `.tbl` message files, C message headers, and supported `.z64` ROMs.
+The editor works with extracted `.bin` / `.tbl` message files, C message headers, and supported `.z64` ROMs. Header import and export are treated as first-class workflows, with support for modern multi-language decomp-style headers, legacy headers, and OTRMod-oriented output.
 
 ## Features
 
@@ -18,6 +18,7 @@ The editor works with extracted `.bin` / `.tbl` message files, C message headers
 - Preview message boxes with game-style text rendering, item icons, colors, choices, highscore tokens, ocarina staff display, credits text, and multi-box messages.
 - Open the preview in a separate window with zoom, column layout, alignment guides, and always-on-top support.
 - Manage glyph profiles for editor display characters, glyph images, and preview glyph widths without accidentally changing the intended byte values.
+- Read glyph images and widths directly from supported ROMs, edit them in the Glyph Manager, and write the changes back to the ROM.
 - Remap glyph byte usage across the active script.
 - Edit ROM title-screen text for supported retail ROMs.
 - Apply supported ROM tweaks from the Tools menu.
@@ -29,6 +30,12 @@ The editor works with extracted `.bin` / `.tbl` message files, C message headers
 
 The main editor is built around fast navigation, readable message syntax, and exact save/export behavior. Messages can be searched by ID or text, edited directly, reordered, imported from headers, exported back to headers, or written into supported ROM message banks.
 
+## Header Workflows
+
+Hylian Grimoire treats C message headers as real project files, not disposable export output. It supports modern multi-language decomp-style headers, legacy headers, and OTRMod-oriented output, while keeping control codes, item icons, language slots, and readable formatting intact wherever possible.
+
+Headers can be loaded directly, exported from data files or ROMs, and imported into supported ROM message banks. For multi-language ROMs, the editor can work with a selected language or export all ROM languages in a modern header layout.
+
 ## Message Preview
 
 ![Message preview window](media/preview.png)
@@ -39,7 +46,11 @@ The preview window renders message boxes with game-style glyphs, colors, item ic
 
 ![Glyph Manager](media/glyphmanager.png)
 
-The Glyph Manager is designed for translation projects that need custom characters. A glyph profile can change which character a byte displays as, replace the preview image, and adjust the glyph width while keeping the underlying byte value stable. This makes it possible to work with language-specific characters without losing control over the actual encoded data.
+The Glyph Manager is designed for translation projects that need custom characters. Glyph profiles can change which character a byte displays as, replace the preview image, and adjust the preview width while keeping the underlying byte value stable. For example, a profile can make byte `0x92` appear as `å` in the editor while still saving byte `0x92` to the message data.
+
+In ROM mode, Hylian Grimoire can read glyph images and widths directly from the loaded ROM, compare them against the expected baseline, and write image or width changes back into the ROM. This makes it possible to inspect and edit custom ROM fonts without treating them as separate loose assets.
+
+When saving or exporting, text characters must be encodable by the active glyph profile. If a message contains an unsupported character, the save is stopped and the affected message ID is reported instead of silently writing an invalid byte.
 
 ## Title Text
 
@@ -77,22 +88,6 @@ Common tags include:
 - `[threechoice]`
 
 The editor syntax is intended to be readable while preserving the original encoded data as closely as possible.
-
-## Glyph Profiles
-
-The Glyph Manager lets you customize how individual glyph bytes appear while editing and previewing messages.
-
-Glyph profiles can change:
-
-- the editor display character
-- the preview glyph image
-- the preview glyph width
-
-The byte value itself does not change just because the display character changes. This is useful for translation work where a project may want to display an original glyph byte as a language-specific character. For example, a profile can make byte `0x92` appear as `å` in the editor while still saving byte `0x92` to the message data.
-
-Glyph profiles are stored outside the bundled files and can be reset per character.
-
-When saving or exporting, Hylian Grimoire rejects text characters that cannot be encoded by the active glyph profile. For example, typing `å` without a profile that maps `å` to a valid glyph byte will stop the save and report the affected message ID. This prevents unknown Unicode or Latin-1 characters from silently being written as invalid game bytes.
 
 ## Build
 
