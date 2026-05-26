@@ -280,6 +280,7 @@ public sealed partial class MainWindow
     private void OnRomTweakChanged(string status)
     {
         MarkRomBankDirty();
+        _promptEditorWindow?.SetRomData(_romData);
         SetStatus(status);
     }
 

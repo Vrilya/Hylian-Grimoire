@@ -358,6 +358,16 @@ public static class PromptEditorPreviewRenderer
             {
                 hash.AppendData(rom.Slice(offset, length));
             }
+
+            if (asset.ColorDisplayListOffset is int colorOffset)
+            {
+                int displayListOffset = baseOffset + colorOffset;
+                int displayListLength = Math.Min(0x80, rom.Length - displayListOffset);
+                if (displayListOffset >= 0 && displayListLength > 0)
+                {
+                    hash.AppendData(rom.Slice(displayListOffset, displayListLength));
+                }
+            }
         }
     }
 }
