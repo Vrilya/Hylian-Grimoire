@@ -90,9 +90,14 @@
     <Compile Include="..\..\src\HylianGrimoire\Tweaks\GcCreditsTweak.cs" Link="GcCreditsTweak.cs" />
     <Compile Include="..\..\src\HylianGrimoire\Tweaks\GcNoControllerTweak.cs" Link="GcNoControllerTweak.cs" />
     <Compile Include="..\..\src\HylianGrimoire\Tweaks\ViPalTweak.cs" Link="ViPalTweak.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Tweaks\ViSelectorTweak.cs" Link="ViSelectorTweak.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\PromptEditor\PromptEditorModels.cs" Link="PromptEditorModels.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\PromptEditor\PromptEditorProfileCatalog.cs" Link="PromptEditorProfileCatalog.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\PromptEditor\PromptEditorService.cs" Link="PromptEditorService.cs" />
     <Compile Include="..\..\src\HylianGrimoire\Rom\RomVersionDatabase.cs" Link="RomVersionDatabase.cs" />
     <Compile Include="..\..\src\HylianGrimoire\Rom\RomVersionProfile.cs" Link="RomVersionProfile.cs" />
     <Compile Include="ExportParityTests.cs" />
+    <Compile Include="PromptEditorTests.cs" />
     <Compile Include="RomCompressionTests.cs" />
     <Compile Include="RomTweakTests.cs" />
     <Compile Include="TitleTextTests.cs" />

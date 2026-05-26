@@ -1,8 +1,9 @@
-﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using HylianGrimoire.Codecs;
 using HylianGrimoire.Glyphs;
 using HylianGrimoire.Models;
+using HylianGrimoire.PromptEditor;
 using HylianGrimoire.Rom;
 using HylianGrimoire.Services;
 using HylianGrimoire.TitleText;
@@ -244,7 +245,33 @@ public sealed partial class MainWindow
         _titleTextWindow.Activate();
     }
 
+    private void OnOpenPromptEditor(object sender, RoutedEventArgs e)
+    {
+        if (!CanUsePromptEditorTool())
+        {
+            return;
+        }
+
+        if (_promptEditorWindow is null)
+        {
+            _promptEditorWindow = new PromptEditorWindow(_romData, OnPromptEditorChanged);
+            _promptEditorWindow.Closed += (_, _) => _promptEditorWindow = null;
+        }
+        else
+        {
+            _promptEditorWindow.SetRomData(_romData);
+        }
+
+        _promptEditorWindow.Activate();
+    }
+
     private void OnTitleTextChanged(string status)
+    {
+        MarkRomBankDirty();
+        SetStatus(status);
+    }
+
+    private void OnPromptEditorChanged(string status)
     {
         MarkRomBankDirty();
         SetStatus(status);
@@ -347,6 +374,15 @@ public sealed partial class MainWindow
         {
             CloseTitleTextWindow();
         }
+
+        if (CanUsePromptEditorTool())
+        {
+            _promptEditorWindow?.SetRomData(_romData);
+        }
+        else
+        {
+            ClosePromptEditorWindow();
+        }
     }
 
     private void UpdateRomToolState()
@@ -357,6 +393,7 @@ public sealed partial class MainWindow
         FontOrderToolItem.IsEnabled = CanUseFontOrderTool();
         ImportHeaderIntoRomItem.IsEnabled = _romData is not null;
         TitleTextToolItem.IsEnabled = CanUseTitleTextTool();
+        PromptEditorToolItem.IsEnabled = CanUsePromptEditorTool();
         TweaksToolItem.IsEnabled = CanUseTweaksTool();
     }
 
@@ -389,6 +426,11 @@ public sealed partial class MainWindow
         && _romData.Profile.IsRetail
         && TitleTextService.TryGetProfile(_romData.Profile, out _);
 
+    private bool CanUsePromptEditorTool() =>
+        _romData is not null
+        && _romData.Profile.IsRetail
+        && PromptEditorProfileCatalog.TryGetProfile(_romData.Profile, out _);
+
     private void CloseTweaksWindow()
     {
         _tweaksWindow?.Close();
@@ -399,6 +441,12 @@ public sealed partial class MainWindow
     {
         _titleTextWindow?.Close();
         _titleTextWindow = null;
+    }
+
+    private void ClosePromptEditorWindow()
+    {
+        _promptEditorWindow?.Close();
+        _promptEditorWindow = null;
     }
 
     private void SetStatus(string message) => StatusText.Text = message;

@@ -1,4 +1,4 @@
-﻿<Window
+<Window
     x:Class="HylianGrimoire.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -70,6 +70,7 @@
                             <MenuFlyoutSeparator />
                             <MenuFlyoutItem x:Name="RemapGlyphBytesItem" Text="Remap glyph bytes" Click="OnOpenGlyphRemap" />
                             <MenuFlyoutItem x:Name="TitleTextToolItem" Text="Title Text" Click="OnOpenTitleText" />
+                            <MenuFlyoutItem x:Name="PromptEditorToolItem" Text="Prompt Editor" Click="OnOpenPromptEditor" />
                             <MenuFlyoutItem x:Name="TweaksToolItem" Text="Tweaks" Click="OnOpenTweaks" />
                             <MenuFlyoutSeparator />
                             <MenuFlyoutItem x:Name="FontOrderToolItem" Text="Font order (0xFFFC)" Click="OnOpenFontOrder" />

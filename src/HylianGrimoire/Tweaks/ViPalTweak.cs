@@ -32,7 +32,7 @@ public static class ViPalTweak
     {
         if (!SupportedBuildDates.Contains(profile.BuildDate))
         {
-            return new RomTweakStatus(RomTweakState.Unsupported, "This tweak supports retail PAL GameCube ROMs only.");
+            return new RomTweakStatus(RomTweakState.Unsupported, "Unavailable");
         }
 
         if (!TryLocateStruct(decompressedRom, out int structOffset))

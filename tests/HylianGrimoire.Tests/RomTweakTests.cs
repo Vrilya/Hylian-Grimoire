@@ -90,6 +90,34 @@ public sealed class RomTweakTests
         Assert.Equal(RomTweakState.Unsupported, ViPalTweak.GetStatus(rom, profile).State);
     }
 
+    [Theory]
+    [InlineData("Retail PAL 1.0", "pal10_orig.z64")]
+    [InlineData("Retail PAL 1.1", "pal11_orig.z64")]
+    public void ViSelectorTweakTogglesPalRetailRom(string profileName, string fixtureName)
+    {
+        RomVersionProfile profile = GetProfile(profileName);
+        byte[] rom = File.ReadAllBytes(GetRequiredRetailDecompressedFixture(fixtureName));
+        byte[] original = (byte[])rom.Clone();
+
+        Assert.Equal(RomTweakState.Off, ViSelectorTweak.GetStatus(rom, profile).State);
+
+        ViSelectorTweak.SetEnabled(rom, profile, enabled: true);
+        Assert.Equal(RomTweakState.On, ViSelectorTweak.GetStatus(rom, profile).State);
+
+        ViSelectorTweak.SetEnabled(rom, profile, enabled: false);
+        Assert.Equal(RomTweakState.Off, ViSelectorTweak.GetStatus(rom, profile).State);
+        Assert.Equal(original, rom);
+    }
+
+    [Fact]
+    public void ViSelectorTweakRejectsNonPalRetailRom()
+    {
+        RomVersionProfile profile = GetProfile("Retail NTSC 1.2");
+        byte[] rom = File.ReadAllBytes(GetRequiredRetailDecompressedFixture("ntsc12_orig.z64"));
+
+        Assert.Equal(RomTweakState.Unsupported, ViSelectorTweak.GetStatus(rom, profile).State);
+    }
+
     [Fact]
     public void GcNoControllerTweakTogglesRetailGameCubeRom()
     {

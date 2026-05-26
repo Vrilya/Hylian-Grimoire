@@ -39,7 +39,7 @@ public static class GcBootLogoTweak
     {
         if (!Profiles.TryGetValue(profile.Name, out PatchProfile? patch))
         {
-            return new RomTweakStatus(RomTweakState.Unsupported, "This tweak supports retail GameCube ROMs only.");
+            return new RomTweakStatus(RomTweakState.Unsupported, "Unavailable");
         }
 
         if (!HasPatchRange(decompressedRom, patch))

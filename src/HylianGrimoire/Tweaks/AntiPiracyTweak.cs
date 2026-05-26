@@ -36,7 +36,7 @@ public static class AntiPiracyTweak
     {
         if (!SupportedBuildDates.Contains(profile.BuildDate))
         {
-            return new RomTweakStatus(RomTweakState.Unsupported, "These checks exist only in N64 cartridge ROMs.");
+            return new RomTweakStatus(RomTweakState.Unsupported, "Unavailable");
         }
 
         int originalCount = 0;

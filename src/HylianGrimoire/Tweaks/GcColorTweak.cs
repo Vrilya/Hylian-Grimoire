@@ -55,7 +55,7 @@ public static class GcColorTweak
     {
         if (!Profiles.TryGetValue(profile.Name, out IReadOnlyList<Patch>? patches))
         {
-            return new RomTweakStatus(RomTweakState.Unsupported, "This tweak supports retail GameCube ROMs only.");
+            return new RomTweakStatus(RomTweakState.Unsupported, "Unavailable");
         }
 
         if (!HasPatchRanges(decompressedRom, patches))

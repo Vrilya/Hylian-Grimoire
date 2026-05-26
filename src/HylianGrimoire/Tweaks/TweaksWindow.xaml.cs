@@ -26,8 +26,8 @@ public sealed partial class TweaksWindow : Window
             presenter.IsResizable = false;
         }
 
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(690, 930));
-        WindowSizeLimits.SetFixedSize(this, 690, 930);
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(690, 860));
+        WindowSizeLimits.SetFixedSize(this, 690, 860);
         WindowIcon.Apply(this);
         AppWindow.TitleBar.ResetToDefault();
         WindowTheme.Register(this);
@@ -99,8 +99,8 @@ public sealed partial class TweaksWindow : Window
         {
             ViPalTweak.SetEnabled(_romData.DecompressedRom, _romData.Profile, ViPalSwitch.IsOn);
             _onChanged(ViPalSwitch.IsOn
-                ? "Enabled PAL video timing tweak."
-                : "Disabled PAL video timing tweak.");
+                ? "Enabled N64 VI PAL timing tweak."
+                : "Disabled N64 VI PAL timing tweak.");
         }
         catch (Exception ex)
         {
@@ -136,6 +136,30 @@ public sealed partial class TweaksWindow : Window
         }
     }
 
+    private async void OnViSelectorToggled(object sender, RoutedEventArgs e)
+    {
+        if (_updating || _romData is null)
+        {
+            return;
+        }
+
+        try
+        {
+            ViSelectorTweak.SetEnabled(_romData.DecompressedRom, _romData.Profile, ViSelectorSwitch.IsOn);
+            _onChanged(ViSelectorSwitch.IsOn
+                ? "Enabled FPAL/MPAL selector tweak."
+                : "Disabled FPAL/MPAL selector tweak.");
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorAsync("Failed to apply tweak", ex.Message);
+        }
+        finally
+        {
+            Refresh();
+        }
+    }
+
     private async void OnCreditsToggled(object sender, RoutedEventArgs e)
     {
         if (_updating || _romData is null)
@@ -147,8 +171,8 @@ public sealed partial class TweaksWindow : Window
         {
             GcCreditsTweak.SetEnabled(_romData.DecompressedRom, _romData.Profile, CreditsSwitch.IsOn);
             _onChanged(CreditsSwitch.IsOn
-                ? "Enabled N64 credits crash fix."
-                : "Disabled N64 credits crash fix.");
+                ? "Enabled GC credits N64 crash fix."
+                : "Disabled GC credits N64 crash fix.");
         }
         catch (Exception ex)
         {
@@ -187,22 +211,25 @@ public sealed partial class TweaksWindow : Window
     private void Refresh()
     {
         RomTweakStatus bootLogoStatus = _romData is null
-            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM to use ROM tweaks.")
+            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM.")
             : GcBootLogoTweak.GetStatus(_romData.DecompressedRom, _romData.Profile);
         RomTweakStatus colorStatus = _romData is null
-            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM to use ROM tweaks.")
+            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM.")
             : GcColorTweak.GetStatus(_romData.DecompressedRom, _romData.Profile);
         RomTweakStatus viPalStatus = _romData is null
-            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM to use ROM tweaks.")
+            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM.")
             : ViPalTweak.GetStatus(_romData.DecompressedRom, _romData.Profile);
         RomTweakStatus noControllerStatus = _romData is null
-            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM to use ROM tweaks.")
+            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM.")
             : GcNoControllerTweak.GetStatus(_romData.DecompressedRom, _romData.Profile);
+        RomTweakStatus viSelectorStatus = _romData is null
+            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM.")
+            : ViSelectorTweak.GetStatus(_romData.DecompressedRom, _romData.Profile);
         RomTweakStatus creditsStatus = _romData is null
-            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM to use ROM tweaks.")
+            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM.")
             : GcCreditsTweak.GetStatus(_romData.DecompressedRom, _romData.Profile);
         RomTweakStatus antiPiracyStatus = _romData is null
-            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM to use ROM tweaks.")
+            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM.")
             : AntiPiracyTweak.GetStatus(_romData.DecompressedRom, _romData.Profile);
 
         _updating = true;
@@ -223,6 +250,10 @@ public sealed partial class TweaksWindow : Window
             NoControllerSwitch.IsEnabled = noControllerStatus.CanToggle;
             NoControllerSwitch.IsOn = noControllerStatus.State is RomTweakState.On or RomTweakState.Mixed;
             NoControllerStatusText.Text = noControllerStatus.Detail;
+
+            ViSelectorSwitch.IsEnabled = viSelectorStatus.CanToggle;
+            ViSelectorSwitch.IsOn = viSelectorStatus.State is RomTweakState.On or RomTweakState.Mixed;
+            ViSelectorStatusText.Text = viSelectorStatus.Detail;
 
             CreditsSwitch.IsEnabled = creditsStatus.CanToggle;
             CreditsSwitch.IsOn = creditsStatus.State is RomTweakState.On or RomTweakState.Mixed;

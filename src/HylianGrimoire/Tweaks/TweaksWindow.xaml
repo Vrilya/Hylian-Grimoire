@@ -27,9 +27,9 @@
         <ScrollViewer
             Grid.Row="2"
             VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="12">
+            <StackPanel Spacing="8">
                 <Border
-                    Padding="16"
+                    Padding="12"
                     CornerRadius="8"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
                     <Grid ColumnSpacing="16">
@@ -37,24 +37,32 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
 
-                        <TextBlock
-                            Text="Nintendo boot logo"
-                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="Nintendo boot logo"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Restores the original Nintendo 64 boot-logo call.&#x0a;&#x0a;ROMs: NTSC GC, NTSC MQ, PAL GC, PAL MQ" />
+                        </StackPanel>
                         <TextBlock
                             x:Name="BootLogoStatusText"
-                            Grid.Row="1"
-                            Margin="0,4,0,0"
-                            TextWrapping="Wrap" />
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
 
                         <ToggleSwitch
                             x:Name="BootLogoSwitch"
                             Grid.Column="1"
-                            Grid.RowSpan="2"
                             MinWidth="0"
                             Width="52"
                             OffContent=""
@@ -65,7 +73,7 @@
                 </Border>
 
                 <Border
-                    Padding="16"
+                    Padding="12"
                     CornerRadius="8"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
                     <Grid ColumnSpacing="16">
@@ -73,24 +81,32 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
 
-                        <TextBlock
-                            Text="N64 interface colors"
-                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="N64 interface colors"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Restores N64-style interface colors.&#x0a;&#x0a;ROMs: NTSC GC, NTSC MQ, PAL GC, PAL MQ" />
+                        </StackPanel>
                         <TextBlock
                             x:Name="ColorStatusText"
-                            Grid.Row="1"
-                            Margin="0,4,0,0"
-                            TextWrapping="Wrap" />
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
 
                         <ToggleSwitch
                             x:Name="ColorSwitch"
                             Grid.Column="1"
-                            Grid.RowSpan="2"
                             MinWidth="0"
                             Width="52"
                             OffContent=""
@@ -101,7 +117,7 @@
                 </Border>
 
                 <Border
-                    Padding="16"
+                    Padding="12"
                     CornerRadius="8"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
                     <Grid ColumnSpacing="16">
@@ -109,24 +125,32 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
 
-                        <TextBlock
-                            Text="PAL video timing"
-                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="N64 VI PAL timing"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Replaces embedded NTSC N64 VI timing values with PAL N64 timing values.&#x0a;&#x0a;ROMs: PAL GC, PAL MQ" />
+                        </StackPanel>
                         <TextBlock
                             x:Name="ViPalStatusText"
-                            Grid.Row="1"
-                            Margin="0,4,0,0"
-                            TextWrapping="Wrap" />
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
 
                         <ToggleSwitch
                             x:Name="ViPalSwitch"
                             Grid.Column="1"
-                            Grid.RowSpan="2"
                             MinWidth="0"
                             Width="52"
                             OffContent=""
@@ -137,7 +161,7 @@
                 </Border>
 
                 <Border
-                    Padding="16"
+                    Padding="12"
                     CornerRadius="8"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
                     <Grid ColumnSpacing="16">
@@ -145,24 +169,76 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
 
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="FPAL/MPAL selector"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Replaces the boot-logo state with a startup selector for FPAL 50 Hz or MPAL 60 Hz output.&#x0a;&#x0a;ROMs: PAL 1.0, PAL 1.1" />
+                        </StackPanel>
                         <TextBlock
-                            Text="No controller message"
-                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                            x:Name="ViSelectorStatusText"
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
+
+                        <ToggleSwitch
+                            x:Name="ViSelectorSwitch"
+                            Grid.Column="1"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnViSelectorToggled" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    Padding="12"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="No controller message"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Restores the N64-style no-controller prompt behavior.&#x0a;&#x0a;ROMs: NTSC GC, NTSC MQ, PAL GC, PAL MQ" />
+                        </StackPanel>
                         <TextBlock
                             x:Name="NoControllerStatusText"
-                            Grid.Row="1"
-                            Margin="0,4,0,0"
-                            TextWrapping="Wrap" />
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
 
                         <ToggleSwitch
                             x:Name="NoControllerSwitch"
                             Grid.Column="1"
-                            Grid.RowSpan="2"
                             MinWidth="0"
                             Width="52"
                             OffContent=""
@@ -173,7 +249,7 @@
                 </Border>
 
                 <Border
-                    Padding="16"
+                    Padding="12"
                     CornerRadius="8"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
                     <Grid ColumnSpacing="16">
@@ -181,24 +257,32 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
 
-                        <TextBlock
-                            Text="N64 credits crash fix"
-                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="GC credits N64 crash fix"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Removes the GameCube credits FMV jump that crashes on real N64 hardware or N64 emulators.&#x0a;&#x0a;ROMs: NTSC GC, NTSC MQ, PAL GC, PAL MQ" />
+                        </StackPanel>
                         <TextBlock
                             x:Name="CreditsStatusText"
-                            Grid.Row="1"
-                            Margin="0,4,0,0"
-                            TextWrapping="Wrap" />
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
 
                         <ToggleSwitch
                             x:Name="CreditsSwitch"
                             Grid.Column="1"
-                            Grid.RowSpan="2"
                             MinWidth="0"
                             Width="52"
                             OffContent=""
@@ -209,7 +293,7 @@
                 </Border>
 
                 <Border
-                    Padding="16"
+                    Padding="12"
                     CornerRadius="8"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
                     <Grid ColumnSpacing="16">
@@ -217,24 +301,32 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
 
-                        <TextBlock
-                            Text="Disable anti-piracy checks"
-                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="Disable anti-piracy checks"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Disables the known CIC-related anti-piracy checks.&#x0a;&#x0a;ROMs: NTSC 1.0, NTSC 1.1, NTSC 1.2, PAL 1.0, PAL 1.1" />
+                        </StackPanel>
                         <TextBlock
                             x:Name="AntiPiracyStatusText"
-                            Grid.Row="1"
-                            Margin="0,4,0,0"
-                            TextWrapping="Wrap" />
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
 
                         <ToggleSwitch
                             x:Name="AntiPiracySwitch"
                             Grid.Column="1"
-                            Grid.RowSpan="2"
                             MinWidth="0"
                             Width="52"
                             OffContent=""

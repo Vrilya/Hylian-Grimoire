@@ -37,7 +37,7 @@ public static class GcCreditsTweak
     {
         if (!OffsetsByBuildDate.TryGetValue(profile.BuildDate, out int offset))
         {
-            return new RomTweakStatus(RomTweakState.Unsupported, "This tweak supports retail GameCube ROMs only.");
+            return new RomTweakStatus(RomTweakState.Unsupported, "Unavailable");
         }
 
         if (!HasPatchRange(decompressedRom, offset))

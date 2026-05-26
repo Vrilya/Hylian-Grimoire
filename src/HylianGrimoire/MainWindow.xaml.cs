@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -8,6 +8,7 @@ using HylianGrimoire.Interop;
 using HylianGrimoire.Models;
 using HylianGrimoire.Glyphs;
 using HylianGrimoire.Preview;
+using HylianGrimoire.PromptEditor;
 using HylianGrimoire.Rom;
 using HylianGrimoire.Services;
 using HylianGrimoire.TitleText;
@@ -44,6 +45,7 @@ public sealed partial class MainWindow : Window
     private GlyphRemapWindow? _glyphRemapWindow;
     private TweaksWindow? _tweaksWindow;
     private TitleTextWindow? _titleTextWindow;
+    private PromptEditorWindow? _promptEditorWindow;
 
     public MainWindow()
     {
@@ -101,6 +103,8 @@ public sealed partial class MainWindow : Window
         _tweaksWindow = null;
         _titleTextWindow?.Close();
         _titleTextWindow = null;
+        _promptEditorWindow?.Close();
+        _promptEditorWindow = null;
     }
 
     private void UpdateWindowTitle()
