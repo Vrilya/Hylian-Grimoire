@@ -6,6 +6,7 @@ using HylianGrimoire.Models;
 using HylianGrimoire.PromptEditor;
 using HylianGrimoire.Rom;
 using HylianGrimoire.Services;
+using HylianGrimoire.Textures;
 using HylianGrimoire.TitleText;
 
 namespace HylianGrimoire;
@@ -265,6 +266,32 @@ public sealed partial class MainWindow
         _promptEditorWindow.Activate();
     }
 
+    private void OnOpenTextureManager(object sender, RoutedEventArgs e)
+    {
+        if (!CanUseTextureManagerTool())
+        {
+            return;
+        }
+
+        if (_textureManagerWindow is null)
+        {
+            _textureManagerWindow = new TextureManagerWindow(_romData, OnTextureManagerChanged);
+            _textureManagerWindow.Closed += (_, _) => _textureManagerWindow = null;
+        }
+        else
+        {
+            _textureManagerWindow.SetRomData(_romData);
+        }
+
+        _textureManagerWindow.Activate();
+    }
+
+    private void OnTextureManagerChanged(string status)
+    {
+        MarkRomBankDirty();
+        SetStatus(status);
+    }
+
     private void OnTitleTextChanged(string status)
     {
         MarkRomBankDirty();
@@ -384,6 +411,15 @@ public sealed partial class MainWindow
         {
             ClosePromptEditorWindow();
         }
+
+        if (CanUseTextureManagerTool())
+        {
+            _textureManagerWindow?.SetRomData(_romData);
+        }
+        else
+        {
+            CloseTextureManagerWindow();
+        }
     }
 
     private void UpdateRomToolState()
@@ -395,6 +431,7 @@ public sealed partial class MainWindow
         ImportHeaderIntoRomItem.IsEnabled = _romData is not null;
         TitleTextToolItem.IsEnabled = CanUseTitleTextTool();
         PromptEditorToolItem.IsEnabled = CanUsePromptEditorTool();
+        TextureManagerToolItem.IsEnabled = CanUseTextureManagerTool();
         TweaksToolItem.IsEnabled = CanUseTweaksTool();
     }
 
@@ -432,6 +469,10 @@ public sealed partial class MainWindow
         && _romData.Profile.IsRetail
         && PromptEditorProfileCatalog.TryGetProfile(_romData.Profile, out _);
 
+    private bool CanUseTextureManagerTool() =>
+        _romData is not null
+        && TextureCatalog.TryGetTextures(_romData.Profile, out _);
+
     private void CloseTweaksWindow()
     {
         _tweaksWindow?.Close();
@@ -448,6 +489,12 @@ public sealed partial class MainWindow
     {
         _promptEditorWindow?.Close();
         _promptEditorWindow = null;
+    }
+
+    private void CloseTextureManagerWindow()
+    {
+        _textureManagerWindow?.Close();
+        _textureManagerWindow = null;
     }
 
     private void SetStatus(string message) => StatusText.Text = message;

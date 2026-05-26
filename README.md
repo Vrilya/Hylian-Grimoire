@@ -19,6 +19,7 @@ The editor works with extracted `.bin` / `.tbl` message files, C message headers
 - Open the preview in a separate window with zoom, column layout, alignment guides, and always-on-top support.
 - Manage glyph profiles for editor display characters, glyph images, and preview glyph widths without accidentally changing the intended byte values.
 - Read glyph images and widths directly from ROMs, edit them in the Glyph Manager, and write the changes back to the ROM.
+- Export and replace ROM textures as PNG files with exact byte-preserving round-tripping.
 - Remap glyph byte usage across the active script.
 - Edit ROM title-screen text.
 - Edit pause-menu prompt positions.
@@ -52,6 +53,14 @@ The Glyph Manager is designed for translation projects that need custom characte
 In ROM mode, Hylian Grimoire can read glyph images and widths directly from the loaded ROM, compare them against the expected baseline, and write image or width changes back into the ROM. This makes it possible to inspect and edit custom ROM fonts without treating them as separate loose assets.
 
 When saving or exporting, text characters must be encodable by the active glyph profile. If a message contains an unsupported character, the save is stopped and the affected message ID is reported instead of silently writing an invalid byte.
+
+## Texture Manager
+
+![Texture Manager](media/texturemanager.png)
+
+The Texture Manager exports and replaces ROM textures as PNG files. It uses the loaded ROM profile to expose the relevant texture groups, keeps alpha visible in the preview, and validates replacement images against the exact expected dimensions and encoded byte length before writing anything back.
+
+Folder export and folder replace use the same grouped texture layout, making it practical to work on many image assets at once while still preserving exact binary round-tripping.
 
 ## Title Text
 
@@ -134,6 +143,7 @@ src/HylianGrimoire/Preview/      Game-style message preview renderer and preview
 src/HylianGrimoire/PromptEditor/ Pause-menu prompt placement editing support
 src/HylianGrimoire/Rom/          ROM detection, message-bank handling, glyph sessions, and ROM patch helpers
 src/HylianGrimoire/Services/     File operations, searching, message list operations, and document services
+src/HylianGrimoire/Textures/     ROM texture catalog, texture codec, and Texture Manager window
 src/HylianGrimoire/TitleText/    Title-screen text editing support
 src/HylianGrimoire/Tweaks/       ROM tweaks
 tests/HylianGrimoire.Tests/      xUnit tests for codec, import/export, preview-adjacent behavior, and file parity

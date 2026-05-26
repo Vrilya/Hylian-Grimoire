@@ -80,6 +80,11 @@
     <Compile Include="..\..\src\HylianGrimoire\Rom\RomMessageService.cs" Link="RomMessageService.cs" />
     <Compile Include="..\..\src\HylianGrimoire\Tweaks\RomTweakState.cs" Link="RomTweakState.cs" />
     <Compile Include="..\..\src\HylianGrimoire\Tweaks\RomTweakStatus.cs" Link="RomTweakStatus.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Textures\TextureDefinition.cs" Link="TextureDefinition.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Textures\TextureFormat.cs" Link="TextureFormat.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Textures\TextureCodec.cs" Link="TextureCodec.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Textures\TextureCatalog.cs" Link="TextureCatalog.cs" />
+    <Compile Include="..\..\src\HylianGrimoire\Textures\TextureRomService.cs" Link="TextureRomService.cs" />
     <Compile Include="..\..\src\HylianGrimoire\TitleText\TitleTextKind.cs" Link="TitleTextKind.cs" />
     <Compile Include="..\..\src\HylianGrimoire\TitleText\TitleTextLine.cs" Link="TitleTextLine.cs" />
     <Compile Include="..\..\src\HylianGrimoire\TitleText\TitleTextPatchProfile.cs" Link="TitleTextPatchProfile.cs" />
@@ -100,6 +105,9 @@
     <Compile Include="PromptEditorTests.cs" />
     <Compile Include="RomCompressionTests.cs" />
     <Compile Include="RomTweakTests.cs" />
+    <Compile Include="TextureCatalogTests.cs" />
+    <Compile Include="TextureCodecTests.cs" />
+    <Compile Include="TextureRomServiceTests.cs" />
     <Compile Include="TitleTextTests.cs" />
   </ItemGroup>
 

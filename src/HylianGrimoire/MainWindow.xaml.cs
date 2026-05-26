@@ -11,6 +11,7 @@ using HylianGrimoire.Preview;
 using HylianGrimoire.PromptEditor;
 using HylianGrimoire.Rom;
 using HylianGrimoire.Services;
+using HylianGrimoire.Textures;
 using HylianGrimoire.TitleText;
 using HylianGrimoire.Tweaks;
 
@@ -46,6 +47,7 @@ public sealed partial class MainWindow : Window
     private TweaksWindow? _tweaksWindow;
     private TitleTextWindow? _titleTextWindow;
     private PromptEditorWindow? _promptEditorWindow;
+    private TextureManagerWindow? _textureManagerWindow;
 
     public MainWindow()
     {
@@ -105,6 +107,8 @@ public sealed partial class MainWindow : Window
         _titleTextWindow = null;
         _promptEditorWindow?.Close();
         _promptEditorWindow = null;
+        _textureManagerWindow?.Close();
+        _textureManagerWindow = null;
     }
 
     private void UpdateWindowTitle()
