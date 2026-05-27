@@ -11,6 +11,7 @@ using HylianGrimoire.Preview;
 using HylianGrimoire.PromptEditor;
 using HylianGrimoire.Rom;
 using HylianGrimoire.Services;
+using HylianGrimoire.Soh;
 using HylianGrimoire.Textures;
 using HylianGrimoire.TitleText;
 using HylianGrimoire.Tweaks;
@@ -48,6 +49,7 @@ public sealed partial class MainWindow : Window
     private TitleTextWindow? _titleTextWindow;
     private PromptEditorWindow? _promptEditorWindow;
     private TextureManagerWindow? _textureManagerWindow;
+    private SohModMakerWindow? _sohModMakerWindow;
 
     public MainWindow()
     {

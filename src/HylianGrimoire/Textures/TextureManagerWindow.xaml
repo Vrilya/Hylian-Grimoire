@@ -61,18 +61,21 @@
                             x:Name="ExportFolderButton"
                             Grid.Column="1"
                             Content="Export folder"
+                            ToolTipService.ToolTip="Export every ROM texture as PNG files to a folder, using Hylian Grimoire's texture folder layout and names."
                             Click="OnExportFolder" />
 
                         <Button
                             x:Name="ReplaceFolderButton"
                             Grid.Column="2"
                             Content="Replace folder"
+                            ToolTipService.ToolTip="Replace ROM textures using PNG files from an exported texture folder. PNG size and format must match the original texture."
                             Click="OnReplaceFolder" />
                     </Grid>
 
                     <TreeView
                         x:Name="TextureTree"
                         Grid.Row="1"
+                        Expanding="OnTextureTreeExpanding"
                         SelectionChanged="OnTextureSelectionChanged" />
                 </Grid>
             </Border>
@@ -160,5 +163,51 @@
             Style="{ThemeResource CaptionTextBlockStyle}"
             TextWrapping="Wrap"
             Text="PNG replacement must match the selected texture's exact pixel size." />
+
+        <Grid
+            x:Name="ProgressOverlay"
+            Grid.RowSpan="3"
+            Background="#99000000"
+            Visibility="Collapsed"
+            Canvas.ZIndex="10">
+            <Border
+                Width="340"
+                Padding="24"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+                BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8">
+                <Grid RowSpacing="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock
+                        x:Name="ProgressTitleText"
+                        Text="Exporting textures"
+                        Style="{ThemeResource SubtitleTextBlockStyle}"
+                        HorizontalAlignment="Center" />
+
+                    <TextBlock
+                        x:Name="ProgressPercentText"
+                        Grid.Row="1"
+                        Text="0%"
+                        Style="{ThemeResource BodyStrongTextBlockStyle}"
+                        HorizontalAlignment="Center" />
+
+                    <ProgressBar
+                        x:Name="ProgressBar"
+                        Grid.Row="2"
+                        Height="4"
+                        Minimum="0"
+                        Maximum="100"
+                        Value="0" />
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

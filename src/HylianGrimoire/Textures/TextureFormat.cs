@@ -2,6 +2,8 @@ namespace HylianGrimoire.Textures;
 
 public enum TextureFormat
 {
+    CI4,
+    CI8,
     I4,
     I8,
     IA4,

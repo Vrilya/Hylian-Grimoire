@@ -12,21 +12,44 @@ public static class TextureCodec
 
         return format switch
         {
-            TextureFormat.I4 or TextureFormat.IA4 => ((width + 1) / 2) * height,
-            TextureFormat.I8 or TextureFormat.IA8 => width * height,
+            TextureFormat.CI4 or TextureFormat.I4 or TextureFormat.IA4 => ((width + 1) / 2) * height,
+            TextureFormat.CI8 or TextureFormat.I8 or TextureFormat.IA8 => width * height,
             TextureFormat.IA16 or TextureFormat.Rgba16 => width * height * 2,
             TextureFormat.Rgba32 => width * height * 4,
             _ => throw new ArgumentOutOfRangeException(nameof(format), format, "Unknown texture format."),
         };
     }
 
+    public static int GetTlutByteLength(int colorCount)
+    {
+        if (colorCount <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(colorCount), "TLUT color count must be positive.");
+        }
+
+        return colorCount * 2;
+    }
+
     public static Bitmap Decode(ReadOnlySpan<byte> data, int width, int height, TextureFormat format)
+        => Decode(data, width, height, format, tlutData: [], tlutColorCount: 0);
+
+    public static Bitmap Decode(
+        ReadOnlySpan<byte> data,
+        int width,
+        int height,
+        TextureFormat format,
+        ReadOnlySpan<byte> tlutData,
+        int tlutColorCount)
     {
         int expectedLength = GetByteLength(width, height, format);
         if (data.Length != expectedLength)
         {
             throw new InvalidDataException($"Texture payload must be exactly {expectedLength} bytes for {width}x{height} {format}.");
         }
+
+        Color[] palette = format is TextureFormat.CI4 or TextureFormat.CI8
+            ? DecodeTlut(tlutData, tlutColorCount)
+            : [];
 
         var bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb);
         Rectangle bounds = new(0, 0, width, height);
@@ -39,6 +62,12 @@ public static class TextureCodec
 
             switch (format)
             {
+                case TextureFormat.CI4:
+                    DecodeCI4(data, pixels, width, height, bitmapData.Stride, stride, palette);
+                    break;
+                case TextureFormat.CI8:
+                    DecodeCI8(data, pixels, width, height, bitmapData.Stride, stride, palette);
+                    break;
                 case TextureFormat.I4:
                     DecodeI4(data, pixels, width, height, bitmapData.Stride, stride);
                     break;
@@ -80,7 +109,45 @@ public static class TextureCodec
         return Encode(bitmap, width, height, format);
     }
 
+    public static byte[] Encode(string imagePath, int width, int height, TextureFormat format, ReadOnlySpan<byte> tlutData, int tlutColorCount)
+    {
+        using var bitmap = new Bitmap(imagePath);
+        return Encode(bitmap, width, height, format, tlutData, tlutColorCount);
+    }
+
+    public static byte[] Encode(
+        string imagePath,
+        int width,
+        int height,
+        TextureFormat format,
+        ReadOnlySpan<byte> tlutData,
+        int tlutColorCount,
+        ReadOnlySpan<byte> originalIndexedData)
+    {
+        using var bitmap = new Bitmap(imagePath);
+        return Encode(bitmap, width, height, format, tlutData, tlutColorCount, originalIndexedData);
+    }
+
     public static byte[] Encode(Bitmap source, int width, int height, TextureFormat format)
+        => Encode(source, width, height, format, tlutData: [], tlutColorCount: 0);
+
+    public static byte[] Encode(
+        Bitmap source,
+        int width,
+        int height,
+        TextureFormat format,
+        ReadOnlySpan<byte> tlutData,
+        int tlutColorCount)
+        => Encode(source, width, height, format, tlutData, tlutColorCount, originalIndexedData: []);
+
+    public static byte[] Encode(
+        Bitmap source,
+        int width,
+        int height,
+        TextureFormat format,
+        ReadOnlySpan<byte> tlutData,
+        int tlutColorCount,
+        ReadOnlySpan<byte> originalIndexedData)
     {
         ValidateDimensions(width, height);
         if (source.Width != width || source.Height != height)
@@ -91,9 +158,22 @@ public static class TextureCodec
         using Bitmap bitmap = CloneAsArgb(source);
         byte[] pixels = ReadArgbPixels(bitmap);
         byte[] output = new byte[GetByteLength(width, height, format)];
+        Color[] palette = format is TextureFormat.CI4 or TextureFormat.CI8
+            ? DecodeTlut(tlutData, tlutColorCount)
+            : [];
+        if ((format is TextureFormat.CI4 or TextureFormat.CI8) && originalIndexedData.Length is not 0 && originalIndexedData.Length != output.Length)
+        {
+            throw new InvalidDataException($"Original indexed payload must be exactly {output.Length} bytes for {width}x{height} {format}.");
+        }
 
         switch (format)
         {
+            case TextureFormat.CI4:
+                EncodeCI4(pixels, output, width, height, bitmapDataStride: width * 4, palette, originalIndexedData);
+                break;
+            case TextureFormat.CI8:
+                EncodeCI8(pixels, output, width, height, bitmapDataStride: width * 4, palette, originalIndexedData);
+                break;
             case TextureFormat.I4:
                 EncodeI4(pixels, output, width, height, bitmapDataStride: width * 4);
                 break;
@@ -120,6 +200,76 @@ public static class TextureCodec
         }
 
         return output;
+    }
+
+    private static Color[] DecodeTlut(ReadOnlySpan<byte> tlutData, int colorCount)
+    {
+        if (colorCount <= 0)
+        {
+            throw new InvalidDataException("CI textures require a TLUT color count.");
+        }
+
+        int expectedLength = GetTlutByteLength(colorCount);
+        if (tlutData.Length != expectedLength)
+        {
+            throw new InvalidDataException($"TLUT payload must be exactly {expectedLength} bytes for {colorCount} colors.");
+        }
+
+        Color[] palette = new Color[colorCount];
+        int index = 0;
+        for (int i = 0; i < palette.Length; i++)
+        {
+            ushort value = (ushort)((tlutData[index++] << 8) | tlutData[index++]);
+            palette[i] = Color.FromArgb(
+                (value & 1) != 0 ? 255 : 0,
+                Expand5To8((value >> 11) & 0x1f),
+                Expand5To8((value >> 6) & 0x1f),
+                Expand5To8((value >> 1) & 0x1f));
+        }
+
+        return palette;
+    }
+
+    private static void DecodeCI4(ReadOnlySpan<byte> data, byte[] pixels, int width, int height, int bitmapStride, int absoluteStride, IReadOnlyList<Color> palette)
+    {
+        if (palette.Count < 16)
+        {
+            throw new InvalidDataException("CI4 textures require at least 16 TLUT colors.");
+        }
+
+        int index = 0;
+        for (int y = 0; y < height; y++)
+        {
+            int row = GetRowOffset(bitmapStride, absoluteStride, height, y);
+            for (int x = 0; x < width; x += 2)
+            {
+                byte packed = data[index++];
+                WriteColor(pixels, row + x * 4, palette[(packed >> 4) & 0x0f]);
+                if (x + 1 < width)
+                {
+                    WriteColor(pixels, row + (x + 1) * 4, palette[packed & 0x0f]);
+                }
+            }
+        }
+    }
+
+    private static void DecodeCI8(ReadOnlySpan<byte> data, byte[] pixels, int width, int height, int bitmapStride, int absoluteStride, IReadOnlyList<Color> palette)
+    {
+        int index = 0;
+        for (int y = 0; y < height; y++)
+        {
+            int row = GetRowOffset(bitmapStride, absoluteStride, height, y);
+            for (int x = 0; x < width; x++)
+            {
+                int paletteIndex = data[index++];
+                if (paletteIndex >= palette.Count)
+                {
+                    throw new InvalidDataException($"CI8 texture uses palette index {paletteIndex}, but the TLUT only has {palette.Count} colors.");
+                }
+
+                WriteColor(pixels, row + x * 4, palette[paletteIndex]);
+            }
+        }
     }
 
     private static void DecodeI4(ReadOnlySpan<byte> data, byte[] pixels, int width, int height, int bitmapStride, int absoluteStride)
@@ -244,6 +394,57 @@ public static class TextureCodec
         }
     }
 
+    private static void EncodeCI4(
+        byte[] pixels,
+        byte[] output,
+        int width,
+        int height,
+        int bitmapDataStride,
+        IReadOnlyList<Color> palette,
+        ReadOnlySpan<byte> originalIndexedData)
+    {
+        if (palette.Count < 16)
+        {
+            throw new InvalidDataException("CI4 textures require at least 16 TLUT colors.");
+        }
+
+        int index = 0;
+        for (int y = 0; y < height; y++)
+        {
+            int row = y * bitmapDataStride;
+            for (int x = 0; x < width; x += 2)
+            {
+                int packedIndex = index;
+                byte high = FindPaletteIndex(pixels, row + x * 4, palette, 16, GetOriginalCI4Index(originalIndexedData, packedIndex, highNibble: true));
+                byte low = x + 1 < width
+                    ? FindPaletteIndex(pixels, row + (x + 1) * 4, palette, 16, GetOriginalCI4Index(originalIndexedData, packedIndex, highNibble: false))
+                    : (byte)0;
+                output[index++] = (byte)((high << 4) | low);
+            }
+        }
+    }
+
+    private static void EncodeCI8(
+        byte[] pixels,
+        byte[] output,
+        int width,
+        int height,
+        int bitmapDataStride,
+        IReadOnlyList<Color> palette,
+        ReadOnlySpan<byte> originalIndexedData)
+    {
+        int index = 0;
+        for (int y = 0; y < height; y++)
+        {
+            int row = y * bitmapDataStride;
+            for (int x = 0; x < width; x++)
+            {
+                output[index] = FindPaletteIndex(pixels, row + x * 4, palette, palette.Count, GetOriginalCI8Index(originalIndexedData, index));
+                index++;
+            }
+        }
+    }
+
     private static void EncodeI8(byte[] pixels, byte[] output, int width, int height, int bitmapDataStride)
     {
         int index = 0;
@@ -364,6 +565,65 @@ public static class TextureCodec
         pixels[offset + 2] = r;
         pixels[offset + 3] = a;
     }
+
+    private static void WriteColor(byte[] pixels, int offset, Color color)
+        => WriteRgba(pixels, offset, color.R, color.G, color.B, color.A);
+
+    private static byte FindPaletteIndex(byte[] pixels, int offset, IReadOnlyList<Color> palette, int searchCount, int? preferredIndex)
+    {
+        byte b = pixels[offset];
+        byte g = pixels[offset + 1];
+        byte r = pixels[offset + 2];
+        byte a = pixels[offset + 3];
+        int match = -1;
+        bool hasDuplicateMatch = false;
+
+        for (int i = 0; i < searchCount; i++)
+        {
+            Color color = palette[i];
+            if (color.R == r && color.G == g && color.B == b && color.A == a)
+            {
+                match = i;
+                if (preferredIndex == i)
+                {
+                    return (byte)i;
+                }
+
+                if (match >= 0)
+                {
+                    hasDuplicateMatch = true;
+                }
+
+                continue;
+            }
+        }
+
+        if (match < 0)
+        {
+            throw new InvalidDataException($"PNG color RGBA({r}, {g}, {b}, {a}) does not exist in the texture TLUT.");
+        }
+
+        if (hasDuplicateMatch)
+        {
+            throw new InvalidDataException($"PNG color RGBA({r}, {g}, {b}, {a}) matches multiple TLUT entries and cannot be encoded unambiguously.");
+        }
+
+        return (byte)match;
+    }
+
+    private static int? GetOriginalCI4Index(ReadOnlySpan<byte> originalIndexedData, int packedIndex, bool highNibble)
+    {
+        if (originalIndexedData.Length == 0)
+        {
+            return null;
+        }
+
+        byte packed = originalIndexedData[packedIndex];
+        return highNibble ? (packed >> 4) & 0x0f : packed & 0x0f;
+    }
+
+    private static int? GetOriginalCI8Index(ReadOnlySpan<byte> originalIndexedData, int index)
+        => originalIndexedData.Length == 0 ? null : originalIndexedData[index];
 
     private static byte GetGray(byte[] pixels, int offset)
     {

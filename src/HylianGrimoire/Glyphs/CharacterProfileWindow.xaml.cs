@@ -372,7 +372,7 @@ public sealed partial class CharacterProfileWindow : Window
         {
             sameSize = HasSameSize(path, OotGlyphCatalog.GetOriginalGlyphPath(value));
         }
-        catch
+        catch (Exception ex) when (ex is ArgumentException or IOException or OutOfMemoryException)
         {
             await ShowDialogAsync("Invalid image", "The selected file could not be read as an image.");
             return;

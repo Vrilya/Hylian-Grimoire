@@ -34,6 +34,7 @@
     <None Update="Assets\AppIcon.ico" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
     <None Update="Assets\AppIcon.png" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
     <Content Include="Assets\Title\**\*.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\TextureCatalog\**\*.txt" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Preview\Oot\**\*.png" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Preview\Oot\**\*.bin" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

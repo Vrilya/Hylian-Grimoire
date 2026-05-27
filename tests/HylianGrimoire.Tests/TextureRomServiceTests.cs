@@ -36,6 +36,22 @@ public sealed class TextureRomServiceTests
     }
 
     [Fact]
+    public void Decode_ci_reads_texture_and_tlut_from_rom()
+    {
+        byte[] rom = CreateRom(96);
+        var texture = new TextureDefinition("test", "Texture", 8, 4, 2, TextureFormat.CI4, 32, 16);
+        byte[] source = [0x01, 0x23, 0x45, 0x67];
+        byte[] tlut = CreateTlut(16);
+        Array.Copy(source, 0, rom, texture.RomAddress, source.Length);
+        Array.Copy(tlut, 0, rom, texture.TlutRomAddress!.Value, tlut.Length);
+
+        using Bitmap bitmap = TextureRomService.Decode(rom, texture);
+        byte[] encoded = TextureCodec.Encode(bitmap, texture.Width, texture.Height, texture.Format, tlut, texture.EffectiveTlutColorCount, source);
+
+        Assert.Equal(source, encoded);
+    }
+
+    [Fact]
     public void WriteRaw_replaces_only_texture_range()
     {
         byte[] rom = CreateRom(96);
@@ -63,6 +79,44 @@ public sealed class TextureRomServiceTests
         Assert.Equal(source, rom.Skip(12).Take(64));
     }
 
+    [Fact]
+    public void EncodeAndWrite_ci_writes_only_texture_range()
+    {
+        byte[] rom = CreateRom(128);
+        var texture = new TextureDefinition("test", "Texture", 12, 8, 4, TextureFormat.CI4, 64, 16);
+        byte[] source = CreateTexturePayload(texture.Format, TextureCodec.GetByteLength(texture.Width, texture.Height, texture.Format));
+        byte[] tlut = CreateTlut(texture.EffectiveTlutColorCount);
+        Array.Copy(source, 0, rom, texture.RomAddress, source.Length);
+        Array.Copy(tlut, 0, rom, texture.TlutRomAddress!.Value, tlut.Length);
+        byte[] before = rom.ToArray();
+
+        using Bitmap bitmap = TextureRomService.Decode(rom, texture);
+        TextureRomService.EncodeAndWrite(rom, texture, bitmap);
+
+        Assert.Equal(before, rom);
+    }
+
+    [Fact]
+    public void EncodeAndWrite_ci_preserves_duplicate_tlut_indices_for_unchanged_png()
+    {
+        byte[] rom = CreateRom(128);
+        var texture = new TextureDefinition("test", "Texture", 12, 2, 1, TextureFormat.CI4, 64, 16);
+        byte[] source = [0x23];
+        byte[] tlut = CreateTlut(texture.EffectiveTlutColorCount);
+        tlut[4] = tlut[0];
+        tlut[5] = tlut[1];
+        tlut[6] = tlut[2];
+        tlut[7] = tlut[3];
+        Array.Copy(source, 0, rom, texture.RomAddress, source.Length);
+        Array.Copy(tlut, 0, rom, texture.TlutRomAddress!.Value, tlut.Length);
+        byte[] before = rom.ToArray();
+
+        using Bitmap bitmap = TextureRomService.Decode(rom, texture);
+        TextureRomService.EncodeAndWrite(rom, texture, bitmap);
+
+        Assert.Equal(before, rom);
+    }
+
     [Theory]
     [InlineData(TextureFormat.I4, 8, 4)]
     [InlineData(TextureFormat.I8, 8, 4)]
@@ -80,6 +134,47 @@ public sealed class TextureRomServiceTests
         Array.Copy(source, 0, rom, texture.RomAddress, source.Length);
         byte[] before = rom.ToArray();
         string path = Path.Combine(Path.GetTempPath(), $"hylian-grimoire-texture-roundtrip-{Guid.NewGuid():N}.png");
+
+        try
+        {
+            using (Bitmap bitmap = TextureRomService.Decode(rom, texture))
+            {
+                bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+            }
+
+            for (int pass = 0; pass < TexturePngRoundtripPasses; pass++)
+            {
+                TextureRomService.EncodeAndWrite(rom, texture, path);
+                Assert.Equal(before, rom);
+
+                using Bitmap bitmap = TextureRomService.Decode(rom, texture);
+                bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+            }
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(TextureFormat.CI4, 8, 4, 16)]
+    [InlineData(TextureFormat.CI8, 8, 4, 256)]
+    public void Exported_ci_png_can_replace_texture_without_changing_bytes_after_repeated_roundtrips(TextureFormat format, int width, int height, int colorCount)
+    {
+        int textureLength = TextureCodec.GetByteLength(width, height, format);
+        int tlutLength = TextureCodec.GetTlutByteLength(colorCount);
+        var texture = new TextureDefinition("test/group", "Texture", 24, width, height, format, 24 + textureLength + 8, colorCount);
+        byte[] rom = CreateRom(texture.TlutRomAddress!.Value + tlutLength + 16);
+        byte[] source = CreateTexturePayload(format, textureLength);
+        byte[] tlut = CreateTlut(colorCount);
+        Array.Copy(source, 0, rom, texture.RomAddress, source.Length);
+        Array.Copy(tlut, 0, rom, texture.TlutRomAddress.Value, tlut.Length);
+        byte[] before = rom.ToArray();
+        string path = Path.Combine(Path.GetTempPath(), $"hylian-grimoire-ci-texture-roundtrip-{Guid.NewGuid():N}.png");
 
         try
         {
@@ -134,6 +229,8 @@ public sealed class TextureRomServiceTests
         {
             payload[i] = format switch
             {
+                TextureFormat.CI4 => (byte)((i % 16 << 4) | ((i + 1) % 16)),
+                TextureFormat.CI8 => (byte)i,
                 TextureFormat.Rgba32 => (byte)((i % 4) == 3 ? 255 : ((i * 37 + 19) & 0xff)),
                 TextureFormat.IA16 => (byte)((i % 2) == 1 ? 255 : ((i * 37 + 19) & 0xff)),
                 _ => (byte)((i * 37 + 19) & 0xff),
@@ -141,5 +238,21 @@ public sealed class TextureRomServiceTests
         }
 
         return payload;
+    }
+
+    private static byte[] CreateTlut(int colorCount)
+    {
+        byte[] tlut = new byte[TextureCodec.GetTlutByteLength(colorCount)];
+        for (int i = 0; i < colorCount; i++)
+        {
+            int r = i & 0x1f;
+            int g = (i >> 5) & 0x1f;
+            int b = (i >> 10) & 0x1f;
+            ushort value = (ushort)((r << 11) | (g << 6) | (b << 1) | 1);
+            tlut[i * 2] = (byte)(value >> 8);
+            tlut[i * 2 + 1] = (byte)value;
+        }
+
+        return tlut;
     }
 }

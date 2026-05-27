@@ -268,6 +268,30 @@ public sealed class ExportParityTests
     }
 
     [Fact]
+    public void LegacyHeaderLoadsAsSingleLanguageDocument()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"legacy-header-{Guid.NewGuid():N}.h");
+        File.WriteAllText(path, """
+        DEFINE_MESSAGE(0x0001, TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+        UNSKIPPABLE "Only one language"
+        )
+        """);
+
+        try
+        {
+            Dictionary<int, List<MessageEntry>> languages = HeaderDocumentService.LoadLanguageEntries(path);
+            Assert.Equal([0], languages.Keys.Order().ToArray());
+
+            List<CHeaderMessageSlot> slots = HeaderDocumentService.GetAvailableWesternSlots(path);
+            Assert.Equal([CHeaderMessageSlot.Nes], slots);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void ModernHeaderImportNeverFallsBackToJapaneseForWesternSlots()
     {
         const string modernHeader = """

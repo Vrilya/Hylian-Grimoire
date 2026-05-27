@@ -72,6 +72,7 @@
                             <MenuFlyoutItem x:Name="TitleTextToolItem" Text="Title Text" Click="OnOpenTitleText" />
                             <MenuFlyoutItem x:Name="PromptEditorToolItem" Text="Prompt Editor" Click="OnOpenPromptEditor" />
                             <MenuFlyoutItem x:Name="TextureManagerToolItem" Text="Texture Manager" Click="OnOpenTextureManager" />
+                            <MenuFlyoutItem x:Name="SohModMakerToolItem" Text="SoH Mod Maker" Click="OnOpenSohModMaker" />
                             <MenuFlyoutItem x:Name="TweaksToolItem" Text="Tweaks" Click="OnOpenTweaks" />
                             <MenuFlyoutSeparator />
                             <MenuFlyoutItem x:Name="FontOrderToolItem" Text="Font order (0xFFFC)" Click="OnOpenFontOrder" />

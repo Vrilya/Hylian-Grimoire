@@ -176,6 +176,41 @@ public static class RomMessageService
         return (jpn, nes, ger, fra);
     }
 
+    public static List<Models.MessageEntry> LoadCreditsBank(
+        RomMessageData source,
+        List<Models.MessageEntry> currentEntries)
+    {
+        byte[] decompressed = source.DecompressedRom.ToArray();
+        PatchActiveSection(
+            decompressed,
+            source.Profile,
+            source.ActiveMessageBankIndex,
+            source.ActiveSection,
+            currentEntries);
+
+        return LoadBankEntries(decompressed, source.Profile, source.Profile.CreditsBank);
+    }
+
+    public static List<Models.MessageEntry>? LoadJapaneseBank(
+        RomMessageData source,
+        List<Models.MessageEntry> currentEntries)
+    {
+        if (source.Profile.JapaneseMessageBank is not MessageBankProfile japaneseBank)
+        {
+            return null;
+        }
+
+        byte[] decompressed = source.DecompressedRom.ToArray();
+        PatchActiveSection(
+            decompressed,
+            source.Profile,
+            source.ActiveMessageBankIndex,
+            source.ActiveSection,
+            currentEntries);
+
+        return LoadBankEntries(decompressed, source.Profile, japaneseBank, decodeMessages: false);
+    }
+
     public static bool TryReadActiveFontOrderBytes(RomMessageData source, out byte[] bytes)
     {
         bytes = [];

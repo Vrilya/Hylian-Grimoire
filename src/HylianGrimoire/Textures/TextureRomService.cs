@@ -12,8 +12,35 @@ public static class TextureRomService
         return rom.Slice(texture.RomAddress, length).ToArray();
     }
 
+    public static byte[] ReadTlutRaw(ReadOnlySpan<byte> rom, TextureDefinition texture)
+    {
+        if (!texture.UsesTlut)
+        {
+            return [];
+        }
+
+        if (texture.TlutRomAddress is not { } tlutAddress)
+        {
+            throw new InvalidDataException($"Texture {texture.Name} uses {texture.Format} but has no TLUT address.");
+        }
+
+        int length = TextureCodec.GetTlutByteLength(texture.EffectiveTlutColorCount);
+        ValidateRange(rom.Length, tlutAddress, length, $"{texture.Name} TLUT");
+
+        return rom.Slice(tlutAddress, length).ToArray();
+    }
+
     public static Bitmap Decode(ReadOnlySpan<byte> rom, TextureDefinition texture)
-        => TextureCodec.Decode(ReadRaw(rom, texture), texture.Width, texture.Height, texture.Format);
+    {
+        byte[] raw = ReadRaw(rom, texture);
+        if (!texture.UsesTlut)
+        {
+            return TextureCodec.Decode(raw, texture.Width, texture.Height, texture.Format);
+        }
+
+        byte[] tlut = ReadTlutRaw(rom, texture);
+        return TextureCodec.Decode(raw, texture.Width, texture.Height, texture.Format, tlut, texture.EffectiveTlutColorCount);
+    }
 
     public static void WriteRaw(Span<byte> rom, TextureDefinition texture, ReadOnlySpan<byte> data)
     {
@@ -29,13 +56,17 @@ public static class TextureRomService
 
     public static void EncodeAndWrite(Span<byte> rom, TextureDefinition texture, Bitmap bitmap)
     {
-        byte[] encoded = TextureCodec.Encode(bitmap, texture.Width, texture.Height, texture.Format);
+        byte[] encoded = texture.UsesTlut
+            ? TextureCodec.Encode(bitmap, texture.Width, texture.Height, texture.Format, ReadTlutRaw(rom, texture), texture.EffectiveTlutColorCount, ReadRaw(rom, texture))
+            : TextureCodec.Encode(bitmap, texture.Width, texture.Height, texture.Format);
         WriteRaw(rom, texture, encoded);
     }
 
     public static void EncodeAndWrite(Span<byte> rom, TextureDefinition texture, string imagePath)
     {
-        byte[] encoded = TextureCodec.Encode(imagePath, texture.Width, texture.Height, texture.Format);
+        byte[] encoded = texture.UsesTlut
+            ? TextureCodec.Encode(imagePath, texture.Width, texture.Height, texture.Format, ReadTlutRaw(rom, texture), texture.EffectiveTlutColorCount, ReadRaw(rom, texture))
+            : TextureCodec.Encode(imagePath, texture.Width, texture.Height, texture.Format);
         WriteRaw(rom, texture, encoded);
     }
 

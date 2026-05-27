@@ -48,7 +48,7 @@ public static class CHeaderImporter
                 int type = ParseBoxType(args[1]);
                 int position = ParseBoxPosition(args[2]);
                 string? body = args.Count == 4
-                    ? args[3]
+                    ? SelectLegacyMessageBody(args[3], preferredSlot)
                     : SelectModernMessageBody(call.Name, args, preferredSlot, allowWesternFallback);
                 if (body is null)
                 {
@@ -254,6 +254,9 @@ public static class CHeaderImporter
     {
         return MessageTextSyntax.ToEditorText(ParseMessageBodyTokens(body));
     }
+
+    private static string? SelectLegacyMessageBody(string body, CHeaderMessageSlot preferredSlot)
+        => preferredSlot == CHeaderMessageSlot.Nes ? body : null;
 
     private static string? SelectModernMessageBody(
         string macroName,

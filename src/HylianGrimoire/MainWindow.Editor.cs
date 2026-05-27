@@ -6,6 +6,7 @@ using HylianGrimoire.Models;
 using HylianGrimoire.PromptEditor;
 using HylianGrimoire.Rom;
 using HylianGrimoire.Services;
+using HylianGrimoire.Soh;
 using HylianGrimoire.Textures;
 using HylianGrimoire.TitleText;
 
@@ -286,6 +287,68 @@ public sealed partial class MainWindow
         _textureManagerWindow.Activate();
     }
 
+    private void OnOpenSohModMaker(object sender, RoutedEventArgs e)
+    {
+        if (!CanUseSohModMakerTool())
+        {
+            return;
+        }
+
+        try
+        {
+            if (_sohModMakerWindow is null)
+            {
+                var window = new SohModMakerWindow(
+                    _romData,
+                    GetCurrentEntriesForSohModMaker,
+                    GetCurrentTextLanguagesForSohModMaker,
+                    OnSohModMakerChanged);
+                window.Closed += (_, _) => _sohModMakerWindow = null;
+                _sohModMakerWindow = window;
+            }
+            else
+            {
+                _sohModMakerWindow.SetRomData(_romData);
+            }
+
+            _sohModMakerWindow.Activate();
+        }
+        catch (Exception ex)
+        {
+            _sohModMakerWindow = null;
+            _ = ShowErrorAsync("Failed to open SoH Mod Maker", ex.Message);
+        }
+    }
+
+    private List<MessageEntry> GetCurrentEntriesForSohModMaker()
+    {
+        CommitCurrent();
+        return _entries.ToList();
+    }
+
+    private IReadOnlyDictionary<int, List<MessageEntry>> GetCurrentTextLanguagesForSohModMaker()
+    {
+        CommitCurrent();
+
+        if (_documentKind == DocumentKind.Header && _headerLanguageEntries is not null)
+        {
+            CommitHeaderLanguageChanges();
+            return _headerLanguageEntries.ToDictionary(
+                pair => pair.Key,
+                pair => pair.Value.ToList());
+        }
+
+        return new Dictionary<int, List<MessageEntry>>
+        {
+            [0] = _entries.ToList(),
+        };
+    }
+
+    private void OnSohModMakerChanged(string status)
+    {
+        SetStatus(status);
+    }
+
     private void OnTextureManagerChanged(string status)
     {
         MarkRomBankDirty();
@@ -420,6 +483,15 @@ public sealed partial class MainWindow
         {
             CloseTextureManagerWindow();
         }
+
+        if (CanUseSohModMakerTool())
+        {
+            _sohModMakerWindow?.SetRomData(_romData);
+        }
+        else
+        {
+            CloseSohModMakerWindow();
+        }
     }
 
     private void UpdateRomToolState()
@@ -432,6 +504,7 @@ public sealed partial class MainWindow
         TitleTextToolItem.IsEnabled = CanUseTitleTextTool();
         PromptEditorToolItem.IsEnabled = CanUsePromptEditorTool();
         TextureManagerToolItem.IsEnabled = CanUseTextureManagerTool();
+        SohModMakerToolItem.IsEnabled = CanUseSohModMakerTool();
         TweaksToolItem.IsEnabled = CanUseTweaksTool();
     }
 
@@ -473,6 +546,8 @@ public sealed partial class MainWindow
         _romData is not null
         && TextureCatalog.TryGetTextures(_romData.Profile, out _);
 
+    private bool CanUseSohModMakerTool() => _entries.Count > 0 || CanUseTextureManagerTool();
+
     private void CloseTweaksWindow()
     {
         _tweaksWindow?.Close();
@@ -495,6 +570,12 @@ public sealed partial class MainWindow
     {
         _textureManagerWindow?.Close();
         _textureManagerWindow = null;
+    }
+
+    private void CloseSohModMakerWindow()
+    {
+        _sohModMakerWindow?.Close();
+        _sohModMakerWindow = null;
     }
 
     private void SetStatus(string message) => StatusText.Text = message;

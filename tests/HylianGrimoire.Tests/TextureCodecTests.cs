@@ -7,6 +7,8 @@ namespace HylianGrimoire.Tests;
 public sealed class TextureCodecTests
 {
     [Theory]
+    [InlineData(TextureFormat.CI4, 5, 3, 9)]
+    [InlineData(TextureFormat.CI8, 5, 3, 15)]
     [InlineData(TextureFormat.I4, 5, 3, 9)]
     [InlineData(TextureFormat.I8, 5, 3, 15)]
     [InlineData(TextureFormat.IA4, 5, 3, 9)]
@@ -37,10 +39,32 @@ public sealed class TextureCodecTests
         Assert.Equal(original, encoded);
     }
 
+    [Theory]
+    [InlineData(TextureFormat.CI4, 8, 4, 16)]
+    [InlineData(TextureFormat.CI8, 8, 4, 256)]
+    public void Decoded_ci_texture_encodes_back_to_identical_bytes(TextureFormat format, int width, int height, int colorCount)
+    {
+        byte[] tlut = CreateTlut(colorCount);
+        byte[] original = CreateIndexedPayload(format, TextureCodec.GetByteLength(width, height, format));
+
+        using Bitmap bitmap = TextureCodec.Decode(original, width, height, format, tlut, colorCount);
+        byte[] encoded = TextureCodec.Encode(bitmap, width, height, format, tlut, colorCount, original);
+
+        Assert.Equal(original, encoded);
+    }
+
     [Fact]
     public void Decode_rejects_wrong_payload_length()
     {
         Assert.Throws<InvalidDataException>(() => TextureCodec.Decode([0, 1, 2], 8, 4, TextureFormat.I4));
+    }
+
+    [Fact]
+    public void Decode_ci_rejects_missing_tlut()
+    {
+        byte[] payload = CreateIndexedPayload(TextureFormat.CI4, TextureCodec.GetByteLength(8, 4, TextureFormat.CI4));
+
+        Assert.Throws<InvalidDataException>(() => TextureCodec.Decode(payload, 8, 4, TextureFormat.CI4));
     }
 
     [Fact]
@@ -49,6 +73,41 @@ public sealed class TextureCodecTests
         using var bitmap = new Bitmap(4, 4);
 
         Assert.Throws<InvalidDataException>(() => TextureCodec.Encode(bitmap, 8, 4, TextureFormat.I4));
+    }
+
+    [Fact]
+    public void Encode_ci_rejects_color_outside_tlut()
+    {
+        byte[] tlut = CreateTlut(16);
+        using var bitmap = new Bitmap(1, 1);
+        bitmap.SetPixel(0, 0, Color.Magenta);
+
+        Assert.Throws<InvalidDataException>(() => TextureCodec.Encode(bitmap, 1, 1, TextureFormat.CI4, tlut, 16));
+    }
+
+    [Fact]
+    public void Encode_ci_rejects_duplicate_tlut_color()
+    {
+        byte[] tlut = CreateTlut(16);
+        tlut[2] = tlut[0];
+        tlut[3] = tlut[1];
+        using Bitmap bitmap = TextureCodec.Decode([0x01], 2, 1, TextureFormat.CI4, tlut, 16);
+
+        Assert.Throws<InvalidDataException>(() => TextureCodec.Encode(bitmap, 2, 1, TextureFormat.CI4, tlut, 16));
+    }
+
+    [Fact]
+    public void Encode_ci_uses_original_indices_to_resolve_duplicate_tlut_colors()
+    {
+        byte[] tlut = CreateTlut(16);
+        tlut[2] = tlut[0];
+        tlut[3] = tlut[1];
+        byte[] original = [0x23];
+
+        using Bitmap bitmap = TextureCodec.Decode(original, 2, 1, TextureFormat.CI4, tlut, 16);
+        byte[] encoded = TextureCodec.Encode(bitmap, 2, 1, TextureFormat.CI4, tlut, 16, original);
+
+        Assert.Equal(original, encoded);
     }
 
     private static byte[] CreatePayload(int length)
@@ -60,5 +119,34 @@ public sealed class TextureCodecTests
         }
 
         return payload;
+    }
+
+    private static byte[] CreateIndexedPayload(TextureFormat format, int length)
+    {
+        byte[] payload = new byte[length];
+        for (int i = 0; i < payload.Length; i++)
+        {
+            payload[i] = format == TextureFormat.CI4
+                ? (byte)((i % 16 << 4) | ((i + 1) % 16))
+                : (byte)i;
+        }
+
+        return payload;
+    }
+
+    private static byte[] CreateTlut(int colorCount)
+    {
+        byte[] tlut = new byte[TextureCodec.GetTlutByteLength(colorCount)];
+        for (int i = 0; i < colorCount; i++)
+        {
+            int r = i & 0x1f;
+            int g = (i >> 5) & 0x1f;
+            int b = (i >> 10) & 0x1f;
+            ushort value = (ushort)((r << 11) | (g << 6) | (b << 1) | 1);
+            tlut[i * 2] = (byte)(value >> 8);
+            tlut[i * 2 + 1] = (byte)value;
+        }
+
+        return tlut;
     }
 }

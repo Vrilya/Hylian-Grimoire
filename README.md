@@ -20,6 +20,7 @@ The editor works with extracted `.bin` / `.tbl` message files, C message headers
 - Manage glyph profiles for editor display characters, glyph images, and preview glyph widths without accidentally changing the intended byte values.
 - Read glyph images and widths directly from ROMs, edit them in the Glyph Manager, and write the changes back to the ROM.
 - Export and replace ROM textures as PNG files with exact byte-preserving round-tripping.
+- Create and edit SoH `.o2r` mod files with selected text and texture resources.
 - Remap glyph byte usage across the active script.
 - Edit ROM title-screen text.
 - Edit pause-menu prompt positions.
@@ -61,6 +62,14 @@ When saving or exporting, text characters must be encodable by the active glyph 
 The Texture Manager exports and replaces ROM textures as PNG files. It uses the loaded ROM profile to expose the relevant texture groups, keeps alpha visible in the preview, and validates replacement images against the exact expected dimensions and encoded byte length before writing anything back.
 
 Folder export and folder replace use the same grouped texture layout, making it practical to work on many image assets at once while still preserving exact binary round-tripping.
+
+## SoH Mod Maker
+
+![SoH Mod Maker](media/sohmodmaker.png)
+
+The SoH Mod Maker creates and edits `.o2r` mod files from the resources Hylian Grimoire already understands. It can include selected texture resources, selected text resources, or both, and it can load an existing mod so its current contents can be inspected before saving a new version.
+
+Texture resources use the same catalog and naming as the Texture Manager, so exported/replaced assets and mod resources stay consistent. When a loaded `.o2r` already contains resources that differ from the loaded ROM, Hylian Grimoire warns before overwriting them.
 
 ## Title Text
 
@@ -143,6 +152,7 @@ src/HylianGrimoire/Preview/      Game-style message preview renderer and preview
 src/HylianGrimoire/PromptEditor/ Pause-menu prompt placement editing support
 src/HylianGrimoire/Rom/          ROM detection, message-bank handling, glyph sessions, and ROM patch helpers
 src/HylianGrimoire/Services/     File operations, searching, message list operations, and document services
+src/HylianGrimoire/Soh/          SoH .o2r mod creation and resource packing
 src/HylianGrimoire/Textures/     ROM texture catalog, texture codec, and Texture Manager window
 src/HylianGrimoire/TitleText/    Title-screen text editing support
 src/HylianGrimoire/Tweaks/       ROM tweaks
