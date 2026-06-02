@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
@@ -9,7 +9,9 @@ namespace HylianGrimoire.Preview;
 
 public static class OotBitmapCache
 {
-    private static readonly string AssetRoot = Path.Combine(AppContext.BaseDirectory, "Assets", "Preview", "Oot");
+    private static readonly string AssetRoot = Path.Combine(
+        AppContext.BaseDirectory,
+        HylianGrimoire.Games.GameProfiles.Get(HylianGrimoire.Games.GameKind.OcarinaOfTime).Assets.PreviewRoot);
     private static readonly string CacheRoot = Path.Combine(Path.GetTempPath(), "HylianGrimoirePreviewCache");
 
     static OotBitmapCache()
@@ -183,10 +185,10 @@ public static class OotBitmapCache
 
     public static Uri GetGlyph(byte value, Windows.UI.Color color, bool shadow = false)
     {
-        return GetGlyph(value, color, OotGlyphSources.ActiveProfile, shadow);
+        return GetGlyph(value, color, OotGlyphSources.OriginalAssets, shadow);
     }
 
-    public static Uri GetGlyph(byte value, Windows.UI.Color color, IOotGlyphSource glyphSource, bool shadow = false)
+    public static Uri GetGlyph(byte value, Windows.UI.Color color, IGlyphSource glyphSource, bool shadow = false)
     {
         string source = glyphSource.GetGlyphPath(value);
         return GetMaskImage(source, $"glyph-{glyphSource.CacheKey}-{value:x2}", color, brighten: !shadow);
@@ -206,9 +208,9 @@ public static class OotBitmapCache
         bool darkText,
         bool lastBox,
         bool showAlignmentGuides,
-        IOotGlyphSource? glyphSource = null)
+        IGlyphSource? glyphSource = null)
     {
-        glyphSource ??= OotGlyphSources.ActiveProfile;
+        glyphSource ??= OotGlyphSources.OriginalAssets;
         string tokenKey = string.Join('-', tokens.Select(token => $"{(int)token.Kind:x}{token.Value:x2}"));
         string guideKey = showAlignmentGuides
             ? $"guides-{AlignmentGuideCount}-{AlignmentGuideHalfSpan:0.###}-{AlignmentGuideCenterOffset:0.###}"
@@ -272,7 +274,7 @@ public static class OotBitmapCache
         IReadOnlyList<OotPreviewToken> tokens,
         bool darkText,
         bool lastBox,
-        IOotGlyphSource glyphSource)
+        IGlyphSource glyphSource)
     {
         float scale = style == OotPreviewStyle.Credits ? 0.85f : TextScale;
         float x = style == OotPreviewStyle.Credits ? 20 : 32;
@@ -365,7 +367,7 @@ public static class OotBitmapCache
         }
     }
 
-    private static float GetLineWidth(IReadOnlyList<OotPreviewToken> tokens, int centerIndex, float scale, IOotGlyphSource glyphSource)
+    private static float GetLineWidth(IReadOnlyList<OotPreviewToken> tokens, int centerIndex, float scale, IGlyphSource glyphSource)
     {
         float width = 0;
         for (int i = centerIndex + 1; i < tokens.Count; i++)
@@ -421,7 +423,7 @@ public static class OotBitmapCache
         graphics.DrawImage(icon, (int)x, (int)y, size, size);
     }
 
-    private static void DrawGlyph(Graphics graphics, byte value, Color color, float x, float y, bool shadow, float scale, IOotGlyphSource glyphSource)
+    private static void DrawGlyph(Graphics graphics, byte value, Color color, float x, float y, bool shadow, float scale, IGlyphSource glyphSource)
     {
         string path = glyphSource.GetGlyphPath(value);
         if (!File.Exists(path) || value == 0x20)
@@ -438,7 +440,7 @@ public static class OotBitmapCache
         DrawMaskImage(graphics, path, color, (int)x, (int)y, size, size, brighten: true);
     }
 
-    private static float GetGlyphAdvance(byte value, float scale, IOotGlyphSource glyphSource)
+    private static float GetGlyphAdvance(byte value, float scale, IGlyphSource glyphSource)
     {
         if (value == 0x20)
         {

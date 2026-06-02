@@ -11,7 +11,7 @@ internal sealed class GlyphListItem : INotifyPropertyChanged
     private string _currentWidth = string.Empty;
     private string _overrideLabel = string.Empty;
 
-    public GlyphListItem(OotGlyphInfo info)
+    public GlyphListItem(GlyphInfo info)
     {
         Value = info.Value;
         Update(info);
@@ -51,7 +51,7 @@ internal sealed class GlyphListItem : INotifyPropertyChanged
         private set => SetField(ref _overrideLabel, value);
     }
 
-    public void Update(OotGlyphInfo info)
+    public void Update(GlyphInfo info)
     {
         Hex = info.Hex;
         CurrentChar = info.CurrentChar.ToString();

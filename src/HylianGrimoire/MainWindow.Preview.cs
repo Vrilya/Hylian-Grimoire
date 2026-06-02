@@ -1,10 +1,8 @@
-﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml;
 using HylianGrimoire.Codecs;
+using HylianGrimoire.Games;
 using HylianGrimoire.Glyphs;
-using HylianGrimoire.Models;
 using HylianGrimoire.Preview;
-using HylianGrimoire.Rom;
-using HylianGrimoire.Services;
 
 namespace HylianGrimoire;
 
@@ -25,9 +23,19 @@ public sealed partial class MainWindow
     {
         if (_previewWindow is null)
         {
-            _previewWindow = new OotPreviewWindow();
+            GameProfile? profile = ActiveGameProfile;
+            if (profile is null || !profile.Capabilities.SupportsMessagePreview)
+            {
+                PreviewToggle.IsChecked = false;
+                SetStatus(profile is null
+                    ? "Create or load a project before opening preview."
+                    : $"{profile.DisplayName} message preview is not available yet.");
+                return;
+            }
+
+            _previewWindow = MessagePreviewWindowFactory.Create(profile);
             PreviewToggle.IsChecked = true;
-            _previewWindow.Closed += (_, _) =>
+            _previewWindow.PreviewClosed += (_, _) =>
             {
                 _previewWindow = null;
                 PreviewToggle.IsChecked = false;
@@ -45,24 +53,24 @@ public sealed partial class MainWindow
             return;
         }
 
-        if (_currentIdx < 0 || _currentIdx >= _entries.Count)
+        if (_session.CurrentIndex < 0 || _session.CurrentIndex >= _session.Entries.Count)
         {
-            _previewWindow.SetMessage(OotPreviewStyle.Black, Array.Empty<MessageToken>());
+            _previewWindow.SetEmpty();
             return;
         }
 
-        var entry = _entries[_currentIdx];
+        var entry = _session.Entries[_session.CurrentIndex];
         try
         {
-            IOotGlyphSource glyphSource = _romData is null
-                ? OotGlyphSources.ActiveProfile
-                : new RomGlyphSource(_romData.DecompressedRom, _romData.FontResources);
+            CharacterProfileSnapshot snapshot = CreateCharacterProfileSnapshot(CurrentGameProfile);
+            IGlyphSource glyphSource = _characterProfileRuntime.CreateGlyphSource(CurrentGameProfile, _session.RomData, snapshot);
+            MessageEncodingProfile encodingProfile = CreateEncodingProfile(CurrentGameProfile, snapshot);
 
             _previewWindow.SetMessage(
-                MessageTypeCatalog.ToPreviewStyle(entry.Type),
-                MessageTextSyntax.FromEditorText(MessageTextSyntax.FromDisplay(GetEditorText())),
+                entry,
+                CurrentGameProfile.EditorTextSyntax.FromDisplay(GetEditorText()),
                 glyphSource,
-                MessageEncodingProfile.Default);
+                encodingProfile);
         }
         catch (InvalidDataException ex)
         {

@@ -1,12 +1,14 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Drawing;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using HylianGrimoire.Games;
 using HylianGrimoire.Interop;
 using HylianGrimoire.Rom;
+using HylianGrimoire.Services;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
 
@@ -16,19 +18,21 @@ public sealed partial class CharacterProfileWindow : Window
 {
     private readonly ObservableCollection<GlyphListItem> _glyphs = [];
     private readonly ObservableCollection<string> _profiles = [];
+    private readonly CharacterProfileRuntime _characterProfileRuntime;
     private RomGlyphEditorSession? _romSession;
     private bool _updating;
     private byte? _selectedValue;
 
     public event EventHandler? GlyphDataChanged;
 
-    public CharacterProfileWindow()
-        : this(null)
+    public CharacterProfileWindow(CharacterProfileRuntime characterProfileRuntime)
+        : this(characterProfileRuntime, null)
     {
     }
 
-    public CharacterProfileWindow(RomGlyphEditorSession? romSession)
+    public CharacterProfileWindow(CharacterProfileRuntime characterProfileRuntime, RomGlyphEditorSession? romSession)
     {
+        _characterProfileRuntime = characterProfileRuntime ?? throw new ArgumentNullException(nameof(characterProfileRuntime));
         _romSession = romSession;
         InitializeComponent();
         SystemBackdrop = new MicaBackdrop();
@@ -62,6 +66,8 @@ public sealed partial class CharacterProfileWindow : Window
 
     public bool IsRomMode => _romSession is not null;
 
+    private GameKind GlyphGameKind => _romSession?.GameKind ?? _characterProfileRuntime.ActiveGameKind;
+
     public void SetRomSession(RomGlyphEditorSession? romSession)
     {
         if (ReferenceEquals(_romSession, romSession))
@@ -89,7 +95,7 @@ public sealed partial class CharacterProfileWindow : Window
         }
 
         romSession.Changed += OnRomSessionChanged;
-        CharacterProfileStore.Current.SetCustomGlyphsAvailable(romSession.HasLoadedCustomGlyphOrWidth());
+        _characterProfileRuntime.SetCustomGlyphsAvailable(romSession.HasLoadedCustomGlyphOrWidth());
     }
 
     private void DetachRomSession()
@@ -119,10 +125,11 @@ public sealed partial class CharacterProfileWindow : Window
     private void ReloadGlyphs()
     {
         byte? selected = _selectedValue;
+        CharacterProfileSnapshot snapshot = CreateCharacterProfileSnapshot();
         _glyphs.Clear();
-        foreach (byte value in OotGlyphCatalog.GlyphValues)
+        foreach (byte value in GameGlyphCatalog.GetGlyphValues(GlyphGameKind))
         {
-            OotGlyphInfo info = GetGlyphInfo(value);
+            GlyphInfo info = GetGlyphInfo(value, snapshot);
             _glyphs.Add(new GlyphListItem(info));
         }
 
@@ -138,12 +145,12 @@ public sealed partial class CharacterProfileWindow : Window
         try
         {
             _profiles.Clear();
-            foreach (string profileName in CharacterProfileStore.Current.ProfileNames)
+            foreach (string profileName in _characterProfileRuntime.ProfileNames)
             {
                 _profiles.Add(profileName);
             }
 
-            ProfileCombo.SelectedItem = CharacterProfileStore.Current.SelectedProfileName;
+            ProfileCombo.SelectedItem = _characterProfileRuntime.SelectedProfileName;
             UpdateProfileControlState();
         }
         finally
@@ -154,14 +161,14 @@ public sealed partial class CharacterProfileWindow : Window
 
     private void UpdateProfileControlState()
     {
-        CurrentCharBox.IsEnabled = CharacterProfileStore.Current.CanEditSelectedProfile;
-        CurrentWidthBox.IsEnabled = CharacterProfileStore.Current.CanEditSelectedProfile || IsRomMode;
-        GlyphImageButton.IsEnabled = CharacterProfileStore.Current.CanEditSelectedProfile || IsRomMode;
-        ReplaceImageButton.IsEnabled = CharacterProfileStore.Current.CanEditSelectedProfile || IsRomMode;
-        ResetImageButton.IsEnabled = CharacterProfileStore.Current.CanEditSelectedProfile || IsRomMode;
-        ResetWidthButton.IsEnabled = CharacterProfileStore.Current.CanEditSelectedProfile || IsRomMode;
-        ResetCharacterButton.IsEnabled = CharacterProfileStore.Current.CanEditSelectedProfile;
-        DeleteProfileButton.IsEnabled = CharacterProfileStore.Current.CanDeleteSelectedProfile;
+        CurrentCharBox.IsEnabled = _characterProfileRuntime.CanEditSelectedProfile;
+        CurrentWidthBox.IsEnabled = _characterProfileRuntime.CanEditSelectedProfile || IsRomMode;
+        GlyphImageButton.IsEnabled = _characterProfileRuntime.CanEditSelectedProfile || IsRomMode;
+        ReplaceImageButton.IsEnabled = _characterProfileRuntime.CanEditSelectedProfile || IsRomMode;
+        ResetImageButton.IsEnabled = _characterProfileRuntime.CanEditSelectedProfile || IsRomMode;
+        ResetWidthButton.IsEnabled = _characterProfileRuntime.CanEditSelectedProfile || IsRomMode;
+        ResetCharacterButton.IsEnabled = _characterProfileRuntime.CanEditSelectedProfile;
+        DeleteProfileButton.IsEnabled = _characterProfileRuntime.CanDeleteSelectedProfile;
     }
 
     private void OnGlyphSelected(object sender, SelectionChangedEventArgs e)
@@ -177,7 +184,7 @@ public sealed partial class CharacterProfileWindow : Window
 
     private void ShowGlyph(byte value)
     {
-        OotGlyphInfo info = GetGlyphInfo(value);
+        GlyphInfo info = GetGlyphInfo(value);
         _updating = true;
         try
         {
@@ -205,13 +212,13 @@ public sealed partial class CharacterProfileWindow : Window
             return;
         }
 
-        OotGlyphInfo info = GetGlyphInfo(value);
+        GlyphInfo info = GetGlyphInfo(value);
         if (CurrentCharBox.Text[0] == info.CurrentChar)
         {
             return;
         }
 
-        CharacterProfileStore.Current.SetDisplayChar(value, CurrentCharBox.Text[0]);
+        _characterProfileRuntime.SetDisplayChar(value, CurrentCharBox.Text[0]);
         RefreshSelected();
     }
 
@@ -231,12 +238,12 @@ public sealed partial class CharacterProfileWindow : Window
             _romSession?.RestoreLoadedRomGlyphs();
         }
 
-        CharacterProfileStore.Current.SelectProfile(profileName);
+        _characterProfileRuntime.SelectProfile(profileName);
         if (IsRomMode
             && profileName != CharacterProfileStore.DefaultProfileName
             && profileName != CharacterProfileStore.CustomGlyphsProfileName)
         {
-            _romSession?.ApplySelectedCharacterProfile();
+            _romSession?.ApplyCharacterProfile(CreateCharacterProfileSnapshot());
         }
 
         ReloadProfiles();
@@ -271,14 +278,14 @@ public sealed partial class CharacterProfileWindow : Window
             return;
         }
 
-        bool created = CharacterProfileStore.Current.CreateProfile(profileNameBox.Text);
+        bool created = _characterProfileRuntime.CreateProfile(profileNameBox.Text);
         if (!created)
         {
             await ShowDialogAsync("Profile not added", "Choose a unique profile name.");
             return;
         }
 
-        _romSession?.CaptureIntoSelectedCharacterProfile();
+        CaptureRomGlyphsIntoSelectedCharacterProfile();
         ReloadProfiles();
         ReloadGlyphs();
         if (_selectedValue is byte value)
@@ -289,7 +296,7 @@ public sealed partial class CharacterProfileWindow : Window
 
     private async void OnDeleteProfile(object sender, RoutedEventArgs e)
     {
-        if (!CharacterProfileStore.Current.CanDeleteSelectedProfile)
+        if (!_characterProfileRuntime.CanDeleteSelectedProfile)
         {
             return;
         }
@@ -297,7 +304,7 @@ public sealed partial class CharacterProfileWindow : Window
         var dialog = new ContentDialog
         {
             Title = "Delete character profile",
-            Content = $"Delete {CharacterProfileStore.Current.SelectedProfileName}?",
+            Content = $"Delete {_characterProfileRuntime.SelectedProfileName}?",
             PrimaryButtonText = "Delete",
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Close,
@@ -310,7 +317,7 @@ public sealed partial class CharacterProfileWindow : Window
             return;
         }
 
-        CharacterProfileStore.Current.DeleteSelectedProfile();
+        _characterProfileRuntime.DeleteSelectedProfile();
         if (IsRomMode)
         {
             _romSession?.ResetAllToDefault();
@@ -332,7 +339,7 @@ public sealed partial class CharacterProfileWindow : Window
         }
 
         double width = Math.Round(sender.Value, 2);
-        OotGlyphInfo info = GetGlyphInfo(value);
+        GlyphInfo info = GetGlyphInfo(value);
         if (Math.Abs(width - info.CurrentWidth) < 0.001)
         {
             return;
@@ -340,14 +347,14 @@ public sealed partial class CharacterProfileWindow : Window
 
         if (_romSession is null)
         {
-            CharacterProfileStore.Current.SetWidth(value, width);
+            _characterProfileRuntime.SetWidth(value, width);
         }
         else
         {
             _romSession.SetWidth(value, width);
-            if (CharacterProfileStore.Current.CanEditSelectedProfile)
+            if (_characterProfileRuntime.CanEditSelectedProfile)
             {
-                CharacterProfileStore.Current.SetWidth(value, width, info.DefaultWidth);
+                _characterProfileRuntime.SetWidth(value, width, info.DefaultWidth);
             }
         }
 
@@ -370,7 +377,7 @@ public sealed partial class CharacterProfileWindow : Window
         bool sameSize;
         try
         {
-            sameSize = HasSameSize(path, OotGlyphCatalog.GetOriginalGlyphPath(value));
+            sameSize = HasSameSize(path, GameGlyphCatalog.GetOriginalGlyphPath(GlyphGameKind, value));
         }
         catch (Exception ex) when (ex is ArgumentException or IOException or OutOfMemoryException)
         {
@@ -386,14 +393,14 @@ public sealed partial class CharacterProfileWindow : Window
 
         if (_romSession is null)
         {
-            CharacterProfileStore.Current.SetImage(value, path);
+            _characterProfileRuntime.SetImage(value, path);
         }
         else
         {
             _romSession.SetImage(value, path);
-            if (CharacterProfileStore.Current.CanEditSelectedProfile)
+            if (_characterProfileRuntime.CanEditSelectedProfile)
             {
-                CharacterProfileStore.Current.SetImage(value, path);
+                _characterProfileRuntime.SetImage(value, path);
             }
         }
 
@@ -406,14 +413,14 @@ public sealed partial class CharacterProfileWindow : Window
         {
             if (_romSession is null)
             {
-                CharacterProfileStore.Current.ResetImage(value);
+                _characterProfileRuntime.ResetImage(value);
             }
             else
             {
                 _romSession.ResetImage(value);
-                if (CharacterProfileStore.Current.CanEditSelectedProfile)
+                if (_characterProfileRuntime.CanEditSelectedProfile)
                 {
-                    CharacterProfileStore.Current.ResetImage(value);
+                    _characterProfileRuntime.ResetImage(value);
                 }
             }
 
@@ -427,14 +434,14 @@ public sealed partial class CharacterProfileWindow : Window
         {
             if (_romSession is null)
             {
-                CharacterProfileStore.Current.ResetWidth(value);
+                _characterProfileRuntime.ResetWidth(value);
             }
             else
             {
                 _romSession.ResetWidth(value);
-                if (CharacterProfileStore.Current.CanEditSelectedProfile)
+                if (_characterProfileRuntime.CanEditSelectedProfile)
                 {
-                    CharacterProfileStore.Current.ResetWidth(value);
+                    _characterProfileRuntime.ResetWidth(value);
                 }
             }
 
@@ -446,7 +453,7 @@ public sealed partial class CharacterProfileWindow : Window
     {
         if (_selectedValue is byte value)
         {
-            CharacterProfileStore.Current.ResetDisplayChar(value);
+            _characterProfileRuntime.ResetDisplayChar(value);
             RefreshSelected();
         }
     }
@@ -458,7 +465,7 @@ public sealed partial class CharacterProfileWindow : Window
             return;
         }
 
-        OotGlyphInfo info = GetGlyphInfo(value);
+        GlyphInfo info = GetGlyphInfo(value);
         GlyphListItem? item = _glyphs.FirstOrDefault(item => item.Value == value);
         if (item is null)
         {
@@ -472,9 +479,42 @@ public sealed partial class CharacterProfileWindow : Window
         ShowGlyph(value);
     }
 
-    private OotGlyphInfo GetGlyphInfo(byte value)
+    private GlyphInfo GetGlyphInfo(byte value)
     {
-        return _romSession?.GetGlyphInfo(value) ?? OotGlyphCatalog.GetGlyphInfo(value);
+        return GetGlyphInfo(value, CreateCharacterProfileSnapshot());
+    }
+
+    private GlyphInfo GetGlyphInfo(byte value, CharacterProfileSnapshot snapshot)
+    {
+        return _romSession?.GetGlyphInfo(value, snapshot) ?? GameGlyphCatalog.GetGlyphInfo(GlyphGameKind, value, snapshot);
+    }
+
+    private CharacterProfileSnapshot CreateCharacterProfileSnapshot()
+    {
+        return _characterProfileRuntime.CreateSnapshot(GlyphGameKind);
+    }
+
+    private void CaptureRomGlyphsIntoSelectedCharacterProfile()
+    {
+        if (_romSession is null)
+        {
+            return;
+        }
+
+        CharacterProfileSnapshot snapshot = CreateCharacterProfileSnapshot();
+        foreach (byte value in GameGlyphCatalog.GetGlyphValues(GlyphGameKind))
+        {
+            GlyphInfo info = _romSession.GetGlyphInfo(value, snapshot);
+            if (info.HasWidthOverride)
+            {
+                _characterProfileRuntime.SetWidth(value, info.CurrentWidth, info.DefaultWidth);
+            }
+
+            if (info.HasImageOverride)
+            {
+                _characterProfileRuntime.SetImage(value, info.CurrentPath);
+            }
+        }
     }
 
     private async Task<string?> PickImageAsync()

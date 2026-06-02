@@ -2,6 +2,7 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using HylianGrimoire.Games;
 using HylianGrimoire.Interop;
 using HylianGrimoire.Rom;
 
@@ -11,11 +12,13 @@ public sealed partial class TweaksWindow : Window
 {
     private RomMessageData? _romData;
     private readonly Action<string> _onChanged;
+    private IReadOnlyList<TweakUi> _tweaks = [];
     private bool _updating;
 
     public TweaksWindow(RomMessageData? romData, Action<string> onChanged)
     {
         InitializeComponent();
+        _tweaks = CreateTweakDefinitions();
         _romData = romData;
         _onChanged = onChanged;
 
@@ -42,149 +45,81 @@ public sealed partial class TweaksWindow : Window
 
     private async void OnBootLogoToggled(object sender, RoutedEventArgs e)
     {
-        if (_updating || _romData is null)
-        {
-            return;
-        }
-
-        try
-        {
-            GcBootLogoTweak.SetEnabled(_romData.DecompressedRom, _romData.Profile, BootLogoSwitch.IsOn);
-            _onChanged(BootLogoSwitch.IsOn
-                ? "Enabled Nintendo boot logo tweak."
-                : "Disabled Nintendo boot logo tweak.");
-        }
-        catch (Exception ex)
-        {
-            await ShowErrorAsync("Failed to apply tweak", ex.Message);
-        }
-        finally
-        {
-            Refresh();
-        }
+        await ApplyTweakAsync(
+            BootLogoSwitch,
+            (romData, enabled) => GcBootLogoTweak.SetEnabled(romData.DecompressedRom, romData.Profile, enabled),
+            "Enabled Nintendo boot logo tweak.",
+            "Disabled Nintendo boot logo tweak.");
     }
 
     private async void OnColorToggled(object sender, RoutedEventArgs e)
     {
-        if (_updating || _romData is null)
-        {
-            return;
-        }
-
-        try
-        {
-            GcColorTweak.SetEnabled(_romData.DecompressedRom, _romData.Profile, ColorSwitch.IsOn);
-            _onChanged(ColorSwitch.IsOn
-                ? "Enabled N64 interface colors tweak."
-                : "Disabled N64 interface colors tweak.");
-        }
-        catch (Exception ex)
-        {
-            await ShowErrorAsync("Failed to apply tweak", ex.Message);
-        }
-        finally
-        {
-            Refresh();
-        }
+        await ApplyTweakAsync(
+            ColorSwitch,
+            (romData, enabled) => GcColorTweak.SetEnabled(romData.DecompressedRom, romData.Profile, enabled),
+            "Enabled N64 interface colors tweak.",
+            "Disabled N64 interface colors tweak.");
     }
 
     private async void OnViPalToggled(object sender, RoutedEventArgs e)
     {
-        if (_updating || _romData is null)
-        {
-            return;
-        }
+        await ApplyTweakAsync(
+            ViPalSwitch,
+            (romData, enabled) => ViPalTweak.SetEnabled(romData.DecompressedRom, romData.Profile, enabled),
+            "Enabled N64 VI PAL timing tweak.",
+            "Disabled N64 VI PAL timing tweak.");
+    }
 
-        try
-        {
-            ViPalTweak.SetEnabled(_romData.DecompressedRom, _romData.Profile, ViPalSwitch.IsOn);
-            _onChanged(ViPalSwitch.IsOn
-                ? "Enabled N64 VI PAL timing tweak."
-                : "Disabled N64 VI PAL timing tweak.");
-        }
-        catch (Exception ex)
-        {
-            await ShowErrorAsync("Failed to apply tweak", ex.Message);
-        }
-        finally
-        {
-            Refresh();
-        }
+    private async void OnMmFpalToggled(object sender, RoutedEventArgs e)
+    {
+        await ApplyTweakAsync(
+            MmFpalSwitch,
+            (romData, enabled) => MmFpalTweak.SetEnabled(romData.DecompressedRom, romData.Profile, enabled),
+            "Enabled N64 VI PAL timing tweak.",
+            "Disabled N64 VI PAL timing tweak.");
     }
 
     private async void OnNoControllerToggled(object sender, RoutedEventArgs e)
     {
-        if (_updating || _romData is null)
-        {
-            return;
-        }
-
-        try
-        {
-            GcNoControllerTweak.SetEnabled(_romData.DecompressedRom, _romData.Profile, NoControllerSwitch.IsOn);
-            _onChanged(NoControllerSwitch.IsOn
-                ? "Enabled no-controller message tweak."
-                : "Disabled no-controller message tweak.");
-        }
-        catch (Exception ex)
-        {
-            await ShowErrorAsync("Failed to apply tweak", ex.Message);
-        }
-        finally
-        {
-            Refresh();
-        }
+        await ApplyTweakAsync(
+            NoControllerSwitch,
+            (romData, enabled) => GcNoControllerTweak.SetEnabled(romData.DecompressedRom, romData.Profile, enabled),
+            "Enabled no-controller message tweak.",
+            "Disabled no-controller message tweak.");
     }
 
     private async void OnViSelectorToggled(object sender, RoutedEventArgs e)
     {
-        if (_updating || _romData is null)
-        {
-            return;
-        }
-
-        try
-        {
-            ViSelectorTweak.SetEnabled(_romData.DecompressedRom, _romData.Profile, ViSelectorSwitch.IsOn);
-            _onChanged(ViSelectorSwitch.IsOn
-                ? "Enabled FPAL/MPAL selector tweak."
-                : "Disabled FPAL/MPAL selector tweak.");
-        }
-        catch (Exception ex)
-        {
-            await ShowErrorAsync("Failed to apply tweak", ex.Message);
-        }
-        finally
-        {
-            Refresh();
-        }
+        await ApplyTweakAsync(
+            ViSelectorSwitch,
+            (romData, enabled) => ViSelectorTweak.SetEnabled(romData.DecompressedRom, romData.Profile, enabled),
+            "Enabled FPAL/MPAL selector tweak.",
+            "Disabled FPAL/MPAL selector tweak.");
     }
 
     private async void OnCreditsToggled(object sender, RoutedEventArgs e)
     {
-        if (_updating || _romData is null)
-        {
-            return;
-        }
-
-        try
-        {
-            GcCreditsTweak.SetEnabled(_romData.DecompressedRom, _romData.Profile, CreditsSwitch.IsOn);
-            _onChanged(CreditsSwitch.IsOn
-                ? "Enabled GC credits N64 crash fix."
-                : "Disabled GC credits N64 crash fix.");
-        }
-        catch (Exception ex)
-        {
-            await ShowErrorAsync("Failed to apply tweak", ex.Message);
-        }
-        finally
-        {
-            Refresh();
-        }
+        await ApplyTweakAsync(
+            CreditsSwitch,
+            (romData, enabled) => GcCreditsTweak.SetEnabled(romData.DecompressedRom, romData.Profile, enabled),
+            "Enabled GC credits N64 crash fix.",
+            "Disabled GC credits N64 crash fix.");
     }
 
     private async void OnAntiPiracyToggled(object sender, RoutedEventArgs e)
+    {
+        await ApplyTweakAsync(
+            AntiPiracySwitch,
+            (romData, enabled) => AntiPiracyTweak.SetEnabled(romData.DecompressedRom, romData.Profile, enabled),
+            "Disabled anti-piracy checks.",
+            "Restored anti-piracy checks.");
+    }
+
+    private async Task ApplyTweakAsync(
+        ToggleSwitch toggleSwitch,
+        Action<RomMessageData, bool> setEnabled,
+        string enabledMessage,
+        string disabledMessage)
     {
         if (_updating || _romData is null)
         {
@@ -193,10 +128,8 @@ public sealed partial class TweaksWindow : Window
 
         try
         {
-            AntiPiracyTweak.SetEnabled(_romData.DecompressedRom, _romData.Profile, AntiPiracySwitch.IsOn);
-            _onChanged(AntiPiracySwitch.IsOn
-                ? "Disabled anti-piracy checks."
-                : "Restored anti-piracy checks.");
+            setEnabled(_romData, toggleSwitch.IsOn);
+            _onChanged(toggleSwitch.IsOn ? enabledMessage : disabledMessage);
         }
         catch (Exception ex)
         {
@@ -210,64 +143,97 @@ public sealed partial class TweaksWindow : Window
 
     private void Refresh()
     {
-        RomTweakStatus bootLogoStatus = _romData is null
-            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM.")
-            : GcBootLogoTweak.GetStatus(_romData.DecompressedRom, _romData.Profile);
-        RomTweakStatus colorStatus = _romData is null
-            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM.")
-            : GcColorTweak.GetStatus(_romData.DecompressedRom, _romData.Profile);
-        RomTweakStatus viPalStatus = _romData is null
-            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM.")
-            : ViPalTweak.GetStatus(_romData.DecompressedRom, _romData.Profile);
-        RomTweakStatus noControllerStatus = _romData is null
-            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM.")
-            : GcNoControllerTweak.GetStatus(_romData.DecompressedRom, _romData.Profile);
-        RomTweakStatus viSelectorStatus = _romData is null
-            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM.")
-            : ViSelectorTweak.GetStatus(_romData.DecompressedRom, _romData.Profile);
-        RomTweakStatus creditsStatus = _romData is null
-            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM.")
-            : GcCreditsTweak.GetStatus(_romData.DecompressedRom, _romData.Profile);
-        RomTweakStatus antiPiracyStatus = _romData is null
-            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM.")
-            : AntiPiracyTweak.GetStatus(_romData.DecompressedRom, _romData.Profile);
-
         _updating = true;
         try
         {
-            BootLogoSwitch.IsEnabled = bootLogoStatus.CanToggle;
-            BootLogoSwitch.IsOn = bootLogoStatus.State is RomTweakState.On or RomTweakState.Mixed;
-            BootLogoStatusText.Text = bootLogoStatus.Detail;
-
-            ColorSwitch.IsEnabled = colorStatus.CanToggle;
-            ColorSwitch.IsOn = colorStatus.State is RomTweakState.On or RomTweakState.Mixed;
-            ColorStatusText.Text = colorStatus.Detail;
-
-            ViPalSwitch.IsEnabled = viPalStatus.CanToggle;
-            ViPalSwitch.IsOn = viPalStatus.State is RomTweakState.On or RomTweakState.Mixed;
-            ViPalStatusText.Text = viPalStatus.Detail;
-
-            NoControllerSwitch.IsEnabled = noControllerStatus.CanToggle;
-            NoControllerSwitch.IsOn = noControllerStatus.State is RomTweakState.On or RomTweakState.Mixed;
-            NoControllerStatusText.Text = noControllerStatus.Detail;
-
-            ViSelectorSwitch.IsEnabled = viSelectorStatus.CanToggle;
-            ViSelectorSwitch.IsOn = viSelectorStatus.State is RomTweakState.On or RomTweakState.Mixed;
-            ViSelectorStatusText.Text = viSelectorStatus.Detail;
-
-            CreditsSwitch.IsEnabled = creditsStatus.CanToggle;
-            CreditsSwitch.IsOn = creditsStatus.State is RomTweakState.On or RomTweakState.Mixed;
-            CreditsStatusText.Text = creditsStatus.Detail;
-
-            AntiPiracySwitch.IsEnabled = antiPiracyStatus.CanToggle;
-            AntiPiracySwitch.IsOn = antiPiracyStatus.State is RomTweakState.On or RomTweakState.Mixed;
-            AntiPiracyStatusText.Text = antiPiracyStatus.Detail;
+            foreach (TweakUi tweak in _tweaks)
+            {
+                RefreshTweak(tweak);
+            }
         }
         finally
         {
             _updating = false;
         }
     }
+
+    private IReadOnlyList<TweakUi> CreateTweakDefinitions() =>
+    [
+        new(
+            GameKind.OcarinaOfTime,
+            BootLogoCard,
+            BootLogoSwitch,
+            BootLogoStatusText,
+            romData => GcBootLogoTweak.GetStatus(romData.DecompressedRom, romData.Profile)),
+        new(
+            GameKind.OcarinaOfTime,
+            ColorCard,
+            ColorSwitch,
+            ColorStatusText,
+            romData => GcColorTweak.GetStatus(romData.DecompressedRom, romData.Profile)),
+        new(
+            GameKind.OcarinaOfTime,
+            ViPalCard,
+            ViPalSwitch,
+            ViPalStatusText,
+            romData => ViPalTweak.GetStatus(romData.DecompressedRom, romData.Profile)),
+        new(
+            GameKind.OcarinaOfTime,
+            ViSelectorCard,
+            ViSelectorSwitch,
+            ViSelectorStatusText,
+            romData => ViSelectorTweak.GetStatus(romData.DecompressedRom, romData.Profile)),
+        new(
+            GameKind.OcarinaOfTime,
+            NoControllerCard,
+            NoControllerSwitch,
+            NoControllerStatusText,
+            romData => GcNoControllerTweak.GetStatus(romData.DecompressedRom, romData.Profile)),
+        new(
+            GameKind.OcarinaOfTime,
+            CreditsCard,
+            CreditsSwitch,
+            CreditsStatusText,
+            romData => GcCreditsTweak.GetStatus(romData.DecompressedRom, romData.Profile)),
+        new(
+            GameKind.OcarinaOfTime,
+            AntiPiracyCard,
+            AntiPiracySwitch,
+            AntiPiracyStatusText,
+            romData => AntiPiracyTweak.GetStatus(romData.DecompressedRom, romData.Profile)),
+        new(
+            GameKind.MajorasMask,
+            MmFpalCard,
+            MmFpalSwitch,
+            MmFpalStatusText,
+            romData => MmFpalTweak.GetStatus(romData.DecompressedRom, romData.Profile),
+            ShowMixedAsOn: false),
+    ];
+
+    private void RefreshTweak(TweakUi tweak)
+    {
+        RomTweakStatus status = GetStatus(tweak);
+        tweak.Card.Visibility = _romData?.Profile.Game == tweak.Game
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        tweak.Switch.IsEnabled = status.CanToggle;
+        tweak.Switch.IsOn = status.State == RomTweakState.On
+            || tweak.ShowMixedAsOn && status.State == RomTweakState.Mixed;
+        tweak.StatusText.Text = status.Detail;
+    }
+
+    private RomTweakStatus GetStatus(TweakUi tweak) =>
+        _romData is null
+            ? new RomTweakStatus(RomTweakState.Unsupported, "Load a ROM.")
+            : tweak.GetStatus(_romData);
+
+    private sealed record TweakUi(
+        GameKind Game,
+        Border Card,
+        ToggleSwitch Switch,
+        TextBlock StatusText,
+        Func<RomMessageData, RomTweakStatus> GetStatus,
+        bool ShowMixedAsOn = true);
 
     private async Task ShowErrorAsync(string title, string message)
     {

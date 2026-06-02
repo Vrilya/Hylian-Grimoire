@@ -1,3 +1,4 @@
+using HylianGrimoire.Codecs;
 using HylianGrimoire.Interop;
 using HylianGrimoire.Models;
 using HylianGrimoire.Rom;
@@ -29,16 +30,19 @@ public sealed partial class SohModMakerWindow : Window
     private bool _updatingIncludeChecks;
     private bool _updatingResourceView;
     private int _previewCounter;
+    private MessageEncodingProfile _encodingProfile;
 
     public SohModMakerWindow(
         RomMessageData? romData,
         Func<List<MessageEntry>> getCurrentEntries,
         Func<IReadOnlyDictionary<int, List<MessageEntry>>> getCurrentTextLanguages,
+        MessageEncodingProfile encodingProfile,
         Action<string> onChanged)
     {
         InitializeComponent();
         _getCurrentEntries = getCurrentEntries;
         _getCurrentTextLanguages = getCurrentTextLanguages;
+        _encodingProfile = encodingProfile;
         _onChanged = onChanged;
 
         SystemBackdrop = new MicaBackdrop();
@@ -48,12 +52,13 @@ public sealed partial class SohModMakerWindow : Window
         AppWindow.TitleBar.ResetToDefault();
         WindowTheme.Register(this);
 
-        SetRomData(romData);
+        SetRomData(romData, encodingProfile);
     }
 
-    public void SetRomData(RomMessageData? romData)
+    public void SetRomData(RomMessageData? romData, MessageEncodingProfile? encodingProfile = null)
     {
         _romData = romData;
+        _encodingProfile = encodingProfile ?? romData?.Profile.GameProfile.EncodingProfile ?? _encodingProfile;
         _selectedResources.Clear();
         _selectedTextResources.Clear();
         _textures = [];

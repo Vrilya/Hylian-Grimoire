@@ -1,8 +1,7 @@
-﻿using Microsoft.UI.Xaml.Controls;
-
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
-
 using Microsoft.UI.Xaml.Automation;
+using HylianGrimoire.Games;
 using HylianGrimoire.Headers;
 
 namespace HylianGrimoire;
@@ -17,6 +16,11 @@ public sealed partial class MainWindow
     }
 
     private sealed record HeaderLanguageSlotOption(string Name, CHeaderMessageSlot Slot)
+    {
+        public override string ToString() => Name;
+    }
+
+    private sealed record GameProjectOption(string Name, GameKind Kind)
     {
         public override string ToString() => Name;
     }
@@ -116,6 +120,36 @@ public sealed partial class MainWindow
             ContentDialogResult.Secondary => true,
             _ => false,
         };
+    }
+
+    private async Task<GameProfile?> PromptForNewProjectAsync()
+    {
+        var options = new ComboBox
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            MinWidth = 320,
+            SelectedIndex = 0,
+        };
+        options.Items.Add(new GameProjectOption("Ocarina of Time", GameKind.OcarinaOfTime));
+        options.Items.Add(new GameProjectOption("Majora's Mask", GameKind.MajorasMask));
+
+        var dialog = new ContentDialog
+        {
+            Title = "New Project",
+            Content = options,
+            PrimaryButtonText = "Create",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = Content.XamlRoot,
+        };
+
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return null;
+        }
+
+        var selected = (GameProjectOption)options.SelectedItem;
+        return GameProfiles.Get(selected.Kind);
     }
 
     private async Task<bool?> PromptForRomCompressionAsync()
@@ -293,7 +327,7 @@ public sealed partial class MainWindow
         return new BusyScope(this, previousStatus);
     }
 
-    private void UpdateBusyProgress(HylianGrimoire.Rom.RomCompressionProgress progress)
+    private void UpdateBusyProgress(HylianGrimoire.Rom.RomFileOperationProgress progress)
     {
         int percent = (int)Math.Round(progress.Percent);
         ProgressModalBar.Value = percent;

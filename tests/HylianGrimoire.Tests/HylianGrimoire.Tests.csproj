@@ -4,9 +4,12 @@
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\HylianGrimoire.Core\HylianGrimoire.Core.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
@@ -19,101 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\src\HylianGrimoire\Codecs\MessageTokenMaps.cs" Link="MessageTokenMaps.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Codecs\DictionaryMaps.cs" Link="DictionaryMaps.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Codecs\MessageSfxMaps.cs" Link="MessageSfxMaps.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Codecs\MessageEncodingProfile.cs" Link="MessageEncodingProfile.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Codecs\FontOrderCodec.cs" Link="FontOrderCodec.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Codecs\MessageCodec.cs" Link="MessageCodec.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Codecs\MessageCodec.Tokens.cs" Link="MessageCodec.Tokens.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Codecs\MessageTableCodec.cs" Link="MessageTableCodec.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Codecs\MessageTextSyntax.cs" Link="MessageTextSyntax.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Models\MessageEntry.cs" Link="MessageEntry.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Models\MessageTypeItem.cs" Link="MessageTypeItem.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Models\MessageToken.cs" Link="MessageToken.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Services\HeaderDocumentService.cs" Link="HeaderDocumentService.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Services\FontOrderService.cs" Link="FontOrderService.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Services\MessageExportService.cs" Link="MessageExportService.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Services\MessageFileService.cs" Link="MessageFileService.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Services\MessageGlyphRemapper.cs" Link="MessageGlyphRemapper.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Services\MessageListService.cs" Link="MessageListService.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Services\MessageSearch.cs" Link="MessageSearch.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Services\MessageTypeCatalog.cs" Link="MessageTypeCatalog.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Preview\OotPreviewStyle.cs" Link="OotPreviewStyle.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Preview\OotPreviewTextPage.cs" Link="OotPreviewTextPage.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Glyphs\OotGlyphMetrics.cs" Link="OotGlyphMetrics.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Glyphs\IOotGlyphSource.cs" Link="IOotGlyphSource.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Glyphs\CharacterProfile.cs" Link="CharacterProfile.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Glyphs\CharacterProfileSelectionChangedEventArgs.cs" Link="CharacterProfileSelectionChangedEventArgs.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Glyphs\CharacterProfileStore.cs" Link="CharacterProfileStore.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Glyphs\CharacterProfileStore.Assets.cs" Link="CharacterProfileStore.Assets.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Glyphs\CharacterProfileStore.Persistence.cs" Link="CharacterProfileStore.Persistence.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Glyphs\OotGlyphCatalog.cs" Link="OotGlyphCatalog.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Headers\CHeaderImporter.cs" Link="CHeaderImporter.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Headers\CHeaderExporter.cs" Link="CHeaderExporter.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Headers\CHeaderJapaneseExporter.cs" Link="CHeaderJapaneseExporter.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Headers\CHeaderTokenEmitter.cs" Link="CHeaderTokenEmitter.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Headers\CHeaderExportFormat.cs" Link="CHeaderExportFormat.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Headers\CHeaderMessageSlot.cs" Link="CHeaderMessageSlot.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Compression\RawDeflateCodec.cs" Link="RawDeflateCodec.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Compression\RawDeflateEncoder.Blocks.cs" Link="RawDeflateEncoder.Blocks.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Compression\RawDeflateEncoder.Core.cs" Link="RawDeflateEncoder.Core.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Compression\RawDeflateEncoder.Huffman.cs" Link="RawDeflateEncoder.Huffman.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Compression\RawDeflateEncoder.Infrastructure.cs" Link="RawDeflateEncoder.Infrastructure.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Compression\RawDeflateEncoder.Tokenizer.cs" Link="RawDeflateEncoder.Tokenizer.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Compression\Yaz0Codec.cs" Link="Yaz0Codec.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\DmaEntry.cs" Link="DmaEntry.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\DmaTable.cs" Link="DmaTable.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\N64Checksum.cs" Link="N64Checksum.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\RomCodecKind.cs" Link="RomCodecKind.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\RomCompressionProgress.cs" Link="RomCompressionProgress.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\RomCompressionService.cs" Link="RomCompressionService.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\RomFontBaseline.cs" Link="RomFontBaseline.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\RomFontResources.cs" Link="RomFontResources.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\RomFontService.cs" Link="RomFontService.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\RomGlyphCodec.cs" Link="RomGlyphCodec.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\RomGlyphSource.cs" Link="RomGlyphSource.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\MessageBankProfile.cs" Link="MessageBankProfile.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\MessageBankOffsetMode.cs" Link="MessageBankOffsetMode.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\RomMessageData.cs" Link="RomMessageData.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\RomMessageSection.cs" Link="RomMessageSection.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\RomMessageService.cs" Link="RomMessageService.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Tweaks\RomTweakState.cs" Link="RomTweakState.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Tweaks\RomTweakStatus.cs" Link="RomTweakStatus.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Textures\TextureDefinition.cs" Link="TextureDefinition.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Textures\TextureFormat.cs" Link="TextureFormat.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Textures\TextureCodec.cs" Link="TextureCodec.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Textures\TextureCatalog.cs" Link="TextureCatalog.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Textures\TextureRomService.cs" Link="TextureRomService.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\TitleText\TitleTextKind.cs" Link="TitleTextKind.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\TitleText\TitleTextLine.cs" Link="TitleTextLine.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\TitleText\TitleTextPatchProfile.cs" Link="TitleTextPatchProfile.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\TitleText\TitleTextService.cs" Link="TitleTextService.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Tweaks\AntiPiracyTweak.cs" Link="AntiPiracyTweak.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Tweaks\GcColorTweak.cs" Link="GcColorTweak.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Tweaks\GcBootLogoTweak.cs" Link="GcBootLogoTweak.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Tweaks\GcCreditsTweak.cs" Link="GcCreditsTweak.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Tweaks\GcNoControllerTweak.cs" Link="GcNoControllerTweak.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Tweaks\ViPalTweak.cs" Link="ViPalTweak.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Tweaks\ViSelectorTweak.cs" Link="ViSelectorTweak.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\PromptEditor\PromptEditorModels.cs" Link="PromptEditorModels.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\PromptEditor\PromptEditorProfileCatalog.cs" Link="PromptEditorProfileCatalog.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\PromptEditor\PromptEditorService.cs" Link="PromptEditorService.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\RomVersionDatabase.cs" Link="RomVersionDatabase.cs" />
-    <Compile Include="..\..\src\HylianGrimoire\Rom\RomVersionProfile.cs" Link="RomVersionProfile.cs" />
-    <Compile Include="ExportParityTests.cs" />
-    <Compile Include="PromptEditorTests.cs" />
-    <Compile Include="RomCompressionTests.cs" />
-    <Compile Include="RomTweakTests.cs" />
-    <Compile Include="TextureCatalogTests.cs" />
-    <Compile Include="TextureCodecTests.cs" />
-    <Compile Include="TextureRomServiceTests.cs" />
-    <Compile Include="TitleTextTests.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="Fixtures\**\*.*" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\..\src\HylianGrimoire\Assets\TextureCatalog\**\*.txt" Link="Assets\TextureCatalog\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\HylianGrimoire\Assets\Games\Oot\TextureCatalog\**\*.txt" Link="Assets\Games\Oot\TextureCatalog\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\HylianGrimoire\Assets\Games\MM\TextureCatalog\**\*.txt" Link="Assets\Games\MM\TextureCatalog\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\HylianGrimoire\Assets\Games\MM\Preview\nes_font_static_raw\**\*.bin" Link="Assets\Games\MM\Preview\nes_font_static_raw\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

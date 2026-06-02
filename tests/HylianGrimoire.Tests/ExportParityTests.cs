@@ -1,9 +1,13 @@
-﻿using System.Drawing;
+using System.Drawing;
 using HylianGrimoire.Codecs;
+using HylianGrimoire.Codecs.MajorasMask;
+using HylianGrimoire.Games;
+using HylianGrimoire.Games.MajorasMask;
 using HylianGrimoire.Glyphs;
 using HylianGrimoire.Headers;
 using HylianGrimoire.Models;
 using HylianGrimoire.Preview;
+using HylianGrimoire.Rom.MajorasMask;
 using HylianGrimoire.Services;
 using Xunit;
 
@@ -69,11 +73,11 @@ public sealed class ExportParityTests
     }
 
     [Fact]
-    public void MessageTypeCatalogMapsCreditsAndUnknownTypes()
+    public void OotMessageTypeCatalogMapsCreditsAndUnknownTypes()
     {
-        Assert.Equal("Credits", MessageTypeCatalog.Items.FirstOrDefault(item => item.Value == 11)?.Name);
-        Assert.Equal(OotPreviewStyle.Credits, MessageTypeCatalog.ToPreviewStyle(11));
-        Assert.Equal(OotPreviewStyle.Black, MessageTypeCatalog.ToPreviewStyle(99));
+        Assert.Equal("Credits", OotMessageTypeCatalog.Instance.Items.FirstOrDefault(item => item.Value == 11)?.Name);
+        Assert.Equal(OotPreviewStyle.Credits, OotMessageTypeCatalog.ToPreviewStyle(11));
+        Assert.Equal(OotPreviewStyle.Black, OotMessageTypeCatalog.ToPreviewStyle(99));
     }
 
     [Fact]
@@ -84,12 +88,12 @@ public sealed class ExportParityTests
             Text = "First[break]Second",
         };
 
-        Assert.True(MessageSearch.Matches(entry, "First[break]Second"));
-        Assert.True(MessageSearch.Matches(entry, "\n[break]\n"));
+        Assert.True(MessageSearch.Matches(entry, "First[break]Second", OotEditorTextSyntax.Instance));
+        Assert.True(MessageSearch.Matches(entry, "\n[break]\n", OotEditorTextSyntax.Instance));
 
         entry.Text = "Plain";
-        Assert.False(MessageSearch.Matches(entry, "\n[break]\n"));
-        Assert.True(MessageSearch.Matches(entry, "Plain"));
+        Assert.False(MessageSearch.Matches(entry, "\n[break]\n", OotEditorTextSyntax.Instance));
+        Assert.True(MessageSearch.Matches(entry, "Plain", OotEditorTextSyntax.Instance));
     }
 
     [Fact]
@@ -104,15 +108,552 @@ public sealed class ExportParityTests
         string serviceBinPath = Path.Combine(serviceTestDir, "messages.bin");
         string serviceHeaderPath = Path.Combine(serviceTestDir, "messages.h");
 
-        MessageFileService.SaveTableFiles(baselineEntries, serviceTblPath, serviceBinPath);
-        var serviceEntries = MessageFileService.LoadTableFiles(serviceTblPath, serviceBinPath);
-        Assert.Equal(baselineEntries.Count, serviceEntries.Count);
+        MessageFileService.SaveTableFiles(baselineEntries, serviceTblPath, serviceBinPath, GameProfiles.Get(GameKind.OcarinaOfTime));
+        MessageFileDocument serviceDocument = MessageFileService.LoadTableFiles(serviceTblPath, serviceBinPath);
+        Assert.Equal(baselineEntries.Count, serviceDocument.Entries.Count);
+        Assert.Equal(GameKind.OcarinaOfTime, serviceDocument.GameProfile.Kind);
         Assert.Equal(baselineFiles.tableBytes, File.ReadAllBytes(serviceTblPath));
         Assert.Equal(baselineFiles.msgBytes, File.ReadAllBytes(serviceBinPath));
 
-        MessageFileService.ExportHeader(baselineEntries, serviceHeaderPath);
+        MessageFileService.ExportHeader(baselineEntries, serviceHeaderPath, GameProfiles.Get(GameKind.OcarinaOfTime));
         Assert.Equal(CHeaderExporter.Export(baselineEntries), File.ReadAllText(serviceHeaderPath));
         Assert.Equal(baselineEntries.Count, MessageFileService.ImportHeader(serviceHeaderPath).Count);
+    }
+
+    [Fact]
+    public void MessageFileServiceDetectsMajorasMaskTableFilesAndRoundtripsThem()
+    {
+        byte[] tableBytes =
+        [
+            0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00,
+            0x00, 0x02, 0x00, 0x00, 0x08, 0x00, 0x00, 0x10,
+            0x00, 0x04, 0x00, 0x00, 0x08, 0x00, 0x00, 0x20,
+            0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+        byte[] messageBytes =
+        [
+            0x01, 0x30, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x48, 0x69, 0xbf, 0x00, 0x00,
+            0x02, 0x10, 0x2d, 0x00, 0x04, 0x00, 0x14, 0x00,
+            0x28, 0x12, 0x34, 0x4f, 0x4b, 0x11, 0x21, 0xbf,
+            0x00, 0x70, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x50, 0x37, 0xbf,
+        ];
+
+        string serviceTestDir = Path.Combine(Path.GetTempPath(), "HylianGrimoireTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(serviceTestDir);
+        string sourceTblPath = Path.Combine(serviceTestDir, "mm.tbl");
+        string sourceBinPath = Path.Combine(serviceTestDir, "mm.bin");
+        string outputTblPath = Path.Combine(serviceTestDir, "mm_out.tbl");
+        string outputBinPath = Path.Combine(serviceTestDir, "mm_out.bin");
+        File.WriteAllBytes(sourceTblPath, tableBytes);
+        File.WriteAllBytes(sourceBinPath, messageBytes);
+
+        MessageFileDocument document = MessageFileService.LoadTableFiles(sourceTblPath, sourceBinPath);
+
+        Assert.Equal(GameKind.MajorasMask, document.GameProfile.Kind);
+        Assert.Equal(3, document.Entries.Count);
+        Assert.Equal(0x0000, document.Entries[0].Id);
+        Assert.Equal(1, document.Entries[0].Type);
+        Assert.Equal(3, document.Entries[0].Position);
+        Assert.Equal("Hi", document.Entries[0].Text);
+        Assert.Equal(0x0002, document.Entries[1].Id);
+        Assert.Equal(2, document.Entries[1].Type);
+        Assert.Equal(1, document.Entries[1].Position);
+        Assert.Equal("OK\n!", document.Entries[1].Text);
+        Assert.Equal(0x0004, document.Entries[2].Id);
+        Assert.Equal(0, document.Entries[2].Type);
+        Assert.Equal(7, document.Entries[2].Position);
+        Assert.Equal("P7", document.Entries[2].Text);
+        Assert.All(
+            document.Entries.Select(entry => entry.Position).Distinct(),
+            position => Assert.Contains(document.GameProfile.MessagePositions.Items, item => item.Value == position));
+
+        MessageFileService.SaveTableFiles(document.Entries, outputTblPath, outputBinPath, document.GameProfile);
+
+        Assert.Equal(tableBytes, File.ReadAllBytes(outputTblPath));
+        Assert.Equal(messageBytes, File.ReadAllBytes(outputBinPath));
+    }
+
+    [Fact]
+    public void MessageFileServiceDetectsMajorasMaskStaffCreditsAndRoundtripsThem()
+    {
+        byte[] tableBytes =
+        [
+            0x4e, 0x20, 0xb0, 0x00, 0x07, 0x00, 0x00, 0x00,
+            0x4e, 0x21, 0xb0, 0x00, 0x07, 0x00, 0x00, 0x08,
+            0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+        byte[] messageBytes =
+        [
+            0x41, 0x42, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x08, 0x06, 0x3c, 0x53, 0x54, 0x41, 0x46, 0x46,
+            0x01, 0x43, 0x52, 0x45, 0x44, 0x49, 0x54, 0x53,
+            0x09, 0x0a, 0x11, 0x00, 0x50, 0x02, 0x00, 0x00,
+        ];
+
+        string serviceTestDir = Path.Combine(Path.GetTempPath(), "HylianGrimoireTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(serviceTestDir);
+        string sourceTblPath = Path.Combine(serviceTestDir, "mm_staff.tbl");
+        string sourceBinPath = Path.Combine(serviceTestDir, "mm_staff.bin");
+        string outputTblPath = Path.Combine(serviceTestDir, "mm_staff_out.tbl");
+        string outputBinPath = Path.Combine(serviceTestDir, "mm_staff_out.bin");
+        File.WriteAllBytes(sourceTblPath, tableBytes);
+        File.WriteAllBytes(sourceBinPath, messageBytes);
+
+        MessageFileDocument document = MessageFileService.LoadTableFiles(sourceTblPath, sourceBinPath);
+
+        Assert.Equal(GameKind.MajorasMask, document.GameProfile.Kind);
+        Assert.Equal(2, document.Entries.Count);
+        Assert.All(document.Entries, entry => Assert.Null(entry.CodecMetadata));
+        Assert.Equal(0x4e20, document.Entries[0].Id);
+        Assert.Equal(11, document.Entries[0].Type);
+        Assert.Equal(0, document.Entries[0].Position);
+        Assert.Equal("AB", document.Entries[0].Text);
+        Assert.Equal("[quicktexton][shift:3c]STAFF\nCREDITS[quicktextoff][persistent][endfade:0050]", document.Entries[1].Text);
+
+        MessageFileService.SaveTableFiles(document.Entries, outputTblPath, outputBinPath, document.GameProfile);
+
+        Assert.Equal(tableBytes, File.ReadAllBytes(outputTblPath));
+        Assert.Equal(messageBytes, File.ReadAllBytes(outputBinPath));
+    }
+
+    [Fact]
+    public void MajorasMaskStaffCreditsEncodePersistentAsStaffControlByte()
+    {
+        var entries = new List<MessageEntry>
+        {
+            new(0x4e20, 11, 0, 0x07, 0)
+            {
+                TableEndMarkerId = 0xffff,
+                Text = "[quicktextoff][persistent]",
+            },
+        };
+
+        var files = MmMessageBankCodec.Instance.Build(entries, MessageEncodingProfile.MajorasMask);
+
+        Assert.Equal([0x09, 0x0a, 0x02, 0x00], files.MessageBytes.Take(4).ToArray());
+        Assert.Equal(0, files.MessageBytes.Length % 16);
+        Assert.All(files.MessageBytes.Skip(4), value => Assert.Equal(0, value));
+    }
+
+    [Fact]
+    public void MajorasMaskPreviewClassifiesOnlyStaffCreditsEntriesAsStaffCredits()
+    {
+        var staffEntry = new MessageEntry(0x4e20, 11, 0, 0x07, 0)
+        {
+            TableEndMarkerId = 0xffff,
+            CodecMetadata = null,
+        };
+
+        var regularTypeBEntry = new MessageEntry(0x05e6, 11, 0, 0x07, 0)
+        {
+            TableEndMarkerId = 0xfffd,
+            CodecMetadata = new MajorasMaskMessageMetadata(
+                TableTypePosition: 0xb0,
+                TextBoxProperties: 0x0b00,
+                IconId: 0xfe,
+                NextTextId: 0xffff,
+                FirstChoicePrice: 0xffff,
+                SecondChoicePrice: 0xffff,
+                Unknown: 0x0000),
+        };
+
+        var wrongBankEntry = new MessageEntry(0x4e20, 11, 0, 0x06, 0)
+        {
+            TableEndMarkerId = 0xffff,
+            CodecMetadata = null,
+        };
+
+        Assert.True(MmPreviewEntryClassifier.IsStaffCredits(staffEntry));
+        Assert.False(MmPreviewEntryClassifier.IsStaffCredits(regularTypeBEntry));
+        Assert.False(MmPreviewEntryClassifier.IsStaffCredits(wrongBankEntry));
+    }
+
+    [Fact]
+    public void MajorasMaskStaffCreditsPreviewDoesNotRenderPersistentTag()
+    {
+        var pages = MmStaffCreditsPreviewTextPage.FromEditorTextPages(
+            "[shift:60][shift:2a]The End[quicktextoff][persistent]",
+            MessageEncodingProfile.MajorasMask);
+
+        Assert.Equal("The End", PreviewGlyphText(pages[0]));
+    }
+
+    [Fact]
+    public void MajorasMaskControlCodesUseGrimoireSyntaxAndAliases()
+    {
+        byte[] raw =
+        [
+            0x17, 0x48, 0x69, 0x11, 0xba, 0x1e, 0x68, 0x6d,
+            0x1a, 0xd0, 0xf3, 0xbf,
+        ];
+
+        string editorText = MmMessageTextCodec.Decode(raw, 0, raw.Length, MessageEncodingProfile.MajorasMask);
+
+        Assert.Equal("[quicktexton]Hi\n[Z-target][sfx:686d][persistent][inputdogbet][hsboatarcherytime]", editorText);
+        Assert.Equal(raw, MmMessageTextCodec.Encode(editorText, MessageEncodingProfile.MajorasMask));
+        Assert.Equal(
+            raw,
+            MmMessageTextCodec.Encode(
+                "[quicktexton]Hi\n[z_target][sfx:686d][shop][input_doggy_racetrack_bet][HS_TIME_BOAT_ARCHERY]",
+                MessageEncodingProfile.MajorasMask));
+        Assert.Equal(
+            [0xb0, 0x1b, 0x00, 0x01, 0xbf],
+            MmMessageTextCodec.Encode("[btn_a][box_break_delayed:0001]", MessageEncodingProfile.MajorasMask));
+    }
+
+    [Fact]
+    public void MajorasMaskEncodingProfileUsesMmGlyphTable()
+    {
+        MessageEncodingProfile encodingProfile = MessageEncodingProfile.MajorasMaskOriginal;
+
+        Assert.Equal('ê', encodingProfile.GetDefaultEditorChar(0x9e));
+        Assert.Equal('ü', encodingProfile.GetDefaultEditorChar(0xac));
+        Assert.True(encodingProfile.TryGetByte('ê', out byte lowerEWithCircumflex));
+        Assert.True(encodingProfile.TryGetByte('ü', out byte lowerUWithDiaeresis));
+        Assert.Equal(0x9e, lowerEWithCircumflex);
+        Assert.Equal(0xac, lowerUWithDiaeresis);
+        Assert.Equal(
+            "êü",
+            MmMessageTextCodec.Decode([0x9e, 0xac, 0xbf, 0x00], 0, 4, encodingProfile));
+        Assert.Equal(
+            [0x9e, 0xac, 0xbf],
+            MmMessageTextCodec.Encode("êü", encodingProfile));
+    }
+
+    [Fact]
+    public void MajorasMaskGlyphManagerOnlyShowsEditableFontGlyphs()
+    {
+        IReadOnlyList<byte> glyphValues = GameGlyphCatalog.GetGlyphValues(GameKind.MajorasMask);
+
+        Assert.Contains((byte)0xaf, glyphValues);
+        Assert.DoesNotContain((byte)0xb0, glyphValues);
+        Assert.DoesNotContain(glyphValues, value => value > 0xaf);
+    }
+
+    [Fact]
+    public void MajorasMaskDebuggerEndMessageIsHiddenFromEditorList()
+    {
+        var entries = new List<MessageEntry>
+        {
+            new(0x354c, 0, 0, 8, 0),
+            new(FontOrderCodec.MessageId, 0, 0, 8, 0),
+            new(MmMessageTableCodec.DebuggerEndMessageId, 0, 0, 8, 0),
+        };
+
+        Assert.True(MessageVisibilityService.IsVisibleEditorEntry(entries[0], GameKind.MajorasMask, entries, romData: null));
+        Assert.False(MessageVisibilityService.IsVisibleEditorEntry(entries[1], GameKind.MajorasMask, entries, romData: null));
+        Assert.False(MessageVisibilityService.IsVisibleEditorEntry(entries[2], GameKind.MajorasMask, entries, romData: null));
+    }
+
+    [Fact]
+    public void MajorasMaskDataFileSaveKeepsBuildGeneratedHelperMessages()
+    {
+        var entries = new List<MessageEntry>
+        {
+            new(0x354c, 0, 0, 8, 0),
+            new(FontOrderCodec.MessageId, 0, 0, 8, 0),
+            new(MmMessageTableCodec.DebuggerEndMessageId, 0, 0, 8, 0),
+        };
+
+        List<MessageEntry> saveEntries = MessageExportService.GetTableFileSaveEntries(
+            entries,
+            excludeFontOrderEntry: true,
+            GameProfiles.Get(GameKind.MajorasMask));
+
+        Assert.Equal([0x354c, FontOrderCodec.MessageId, MmMessageTableCodec.DebuggerEndMessageId], saveEntries.Select(entry => entry.Id));
+    }
+
+    [Fact]
+    public void OcarinaDataFileSaveOmitsRomFontOrderMessage()
+    {
+        var entries = new List<MessageEntry>
+        {
+            new(0x0001, 0, 0, 8, 0),
+            new(FontOrderCodec.MessageId, 0, 0, 8, 0),
+        };
+
+        List<MessageEntry> saveEntries = MessageExportService.GetTableFileSaveEntries(
+            entries,
+            excludeFontOrderEntry: true,
+            GameProfiles.Get(GameKind.OcarinaOfTime));
+
+        Assert.Equal([0x0001], saveEntries.Select(entry => entry.Id));
+    }
+
+    [Fact]
+    public void MajorasMaskTypeAndPositionCatalogUsesMmTerms()
+    {
+        GameProfile profile = GameProfiles.Get(GameKind.MajorasMask);
+
+        Assert.Equal(
+        [
+            "Black",
+            "Wooden",
+            "Blue faded",
+            "Ocarina",
+            "Type 4",
+            "Clear",
+            "Display all",
+            "Clear display all",
+            "Blue",
+            "Pause info",
+            "Type A",
+            "Type B",
+            "Title card",
+            "Notebook notification",
+            "Ocarina free play",
+            "Type F",
+        ], profile.MessageTypes.Items.Select(item => item.Name).ToArray());
+        Assert.Equal(
+        [
+            "Auto",
+            "Top",
+            "Middle",
+            "Bottom",
+            "Fixed",
+        ], profile.MessagePositions.Items.Select(item => item.Name).ToArray());
+        Assert.Equal([0, 1, 2, 3, 7], profile.MessagePositions.Items.Select(item => item.Value).ToArray());
+    }
+
+    [Fact]
+    public void MajorasMaskEditorSyntaxUsesCanonicalGrimoireTags()
+    {
+        var syntax = GameProfiles.Get(GameKind.MajorasMask).EditorTextSyntax;
+        string canonicalText = "[breakdelay:0001][A-button][persistent]";
+        string aliasText = "[BOX_BREAK_DELAYED:0001][BTN_A][SHOP]";
+
+        Assert.False(syntax.TryNormalizeEditorText(canonicalText, out string normalizedCanonical));
+        Assert.Equal(canonicalText, normalizedCanonical);
+        Assert.True(syntax.TryNormalizeEditorText(aliasText, out string normalizedAlias));
+        Assert.Equal(canonicalText, normalizedAlias);
+        Assert.Equal("\n[breakdelay:0001]\nText[break2]\n", syntax.ToDisplay("[breakdelay:0001]Text[break2]"));
+        Assert.Equal("[breakdelay:0001]Text\n[break2]", syntax.FromDisplay("\n[breakdelay:0001]\nText\n[break2]\n"));
+        Assert.Equal(
+            "Text[carriagereturn][break2]",
+            syntax.FromDisplay("Text[carriagereturn][break2]\n"));
+    }
+
+    [Fact]
+    public void MajorasMaskMetadataEditsRebuildMessageHeaderEvenWhenTextIsUnchanged()
+    {
+        byte[] tableBytes =
+        [
+            0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00,
+            0x00, 0x02, 0x00, 0x00, 0x08, 0x00, 0x00, 0x10,
+            0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+        byte[] messageBytes =
+        [
+            0x01, 0x30, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x48, 0x69, 0xbf, 0x00, 0x00,
+            0x02, 0x10, 0x2d, 0x00, 0x04, 0x00, 0x14, 0x00,
+            0x28, 0x12, 0x34, 0x4f, 0x4b, 0xbf,
+        ];
+
+        List<MessageEntry> entries = MmMessageTableCodec.ParseTable(tableBytes, messageBytes);
+        var metadata = Assert.IsType<MajorasMaskMessageMetadata>(entries[1].CodecMetadata);
+        entries[1].CodecMetadata = metadata.With(
+            iconId: 0x33,
+            nextTextId: 0x1234,
+            firstChoicePrice: -1,
+            secondChoicePrice: 35,
+            centered: true,
+            unskippable: true,
+            drawInstantly: true);
+
+        (byte[] rebuiltTable, byte[] rebuiltMessages) = MmMessageTableCodec.BuildFiles(entries);
+        List<MessageEntry> reparsed = MmMessageTableCodec.ParseTable(rebuiltTable, rebuiltMessages);
+        var reparsedMetadata = Assert.IsType<MajorasMaskMessageMetadata>(reparsed[1].CodecMetadata);
+
+        Assert.NotEqual(messageBytes, rebuiltMessages);
+        Assert.Equal("OK", reparsed[1].Text);
+        Assert.Equal(0x33, reparsedMetadata.IconId);
+        Assert.Equal(0x1234, reparsedMetadata.NextTextId);
+        Assert.Equal(-1, reparsedMetadata.FirstChoicePriceSigned);
+        Assert.Equal(35, reparsedMetadata.SecondChoicePriceSigned);
+        Assert.True(reparsedMetadata.IsCentered);
+        Assert.True(reparsedMetadata.IsUnskippable);
+        Assert.True(reparsedMetadata.DrawInstantly);
+    }
+
+    [Fact]
+    public void MajorasMaskVerifiedHeaderUsesMessageIconAndBlackDisplayAllBox()
+    {
+        byte[] tableBytes =
+        [
+            0x21, 0xac, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00,
+            0x21, 0xad, 0x00, 0x00, 0x08, 0x00, 0x00, 0x20,
+            0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+        byte[] messageBytes =
+        [
+            0x06, 0x00, 0x0c, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0x03, 0x54, 0x68, 0x61, 0x6e,
+            0x6b, 0x73, 0x00, 0x20, 0x02, 0x49, 0x6e, 0x6e,
+            0xbf, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x06, 0x00, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0x4f, 0x4b, 0xbf, 0x00, 0x00,
+        ];
+
+        List<MessageEntry> entries = MmMessageTableCodec.ParseTable(tableBytes, messageBytes);
+        var metadata = Assert.IsType<MajorasMaskMessageMetadata>(entries[0].CodecMetadata);
+        MmMessageIconEntry icon = MmMessageIconCatalog.Get(metadata.IconId);
+
+        Assert.Equal(0x06, metadata.Type);
+        Assert.Equal(0x0c, metadata.IconId);
+        Assert.Equal(MmPreviewStyle.Black, MmMessageTypeCatalog.ToPreviewStyle(metadata.Type));
+        Assert.Contains("Piece of Heart", icon.Label);
+        Assert.EndsWith("gQuestIconPieceOfHeartTex.png", icon.RelativePath);
+        Assert.Equal("[color:blue]Thanks[color:default] [color:green]Inn", entries[0].Text);
+    }
+
+    [Fact]
+    public void MajorasMaskIconCatalogUsesEffectiveMessageIconMappings()
+    {
+        MmMessageIconEntry redRupee = MmMessageIconCatalog.Get(0x04);
+        MmMessageIconEntry recoveryHeart = MmMessageIconCatalog.Get(0x0a);
+        MmMessageIconEntry strayFairy = MmMessageIconCatalog.Get(0x11);
+        MmMessageIconEntry pieceOfHeart = MmMessageIconCatalog.Get(0x0c);
+        MmMessageIconEntry dekuStickUpgrade = MmMessageIconCatalog.Get(0x2f);
+        MmMessageIconEntry powderKeg = MmMessageIconCatalog.Get(0x34);
+        MmMessageIconEntry lullaby = MmMessageIconCatalog.Get(0xcb);
+        MmMessageIconEntry songNote = MmMessageIconCatalog.Get(0xd8);
+        MmMessageIconEntry anju = MmMessageIconCatalog.Get(0xdc);
+        MmMessageIconEntry notebookMark = MmMessageIconCatalog.Get(0xf0);
+
+        Assert.Contains("Red Rupee", redRupee.Label);
+        Assert.EndsWith("gRupeeCounterIconTex.png", redRupee.RelativePath);
+        Assert.Equal(MmMessageIconDrawKind.Rupee, redRupee.DrawKind);
+        Assert.Contains("Recovery Heart", recoveryHeart.Label);
+        Assert.EndsWith("gHeartFullTex.png", recoveryHeart.RelativePath);
+        Assert.Equal(MmMessageIconDrawKind.Heart, recoveryHeart.DrawKind);
+        Assert.Contains("Stray Fairy", strayFairy.Label);
+        Assert.EndsWith("gStrayFairyWoodfallIconTex.png", strayFairy.RelativePath);
+        Assert.Equal(MmMessageIconDrawKind.StrayFairy, strayFairy.DrawKind);
+        Assert.Contains("Piece of Heart", pieceOfHeart.Label);
+        Assert.EndsWith("gQuestIconPieceOfHeartTex.png", pieceOfHeart.RelativePath);
+        Assert.Contains("Deku Stick Upgrade", dekuStickUpgrade.Label);
+        Assert.EndsWith("gItemIconDekuStickTex.png", dekuStickUpgrade.RelativePath);
+        Assert.Contains("Powder Keg", powderKeg.Label);
+        Assert.EndsWith("gItemIconPowderKegTex.png", powderKeg.RelativePath);
+        Assert.Contains("Song Note", lullaby.Label);
+        Assert.EndsWith("gItemIconSongNoteTex.png", lullaby.RelativePath);
+        Assert.Contains("Song Note", songNote.Label);
+        Assert.EndsWith("gItemIconSongNoteTex.png", songNote.RelativePath);
+        Assert.Contains("Anju", anju.Label);
+        Assert.EndsWith("gBombersNotebookPhotoAnjuTex.png", anju.RelativePath);
+        Assert.Contains("Notebook Mark", notebookMark.Label);
+        Assert.EndsWith("gBombersNotebookEntryIconExclamationPointLargeTex.png", notebookMark.RelativePath);
+    }
+
+    [Fact]
+    public void MajorasMaskPreviewStylesFollowTextboxBackgroundTable()
+    {
+        Assert.Equal(MmPreviewStyle.Blue, MmMessageTypeCatalog.ToPreviewStyle(0x2));
+        Assert.Equal(MmPreviewStyle.BlueDefault, MmMessageTypeCatalog.ToPreviewStyle(0x8));
+        Assert.Equal(MmPreviewStyle.ClearBlackText, MmMessageTypeCatalog.ToPreviewStyle(0x5));
+        Assert.Equal(MmPreviewStyle.Clear, MmMessageTypeCatalog.ToPreviewStyle(0x4));
+        Assert.Equal(MmPreviewStyle.TypeB, MmMessageTypeCatalog.ToPreviewStyle(0xB));
+        Assert.Equal(MmPreviewStyle.TitleCard, MmMessageTypeCatalog.ToPreviewStyle(0xC));
+        Assert.Equal(MmPreviewStyle.Notebook, MmMessageTypeCatalog.ToPreviewStyle(0xD));
+        Assert.Equal(MmPreviewStyle.OcarinaFreePlay, MmMessageTypeCatalog.ToPreviewStyle(0xE));
+    }
+
+    [Fact]
+    public void MajorasMaskPreviewPagesUseMmSyntaxAndMetrics()
+    {
+        var pages = MmPreviewTextPage.FromEditorTextPages(
+            "Hi\n[A-button][color:red]Red[break]Next",
+            MessageEncodingProfile.MajorasMask);
+
+        Assert.Equal(2, pages.Count);
+        Assert.Contains(pages[0], token => token.Kind == OotPreviewTokenKind.LineBreak);
+        Assert.Contains(pages[0], token => token is { Kind: OotPreviewTokenKind.Glyph, Value: 0xb0 });
+        Assert.Contains(pages[0], token => token is { Kind: OotPreviewTokenKind.Color, Value: 0x01 });
+        Assert.Contains(pages[1], token => token is { Kind: OotPreviewTokenKind.Glyph, Value: (byte)'N' });
+        Assert.Equal(6, MmGlyphMetrics.GetDefaultAdvance(0x7f));
+    }
+
+    [Fact]
+    public void MajorasMaskPreviewUsesPostmanTimerPlaceholder()
+    {
+        var pages = MmPreviewTextPage.FromEditorTextPages("[timerpostman]", MessageEncodingProfile.MajorasMask);
+
+        string renderedText = PreviewGlyphText(pages[0]);
+        Assert.Equal("9\"59", renderedText);
+    }
+
+    [Fact]
+    public void MajorasMaskPreviewUsesBoatArcheryHighscorePlaceholder()
+    {
+        var pages = MmPreviewTextPage.FromEditorTextPages("[hsboatarchery]", MessageEncodingProfile.MajorasMask);
+
+        string renderedText = PreviewGlyphText(pages[0]);
+        Assert.Equal("20", renderedText);
+    }
+
+    [Fact]
+    public void MajorasMaskPreviewTreatsCarriageReturnSeparatelyFromNewline()
+    {
+        var pages = MmPreviewTextPage.FromEditorTextPages(
+            "First[carriagereturn][break2]Second",
+            MessageEncodingProfile.MajorasMask);
+
+        Assert.Equal(2, pages.Count);
+        Assert.Contains(pages[0], token => token.Kind == OotPreviewTokenKind.CarriageReturn);
+        Assert.Contains(pages[0], token => token.Kind == OotPreviewTokenKind.BoxBreak2);
+        Assert.DoesNotContain(pages[0], token => token.Kind == OotPreviewTokenKind.LineBreak);
+    }
+
+    [Fact]
+    public void MajorasMaskPreviewUsesBoxBreak2FillerLineForVerticalPlacement()
+    {
+        var syntax = MmEditorTextSyntax.Instance;
+        var dogRacePages = MmPreviewTextPage.FromEditorTextPages(
+            syntax.FromDisplay("If the dog you brought me takes\n1st place, you get triple your bet.\n2nd place gets double.\n[break2]\nNext"),
+            MessageEncodingProfile.MajorasMask);
+        var mamamuPages = MmPreviewTextPage.FromEditorTextPages(
+            syntax.FromDisplay("What do you want?\nAre you going to be OK here?\n[carriagereturn][break2]\nNext"),
+            MessageEncodingProfile.MajorasMask);
+
+        Assert.Equal(14, MmPreviewLayout.GetStartY(dogRacePages[0]));
+        Assert.Equal(20, MmPreviewLayout.GetStartY(mamamuPages[0]));
+    }
+
+    [Fact]
+    public void MajorasMaskOcarinaPreviewUsesTopTextPlacement()
+    {
+        var pages = MmPreviewTextPage.FromEditorTextPages(
+            "[quicktexton]Here's what I played:[quicktextoff]",
+            MessageEncodingProfile.MajorasMask);
+
+        Assert.Equal(2, MmPreviewLayout.GetStartY(MmPreviewStyle.Ocarina, pages[0]));
+    }
+
+    [Fact]
+    public void RealMajorasMaskTableFixtureRoundtripsByteForByte()
+    {
+        string sourceTblPath = FixturePath("MajorasMask", "real_mm_sample.tbl");
+        string sourceBinPath = FixturePath("MajorasMask", "real_mm_sample.bin");
+        string serviceTestDir = Path.Combine(Path.GetTempPath(), "HylianGrimoireTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(serviceTestDir);
+        string outputTblPath = Path.Combine(serviceTestDir, "real_mm_sample_out.tbl");
+        string outputBinPath = Path.Combine(serviceTestDir, "real_mm_sample_out.bin");
+
+        MessageFileDocument document = MessageFileService.LoadTableFiles(sourceTblPath, sourceBinPath);
+
+        Assert.Equal(GameKind.MajorasMask, document.GameProfile.Kind);
+        Assert.Equal(64, document.Entries.Count);
+        Assert.Equal(0x0000, document.Entries[0].Id);
+        Assert.Equal(0x0041, document.Entries[^1].Id);
+        Assert.All(document.Entries, entry => Assert.NotNull(entry.OriginalEncodedBytes));
+
+        MessageFileService.SaveTableFiles(document.Entries, outputTblPath, outputBinPath, document.GameProfile);
+
+        Assert.Equal(File.ReadAllBytes(sourceTblPath), File.ReadAllBytes(outputTblPath));
+        Assert.Equal(File.ReadAllBytes(sourceBinPath), File.ReadAllBytes(outputBinPath));
     }
 
     [Fact]
@@ -274,6 +815,33 @@ public sealed class ExportParityTests
         File.WriteAllText(path, """
         DEFINE_MESSAGE(0x0001, TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
         UNSKIPPABLE "Only one language"
+        )
+        """);
+
+        try
+        {
+            Dictionary<int, List<MessageEntry>> languages = HeaderDocumentService.LoadLanguageEntries(path);
+            Assert.Equal([0], languages.Keys.Order().ToArray());
+
+            List<CHeaderMessageSlot> slots = HeaderDocumentService.GetAvailableWesternSlots(path);
+            Assert.Equal([CHeaderMessageSlot.Nes], slots);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void MajorasMaskHeaderOffersOnlyOneImportSlot()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"mm-header-{Guid.NewGuid():N}.h");
+        File.WriteAllText(path, """
+        DEFINE_MESSAGE(0x0002, 0x00, 0x00,
+        MSG(
+        HEADER(0x0200, 0xFE, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF)
+        "Only one MM language"
+        )
         )
         """);
 
@@ -694,15 +1262,17 @@ public sealed class ExportParityTests
         try
         {
             CharacterProfileStore.Current.SetDisplayChar(0x92, 'å');
-            Assert.Equal("å", DecodeEditorText([0x92, 0x02, 0x00, 0x00]));
-            Assert.Equal([0x92, 0x02, 0x00, 0x00], EncodeEditorText("å"));
-            Assert.Equal("å", encodingProfile.HeaderTextToEditorText("â"));
-            Assert.Equal("â", encodingProfile.ToHeaderText("å"));
+            MessageEncodingProfile profileEncoding = encodingProfile.WithCharacterProfileSnapshot(CharacterProfileStore.Current.CreateSnapshot());
+
+            Assert.Equal("å", DecodeEditorText([0x92, 0x02, 0x00, 0x00], profileEncoding));
+            Assert.Equal([0x92, 0x02, 0x00, 0x00], EncodeEditorText("å", profileEncoding));
+            Assert.Equal("å", profileEncoding.HeaderTextToEditorText("â"));
+            Assert.Equal("â", profileEncoding.ToHeaderText("å"));
             Assert.Equal("Profil å", CHeaderImporter.Import("""
                 DEFINE_MESSAGE(0x0001, TEXTBOX_TYPE_BLACK, TEXTBOX_POS_BOTTOM,
                 "Profil â"
                 )
-                """)[0].Text);
+                """, encodingProfile: profileEncoding)[0].Text);
             Assert.True(MessageEncodingProfile.Original.TryGetByte('â', out byte originalLowerCircumflex));
             Assert.Equal(0x92, originalLowerCircumflex);
             Assert.False(MessageEncodingProfile.Original.TryGetByte('å', out _));
@@ -758,6 +1328,34 @@ public sealed class ExportParityTests
             CharacterProfileStore.Current.ResetDisplayChar(0x82);
             CharacterProfileStore.Current.ResetDisplayChar(0x92);
             CharacterProfileStore.Current.DeleteSelectedProfile();
+        }
+    }
+
+    [Fact]
+    public void CharacterProfileRemapHandlesMajorasMaskEditorTags()
+    {
+        CharacterProfileStore.Current.SetGameKind(GameKind.MajorasMask);
+        CharacterProfileStore.Current.CreateProfile("MM Remap");
+        CharacterProfileStore.Current.SetDisplayChar(0x9e, 'å');
+        try
+        {
+            string custom = CharacterProfileStore.Current.RemapEditorText(
+                "[delay:000a]ê [background][color:red]ê[break2]",
+                CharacterProfileStore.DefaultProfileName,
+                "MM Remap");
+            Assert.Equal("[delay:000a]å [background][color:red]å[break2]", custom);
+
+            string defaultText = CharacterProfileStore.Current.RemapEditorText(
+                custom,
+                "MM Remap",
+                CharacterProfileStore.DefaultProfileName);
+            Assert.Equal("[delay:000a]ê [background][color:red]ê[break2]", defaultText);
+        }
+        finally
+        {
+            CharacterProfileStore.Current.ResetDisplayChar(0x9e);
+            CharacterProfileStore.Current.DeleteSelectedProfile();
+            CharacterProfileStore.Current.SetGameKind(GameKind.OcarinaOfTime);
         }
     }
 
@@ -845,21 +1443,41 @@ public sealed class ExportParityTests
                     Text = "Å [item:82] }",
                 },
             };
+            MessageEncodingProfile encodingProfile = MessageEncodingProfile.Default
+                .WithCharacterProfileSnapshot(CharacterProfileStore.Current.CreateSnapshot());
 
-            Assert.Equal(1, MessageGlyphRemapper.CountOccurrences(entries, 0x82));
-            Assert.Equal(1, MessageGlyphRemapper.CountOccurrences(entries, 0x7d));
+            Assert.Equal(1, MessageGlyphRemapper.CountOccurrences(entries, 0x82, encodingProfile));
+            Assert.Equal(1, MessageGlyphRemapper.CountOccurrences(entries, 0x7d, encodingProfile));
 
-            int replacements = MessageGlyphRemapper.Replace(entries, 0x82, 0x7d);
+            int replacements = MessageGlyphRemapper.Replace(entries, 0x82, 0x7d, encodingProfile);
             Assert.Equal(1, replacements);
             Assert.Equal("} [item:82] }", entries[0].Text);
-            Assert.Equal(0, MessageGlyphRemapper.CountOccurrences(entries, 0x82));
-            Assert.Equal(2, MessageGlyphRemapper.CountOccurrences(entries, 0x7d));
+            Assert.Equal(0, MessageGlyphRemapper.CountOccurrences(entries, 0x82, encodingProfile));
+            Assert.Equal(2, MessageGlyphRemapper.CountOccurrences(entries, 0x7d, encodingProfile));
         }
         finally
         {
             CharacterProfileStore.Current.ResetDisplayChar(0x82);
             CharacterProfileStore.Current.DeleteSelectedProfile();
         }
+    }
+
+    [Fact]
+    public void GlyphRemapperPreservesMajorasMaskTags()
+    {
+        var entries = new List<MessageEntry>
+        {
+            new(0x0001, 0, 0, 0, 0)
+            {
+                Text = "[delay:000a]e[break]e",
+            },
+        };
+
+        Assert.Equal(2, MessageGlyphRemapper.CountOccurrences(entries, 0x65, MessageEncodingProfile.MajorasMask));
+
+        int replacements = MessageGlyphRemapper.Replace(entries, 0x65, 0x78, MessageEncodingProfile.MajorasMask);
+        Assert.Equal(2, replacements);
+        Assert.Equal("[delay:000a]x[break]x", entries[0].Text);
     }
 
     [Fact]
@@ -938,7 +1556,7 @@ public sealed class ExportParityTests
         Assert.Equal(2, fixtureHeaderEntries.Count);
         Assert.Equal("Press [Triangle]", fixtureHeaderEntries[1].Text);
 
-        string assetRoot = Path.Combine(RepositoryRoot(), "src", "HylianGrimoire", "Assets", "Preview", "Oot");
+        string assetRoot = Path.Combine(RepositoryRoot(), "src", "HylianGrimoire", "Assets", "Games", "Oot", "Preview", "Oot");
         Assert.False(File.Exists(Path.Combine(assetRoot, "resource_map.json")));
         if (Directory.Exists(assetRoot))
         {
@@ -1020,8 +1638,13 @@ public sealed class ExportParityTests
 
     private static string PreviewGlyphText(string text)
     {
+        return PreviewGlyphText(OotPreviewTextPage.FromMessageTokens(MessageTextSyntax.FromEditorText(text)));
+    }
+
+    private static string PreviewGlyphText(IEnumerable<OotPreviewToken> tokens)
+    {
         return new string(
-            OotPreviewTextPage.FromMessageTokens(MessageTextSyntax.FromEditorText(text))
+            tokens
                 .Where(token => token.Kind == OotPreviewTokenKind.Glyph && token.Value is >= 0x20 and <= 0x7e)
                 .Select(token => (char)token.Value)
                 .ToArray());
@@ -1037,8 +1660,11 @@ public sealed class ExportParityTests
         return MessageCodec.EncodeMessageTokens(MessageTextSyntax.FromEditorText(text), encodingProfile);
     }
 
-    private static string FixturePath(string fileName)
+    private static string FixturePath(params string[] pathParts)
     {
-        return Path.Combine(AppContext.BaseDirectory, "Fixtures", fileName);
+        string[] parts = new string[pathParts.Length + 1];
+        parts[0] = Path.Combine(AppContext.BaseDirectory, "Fixtures");
+        Array.Copy(pathParts, 0, parts, 1, pathParts.Length);
+        return Path.Combine(parts);
     }
 }

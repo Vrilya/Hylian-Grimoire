@@ -11,10 +11,11 @@ public sealed partial class SohModMakerWindow
     private static IReadOnlyList<SohTextResourceItem> BuildTextResources(RomMessageData romData)
     {
         var resources = new List<SohTextResourceItem>();
-        for (int bankIndex = 0; bankIndex < romData.Profile.MessageBanks.Count && bankIndex < 3; bankIndex++)
+        IReadOnlyList<MessageBankProfile> editableBanks = romData.Profile.GameProfile.MessageBankLayout.GetEditableBanks(romData.Profile);
+        for (int bankIndex = 0; bankIndex < editableBanks.Count && bankIndex < 3; bankIndex++)
         {
             resources.Add(new SohTextResourceItem(
-                romData.Profile.MessageBanks[bankIndex].Name,
+                editableBanks[bankIndex].Name,
                 SohResourcePacker.GetMessageResourcePath(bankIndex),
                 SohTextResourceKind.MessageBank,
                 bankIndex));
@@ -125,10 +126,12 @@ public sealed partial class SohModMakerWindow
                 SohTextResourceKind.CurrentDocument => GetCurrentDocumentTextEntries(resource, currentEntries),
                 SohTextResourceKind.MessageBank => (messageBanks ??= RomMessageService.LoadAllMessageBanks(
                     _romData ?? throw new InvalidDataException("A ROM is required to read ROM language banks."),
-                    currentEntries))[resource.BankIndex],
+                    currentEntries,
+                    _encodingProfile))[resource.BankIndex],
                 SohTextResourceKind.Credits => creditsBank ??= RomMessageService.LoadCreditsBank(
                     _romData ?? throw new InvalidDataException("A ROM is required to read credits text."),
-                    currentEntries),
+                    currentEntries,
+                    _encodingProfile),
                 _ => throw new InvalidDataException($"Unsupported SoH text resource: {resource.DisplayName}."),
             };
 
@@ -146,9 +149,9 @@ public sealed partial class SohModMakerWindow
             : currentEntries;
     }
 
-    private static byte[] PackTextEntries(List<MessageEntry> entries)
+    private byte[] PackTextEntries(List<MessageEntry> entries)
     {
-        var (tableBytes, messageBytes) = MessageTableCodec.BuildFiles(entries, MessageEncodingProfile.Default);
+        var (tableBytes, messageBytes) = MessageTableCodec.BuildFiles(entries, _encodingProfile);
         return SohResourcePacker.PackText(messageBytes, tableBytes, addFontOrder: true);
     }
 }

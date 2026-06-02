@@ -13,9 +13,10 @@ public sealed partial class TitleTextWindow : Window
     private readonly Action<string> _onChanged;
     private RomMessageData? _romData;
     private TitleTextPatchProfile? _profile;
+    private int _languageIndex;
     private bool _updating;
 
-    public TitleTextWindow(RomMessageData? romData, Action<string> onChanged)
+    public TitleTextWindow(RomMessageData? romData, int languageIndex, Action<string> onChanged)
     {
         InitializeComponent();
         _onChanged = onChanged;
@@ -30,12 +31,13 @@ public sealed partial class TitleTextWindow : Window
         WindowTheme.Register(this);
         WindowIcon.Apply(this);
         WindowSizeLimits.SetFixedSize(this, 1389, 950);
-        SetRomData(romData);
+        SetRomData(romData, languageIndex);
     }
 
-    public void SetRomData(RomMessageData? romData)
+    public void SetRomData(RomMessageData? romData, int languageIndex)
     {
         _romData = romData;
+        _languageIndex = languageIndex;
         LoadFromRom();
     }
 
@@ -65,8 +67,10 @@ public sealed partial class TitleTextWindow : Window
             }
 
             _profile = profile;
-            (TitleTextLine noController, TitleTextLine pressStart) = TitleTextService.Read(_romData.DecompressedRom, profile);
-            ProfileText.Text = profile.DisplayName;
+            (TitleTextLine? noController, TitleTextLine pressStart) =
+                TitleTextService.Read(_romData.DecompressedRom, profile, _languageIndex);
+            ProfileText.Text = TitleTextService.GetDisplayName(profile, _languageIndex);
+            HelpText.Text = GetHelpText(profile);
             SetControlsEnabled(true);
             SetInputs(noController, pressStart);
         }
@@ -105,8 +109,18 @@ public sealed partial class TitleTextWindow : Window
 
     private void OnTitleTextBeforeTextChanging(TextBox sender, TextBoxBeforeTextChangingEventArgs args)
     {
-        int maxCharacters = sender == NoControllerTextBox ? 14 : 12;
-        args.Cancel = !IsValidTitleTextInput(args.NewText, maxCharacters);
+        int maxCharacters = sender == NoControllerTextBox
+            ? _profile?.NoController?.MaxCharacters ?? 14
+            : _profile is null
+                ? 12
+                : TitleTextService.GetPressStartMaxCharacters(_profile, _languageIndex);
+        int maxSpaces = sender == NoControllerTextBox || _profile is null
+            ? 1
+            : TitleTextService.GetPressStartMaxSpaces(_profile, _languageIndex);
+        bool allowUWithDiaeresis = sender != NoControllerTextBox &&
+            _profile is not null &&
+            TitleTextService.AllowsLocalizedUDiaeresis(_profile, _languageIndex);
+        args.Cancel = !IsValidTitleTextInput(args.NewText, maxCharacters, maxSpaces, allowUWithDiaeresis);
     }
 
     private void TryWriteCurrentTitleText()
@@ -118,9 +132,9 @@ public sealed partial class TitleTextWindow : Window
 
         try
         {
-            TitleTextLine noController = GetNoControllerLine();
+            TitleTextLine? noController = GetNoControllerLine();
             TitleTextLine pressStart = GetPressStartLine();
-            TitleTextService.Write(_romData.DecompressedRom, _profile, noController, pressStart);
+            TitleTextService.Write(_romData.DecompressedRom, _profile, noController, pressStart, _languageIndex);
             _onChanged("Title text edited.");
         }
         catch (Exception ex)
@@ -148,8 +162,9 @@ public sealed partial class TitleTextWindow : Window
 
         try
         {
-            TitleTextService.Reset(_romData.DecompressedRom, _profile, kind);
-            (TitleTextLine noController, TitleTextLine pressStart) = TitleTextService.Read(_romData.DecompressedRom, _profile);
+            TitleTextService.Reset(_romData.DecompressedRom, _profile, kind, _languageIndex);
+            (TitleTextLine? noController, TitleTextLine pressStart) =
+                TitleTextService.Read(_romData.DecompressedRom, _profile, _languageIndex);
             SetInputs(noController, pressStart);
             string message = kind == TitleTextKind.NoController
                 ? "No controller text reset."
@@ -174,10 +189,12 @@ public sealed partial class TitleTextWindow : Window
         {
             Uri imageUri = TitleTextPreviewRenderer.Render(
                 _romData.DecompressedRom,
+                _profile,
                 _romData.FontResources,
                 GetNoControllerLine(),
                 GetPressStartLine(),
-                GuidesButton.IsChecked == true);
+                GuidesButton.IsChecked == true,
+                _languageIndex);
             PreviewImage.Source = new BitmapImage(imageUri);
         }
         catch (Exception ex)
@@ -186,24 +203,33 @@ public sealed partial class TitleTextWindow : Window
         }
     }
 
-    private TitleTextLine GetNoControllerLine()
+    private TitleTextLine? GetNoControllerLine()
     {
+        if (_profile?.NoController is null)
+        {
+            return null;
+        }
+
         return new TitleTextLine(
             TitleTextKind.NoController,
             NoControllerTextBox.Text,
-            GetGapAfterIndex(NoControllerTextBox.Text, 1),
+            GetGapAfterIndex(NoControllerTextBox.Text, _profile.NoController.DefaultGapAfterIndex),
             ParseByte(NoControllerXBox.Text, "No controller X"),
-            14);
+            _profile.NoController.MaxCharacters);
     }
 
     private TitleTextLine GetPressStartLine()
     {
+        TitleTextPatchProfile loadedProfile = _profile
+            ?? throw new InvalidOperationException("No title text profile is loaded.");
+        int maxCharacters = TitleTextService.GetPressStartMaxCharacters(loadedProfile, _languageIndex);
+
         return new TitleTextLine(
             TitleTextKind.PressStart,
             PressStartTextBox.Text,
-            GetGapAfterIndex(PressStartTextBox.Text, 4),
+            GetGapAfterIndex(PressStartTextBox.Text, loadedProfile.PressStart.DefaultGapAfterIndex),
             ParseByte(PressStartXBox.Text, "Press start X"),
-            12);
+            maxCharacters);
     }
 
     private static int GetGapAfterIndex(string text, int defaultGapAfterIndex)
@@ -219,7 +245,7 @@ public sealed partial class TitleTextWindow : Window
         return visibleCharacters > 0 ? visibleCharacters - 1 : defaultGapAfterIndex;
     }
 
-    private static bool IsValidTitleTextInput(string text, int maxCharacters)
+    private static bool IsValidTitleTextInput(string text, int maxCharacters, int maxSpaces, bool allowUWithDiaeresis)
     {
         int spaces = 0;
         int visibleCharacters = 0;
@@ -230,7 +256,7 @@ public sealed partial class TitleTextWindow : Window
             if (ch == ' ')
             {
                 spaces++;
-                if (spaces > 1 || i == 0)
+                if (spaces > maxSpaces || i == 0)
                 {
                     return false;
                 }
@@ -238,7 +264,8 @@ public sealed partial class TitleTextWindow : Window
                 continue;
             }
 
-            if (ch is not (>= 'A' and <= 'Z') and not (>= 'a' and <= 'z'))
+            if (ch is not (>= 'A' and <= 'Z') and not (>= 'a' and <= 'z') &&
+                !(allowUWithDiaeresis && (ch == 'Ü' || ch == 'ü')))
             {
                 return false;
             }
@@ -284,13 +311,23 @@ public sealed partial class TitleTextWindow : Window
         return value;
     }
 
-    private void SetInputs(TitleTextLine noController, TitleTextLine pressStart)
+    private void SetInputs(TitleTextLine? noController, TitleTextLine pressStart)
     {
         _updating = true;
         try
         {
-            NoControllerTextBox.Text = noController.Text;
-            NoControllerXBox.Text = noController.X.ToString();
+            NoControllerPanel.Visibility = noController is null ? Visibility.Collapsed : Visibility.Visible;
+            if (noController is not null)
+            {
+                NoControllerTextBox.Text = noController.Text;
+                NoControllerXBox.Text = noController.X.ToString();
+            }
+            else
+            {
+                NoControllerTextBox.Text = string.Empty;
+                NoControllerXBox.Text = string.Empty;
+            }
+
             PressStartTextBox.Text = pressStart.Text;
             PressStartXBox.Text = pressStart.X.ToString();
         }
@@ -306,14 +343,24 @@ public sealed partial class TitleTextWindow : Window
         NoControllerXBox.Text = string.Empty;
         PressStartTextBox.Text = string.Empty;
         PressStartXBox.Text = string.Empty;
+        NoControllerPanel.Visibility = Visibility.Visible;
     }
 
     private void SetControlsEnabled(bool enabled)
     {
-        NoControllerTextBox.IsEnabled = enabled;
-        NoControllerXBox.IsEnabled = enabled;
+        bool noControllerEnabled = enabled && _profile?.NoController is not null;
+        NoControllerTextBox.IsEnabled = noControllerEnabled;
+        NoControllerXBox.IsEnabled = noControllerEnabled;
         PressStartTextBox.IsEnabled = enabled;
         PressStartXBox.IsEnabled = enabled;
         GuidesButton.IsEnabled = enabled;
+    }
+
+    private string GetHelpText(TitleTextPatchProfile profile)
+    {
+        int maxSpaces = TitleTextService.GetPressStartMaxSpaces(profile, _languageIndex);
+        return maxSpaces == 1
+            ? "Use one space to choose where the title-screen gap is drawn. The space is not written as a character."
+            : $"Use up to {maxSpaces} spaces to choose where the title-screen gaps are drawn. The spaces are not written as characters.";
     }
 }

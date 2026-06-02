@@ -23,7 +23,7 @@ public sealed partial class TextureManagerWindow
 
         using var bitmap = TextureRomService.Decode(_romData.DecompressedRom, item.Texture);
         bitmap.Save(path, ImageFormat.Png);
-        SetLocalStatus($"Exported {Path.GetFileName(path)} successfully.");
+        SetLocalStatus("Exported texture successfully.");
         _onChanged($"Exported {item.Texture.Name}.");
     }
 
@@ -44,7 +44,7 @@ public sealed partial class TextureManagerWindow
         {
             TextureRomService.EncodeAndWrite(_romData.DecompressedRom, item.Texture, path);
             RefreshSelectedTexture();
-            SetLocalStatus($"Replaced {Path.GetFileName(path)} successfully.");
+            SetLocalStatus("Replaced texture successfully.");
             _onChanged($"Replaced {item.Texture.Name}.");
         }
         catch (Exception ex)

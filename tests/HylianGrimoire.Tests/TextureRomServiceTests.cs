@@ -1,4 +1,5 @@
 using System.Drawing;
+using HylianGrimoire.Rom;
 using HylianGrimoire.Textures;
 using Xunit;
 
@@ -64,6 +65,62 @@ public sealed class TextureRomServiceTests
         Assert.Equal(before.Take(20), rom.Take(20));
         Assert.Equal(replacement, rom.Skip(20).Take(16));
         Assert.Equal(before.Skip(36), rom.Skip(36));
+    }
+
+    [Fact]
+    public void ReadRaw_reads_cmpdma_archive_texture_from_decoded_payload()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_decompressed.z64", out string romPath))
+        {
+            return;
+        }
+
+        byte[] rom = File.ReadAllBytes(romPath);
+        TextureDefinition texture = GetMajorasMaskArchiveTexture();
+        int textureLength = TextureCodec.GetByteLength(texture.Width, texture.Height, texture.Format);
+
+        byte[] raw = TextureRomService.ReadRaw(rom, texture);
+
+        Assert.Equal(textureLength, raw.Length);
+        Assert.NotEqual(
+            rom.Skip(texture.ArchiveRomAddress!.Value + texture.RomAddress).Take(textureLength).ToArray(),
+            raw);
+    }
+
+    [Fact]
+    public void WriteRaw_preserves_cmpdma_archive_bytes_when_payload_is_unchanged()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_decompressed.z64", out string romPath))
+        {
+            return;
+        }
+
+        byte[] rom = File.ReadAllBytes(romPath);
+        TextureDefinition texture = GetMajorasMaskArchiveTexture();
+        byte[] beforeArchive = rom.Skip(texture.ArchiveRomAddress!.Value).Take(texture.ArchiveLength!.Value).ToArray();
+        byte[] raw = TextureRomService.ReadRaw(rom, texture);
+
+        TextureRomService.WriteRaw(rom, texture, raw);
+
+        Assert.Equal(beforeArchive, rom.Skip(texture.ArchiveRomAddress.Value).Take(texture.ArchiveLength.Value));
+    }
+
+    [Fact]
+    public void WriteRaw_repacks_cmpdma_archive_and_preserves_readback()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_decompressed.z64", out string romPath))
+        {
+            return;
+        }
+
+        byte[] rom = File.ReadAllBytes(romPath);
+        TextureDefinition texture = GetMajorasMaskArchiveTexture();
+        byte[] replacement = TextureRomService.ReadRaw(rom, texture);
+        replacement[0] ^= 0x80;
+
+        TextureRomService.WriteRaw(rom, texture, replacement);
+
+        Assert.Equal(replacement, TextureRomService.ReadRaw(rom, texture));
     }
 
     [Fact]
@@ -221,6 +278,12 @@ public sealed class TextureRomServiceTests
 
     private static byte[] CreateRom(int length)
         => Enumerable.Range(0, length).Select(i => (byte)((i * 17 + 3) & 0xff)).ToArray();
+
+    private static TextureDefinition GetMajorasMaskArchiveTexture()
+    {
+        RomVersionProfile profile = RomVersionDatabase.Profiles.Single(profile => profile.Name == "Majora's Mask NTSC-U");
+        return TextureCatalog.GetTextures(profile).Single(texture => texture.Name == "gQuestIconHeartContainerTex");
+    }
 
     private static byte[] CreateTexturePayload(TextureFormat format, int length)
     {

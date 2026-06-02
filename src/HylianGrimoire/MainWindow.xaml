@@ -23,19 +23,29 @@
                 HorizontalAlignment="Right"
                 VerticalAlignment="Center"
                 Spacing="8">
-                <DropDownButton ToolTipService.ToolTip="Load menu">
+                <DropDownButton ToolTipService.ToolTip="Project menu">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <SymbolIcon Symbol="OpenFile" />
-                        <TextBlock Text="Load" />
+                        <TextBlock Text="Project" />
                     </StackPanel>
                     <DropDownButton.Flyout>
                         <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                            <MenuFlyoutItem Text="Load..." Click="OnLoadDocument">
+                            <MenuFlyoutItem Text="New Project..." Click="OnNewProject">
+                                <MenuFlyoutItem.Icon>
+                                    <SymbolIcon Symbol="Add" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem Text="Open..." Click="OnLoadDocument">
+                                <MenuFlyoutItem.Icon>
+                                    <SymbolIcon Symbol="OpenFile" />
+                                </MenuFlyoutItem.Icon>
                                 <MenuFlyoutItem.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="O" Modifiers="Control" />
                                 </MenuFlyoutItem.KeyboardAccelerators>
                             </MenuFlyoutItem>
                             <MenuFlyoutItem x:Name="ImportHeaderIntoRomItem" Text="Import .h into ROM" Click="OnImportHeaderIntoRom" />
+                            <MenuFlyoutSeparator />
+                            <MenuFlyoutItem x:Name="CloseProjectItem" Text="Close Project" Click="OnCloseProject" />
                         </MenuFlyout>
                     </DropDownButton.Flyout>
                 </DropDownButton>
@@ -54,7 +64,7 @@
                             </MenuFlyoutItem>
                             <MenuFlyoutItem Text="Save as data files" Click="OnSaveAsFiles" />
                             <MenuFlyoutItem x:Name="SaveAsRomItem" Text="Save as ROM" Click="OnSaveAsRom" />
-                            <MenuFlyoutItem Text="Export to .h" Click="OnExportAsHeader" />
+                            <MenuFlyoutItem x:Name="ExportHeaderItem" Text="Export to .h" Click="OnExportAsHeader" />
                         </MenuFlyout>
                     </DropDownButton.Flyout>
                 </DropDownButton>
@@ -94,11 +104,7 @@
                     ToolTipService.ToolTip="ROM Language">
                     <SymbolIcon Symbol="Globe" />
                     <DropDownButton.Flyout>
-                        <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                            <MenuFlyoutItem x:Name="Language1Item" Text="Language 1" Click="OnSelectLanguage1" />
-                            <MenuFlyoutItem x:Name="Language2Item" Text="Language 2" Click="OnSelectLanguage2" />
-                            <MenuFlyoutItem x:Name="Language3Item" Text="Language 3" Click="OnSelectLanguage3" />
-                        </MenuFlyout>
+                        <MenuFlyout x:Name="LanguageMenuFlyout" Placement="BottomEdgeAlignedLeft" />
                     </DropDownButton.Flyout>
                 </DropDownButton>
 
@@ -123,7 +129,7 @@
             </StackPanel>
         </Grid>
 
-        <Grid Grid.Row="1" Padding="16,4,16,0" ColumnSpacing="16">
+        <Grid x:Name="EditorSurface" Grid.Row="1" Padding="16,4,16,0" ColumnSpacing="16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="190" MinWidth="170" />
                 <ColumnDefinition Width="*" MinWidth="420" />
@@ -217,48 +223,128 @@
                     Text="Editor"
                     Style="{ThemeResource SubtitleTextBlockStyle}" />
 
-                <Grid Grid.Row="1" ColumnSpacing="12">
+                <Grid Grid.Row="1" ColumnSpacing="12" RowSpacing="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="96" />
+                        <ColumnDefinition Width="100" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="140" />
+                        <ColumnDefinition Width="100" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="120" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock
-                        Grid.Column="0"
-                        Text="ID"
-                        VerticalAlignment="Center" />
-                    <TextBox
-                        x:Name="IdBox"
-                        Grid.Column="1"
-                        IsReadOnly="True" />
-
-                    <TextBlock
-                        Grid.Column="2"
-                        Text="Type"
-                        VerticalAlignment="Center" />
                     <ComboBox
                         x:Name="TypeCombo"
-                        Grid.Column="3"
-                        Width="140"
+                        Grid.Column="0"
+                        Width="100"
+                        MinWidth="100"
+                        MaxWidth="100"
                         SelectionChanged="OnTypeChange" />
-
                     <TextBlock
-                        Grid.Column="4"
-                        Text="Position"
+                        Grid.Column="1"
+                        Text="Type"
                         VerticalAlignment="Center" />
+
                     <ComboBox
                         x:Name="PositionCombo"
-                        Grid.Column="5"
-                        Width="120"
+                        Grid.Column="2"
+                        Width="100"
+                        MinWidth="100"
+                        MaxWidth="100"
                         SelectionChanged="OnPosChange" />
+                    <TextBlock
+                        Grid.Column="3"
+                        Text="Position"
+                        VerticalAlignment="Center" />
+
+                    <ComboBox
+                        x:Name="MmIconCombo"
+                        Grid.Column="4"
+                        Width="100"
+                        MinWidth="100"
+                        MaxWidth="100"
+                        SelectionChanged="OnMmIconChanged"
+                        Visibility="Collapsed" />
+                    <TextBlock
+                        x:Name="MmIconLabel"
+                        Grid.Column="5"
+                        Text="Icon"
+                        VerticalAlignment="Center"
+                        Visibility="Collapsed" />
+
+                    <CheckBox
+                        x:Name="MmUnskippableCheck"
+                        Grid.Column="6"
+                        Content="Unskippable"
+                        Click="OnMmUnskippableChanged"
+                        Visibility="Collapsed" />
+                    <CheckBox
+                        x:Name="MmInstantTextCheck"
+                        Grid.Column="7"
+                        Content="Instant text"
+                        Click="OnMmInstantTextChanged"
+                        Visibility="Collapsed" />
+
+                    <TextBox
+                        x:Name="MmNextMessageBox"
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        TextChanged="OnMmNextMessageChanged"
+                        Visibility="Collapsed" />
+                    <TextBlock
+                        x:Name="MmNextMessageLabel"
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Text="Next ID"
+                        VerticalAlignment="Center"
+                        Visibility="Collapsed" />
+
+                    <TextBox
+                        x:Name="MmFirstPriceBox"
+                        Grid.Row="1"
+                        Grid.Column="2"
+                        TextChanged="OnMmFirstPriceChanged"
+                        Visibility="Collapsed" />
+                    <TextBlock
+                        x:Name="MmFirstPriceLabel"
+                        Grid.Row="1"
+                        Grid.Column="3"
+                        Text="1st price"
+                        VerticalAlignment="Center"
+                        Visibility="Collapsed" />
+
+                    <TextBox
+                        x:Name="MmSecondPriceBox"
+                        Grid.Row="1"
+                        Grid.Column="4"
+                        TextChanged="OnMmSecondPriceChanged"
+                        Visibility="Collapsed" />
+                    <TextBlock
+                        x:Name="MmSecondPriceLabel"
+                        Grid.Row="1"
+                        Grid.Column="5"
+                        Text="2nd price"
+                        VerticalAlignment="Center"
+                        Visibility="Collapsed" />
+
+                    <CheckBox
+                        x:Name="MmCenteredCheck"
+                        Grid.Row="1"
+                        Grid.Column="6"
+                        Content="Centered"
+                        Click="OnMmCenteredChanged"
+                        Visibility="Collapsed" />
                 </Grid>
 
                 <TextBlock
+                    x:Name="MessageTextLabel"
                     Grid.Row="2"
                     Text="Message text:" />
 
@@ -288,18 +374,16 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel
-                    Orientation="Horizontal"
-                    Spacing="12"
-                    VerticalAlignment="Center">
-                    <TextBlock
-                        x:Name="StatusText"
-                        Text=""
-                        Style="{ThemeResource CaptionTextBlockStyle}"
-                        VerticalAlignment="Center" />
-                </StackPanel>
+                <TextBlock
+                    x:Name="StatusText"
+                    Text=""
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    MaxLines="1"
+                    TextTrimming="CharacterEllipsis"
+                    VerticalAlignment="Center" />
 
                 <StackPanel
+                    x:Name="EditorOptionsPanel"
                     Grid.Column="1"
                     Orientation="Horizontal"
                     Spacing="20"
@@ -327,6 +411,8 @@
                         <ComboBox
                             x:Name="EditorFontSizeBox"
                             Width="76"
+                            MinWidth="76"
+                            MaxWidth="76"
                             SelectedIndex="2"
                             SelectionChanged="OnEditorFontSizeChanged">
                             <ComboBoxItem Content="12" />
@@ -342,6 +428,7 @@
                     </StackPanel>
 
                     <Button
+                        x:Name="GlyphManagerButton"
                         Content="Glyph Manager"
                         Click="OnOpenCharacterProfiles"
                         VerticalAlignment="Center" />

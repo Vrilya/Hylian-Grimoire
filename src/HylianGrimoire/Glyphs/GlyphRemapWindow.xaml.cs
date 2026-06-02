@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using HylianGrimoire.Codecs;
 using HylianGrimoire.Interop;
 using HylianGrimoire.Models;
 using HylianGrimoire.Services;
@@ -12,22 +13,25 @@ namespace HylianGrimoire.Glyphs;
 public sealed partial class GlyphRemapWindow : Window
 {
     private readonly IReadOnlyList<MessageEntry> _entries;
-    private readonly IOotGlyphSource _glyphSource;
+    private readonly IGlyphSource _glyphSource;
+    private readonly MessageEncodingProfile _encodingProfile;
     private readonly Func<byte, byte, int> _apply;
     private readonly List<GlyphRemapItem> _items;
 
     public GlyphRemapWindow(
         IReadOnlyList<MessageEntry> entries,
-        IOotGlyphSource glyphSource,
+        IGlyphSource glyphSource,
+        MessageEncodingProfile encodingProfile,
         Func<byte, byte, int> apply)
     {
         InitializeComponent();
         _entries = entries;
         _glyphSource = glyphSource;
+        _encodingProfile = encodingProfile;
         _apply = apply;
         _items = Enumerable
             .Range(MessageGlyphRemapper.FirstGlyph, MessageGlyphRemapper.LastGlyph - MessageGlyphRemapper.FirstGlyph + 1)
-            .Select(value => new GlyphRemapItem((byte)value))
+            .Select(value => new GlyphRemapItem((byte)value, _encodingProfile))
             .ToList();
 
         SourceCombo.ItemsSource = _items;
@@ -81,8 +85,8 @@ public sealed partial class GlyphRemapWindow : Window
             return;
         }
 
-        int sourceCount = MessageGlyphRemapper.CountOccurrences(_entries, source.Value);
-        int targetCount = MessageGlyphRemapper.CountOccurrences(_entries, target.Value);
+        int sourceCount = MessageGlyphRemapper.CountOccurrences(_entries, source.Value, _encodingProfile);
+        int targetCount = MessageGlyphRemapper.CountOccurrences(_entries, target.Value, _encodingProfile);
         SourceCountText.Text = $"{sourceCount} occurrences";
         TargetCountText.Text = $"{targetCount} occurrences";
         SourceImage.Source = LoadGlyphImage(source.Value);
@@ -96,10 +100,10 @@ public sealed partial class GlyphRemapWindow : Window
         return File.Exists(path) ? new BitmapImage(new Uri(path)) : null;
     }
 
-    private sealed class GlyphRemapItem(byte value)
+    private sealed class GlyphRemapItem(byte value, MessageEncodingProfile encodingProfile)
     {
         public byte Value { get; } = value;
 
-        public string Label => $"0x{Value:X2}  {MessageGlyphRemapper.GetDisplayChar(Value)}";
+        public string Label => $"0x{Value:X2}  {MessageGlyphRemapper.GetDisplayChar(Value, encodingProfile)}";
     }
 }

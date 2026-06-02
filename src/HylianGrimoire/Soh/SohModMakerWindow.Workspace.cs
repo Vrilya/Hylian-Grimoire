@@ -52,7 +52,7 @@ public sealed partial class SohModMakerWindow
             UpdateResourceViewButtons();
             SetEnabled(true, hasTextureResources: GetTextureResourceCount() > 0);
             UpdateWorkspaceSummary();
-            StatusText.Text = $"Loaded {Path.GetFileName(path)}. {_selectedResources.Count} textures and {_selectedTextResources.Count} text resources selected.";
+            StatusText.Text = $"Loaded mod. {_selectedResources.Count} textures and {_selectedTextResources.Count} text resources selected.";
         }
         catch (Exception ex)
         {

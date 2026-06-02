@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -17,6 +17,7 @@
     <WindowsPackageType>None</WindowsPackageType>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Required by source-generated P/Invoke declarations that use LibraryImport. -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Platforms>x64</Platforms>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -25,7 +26,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260508005" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.13" />
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HylianGrimoire.Core\HylianGrimoire.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,10 +37,9 @@
     <Content Remove="Assets\AppIcon.png" />
     <None Update="Assets\AppIcon.ico" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
     <None Update="Assets\AppIcon.png" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
-    <Content Include="Assets\Title\**\*.png" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="Assets\TextureCatalog\**\*.txt" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="Assets\Preview\Oot\**\*.png" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="Assets\Preview\Oot\**\*.bin" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Games\**\*.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Games\**\*.bin" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Games\**\*.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

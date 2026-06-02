@@ -1,9 +1,9 @@
 using System.Collections.ObjectModel;
-using System.Runtime.InteropServices;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using HylianGrimoire.Games;
 using HylianGrimoire.Interop;
 using HylianGrimoire.Models;
 using HylianGrimoire.Glyphs;
@@ -11,6 +11,7 @@ using HylianGrimoire.Preview;
 using HylianGrimoire.PromptEditor;
 using HylianGrimoire.Rom;
 using HylianGrimoire.Services;
+using HylianGrimoire.Sessions;
 using HylianGrimoire.Soh;
 using HylianGrimoire.Textures;
 using HylianGrimoire.TitleText;
@@ -20,29 +21,17 @@ namespace HylianGrimoire;
 
 public sealed partial class MainWindow : Window
 {
-    private static readonly string[] PositionNames =
-        ["Auto", "Top", "Middle", "Bottom"];
-
+    private readonly DocumentSession _session = new();
+    private readonly CharacterProfileRuntime _characterProfileRuntime = new(CharacterProfileStore.Current);
+    private readonly HeaderDocumentWorkflow _headerDocumentWorkflow = new();
+    private readonly RomDocumentWorkflow _romDocumentWorkflow = new();
+    private readonly TableFileWorkflow _tableFileWorkflow = new();
     private readonly ObservableCollection<MessageItem> _items = new();
-    private List<MessageEntry> _entries = new();
-    private int _currentIdx = -1;
     private bool _updating;
-    private DocumentKind _documentKind = DocumentKind.None;
-    private string? _tblPath;
-    private string? _binPath;
-    private string? _headerPath;
-    private Dictionary<int, List<MessageEntry>>? _headerLanguageEntries;
-    private int _activeHeaderLanguageIndex;
-    private string? _romPath;
-    private RomMessageData? _romData;
-    private string _searchText = string.Empty;
-    private string _cleanDocumentFingerprint = string.Empty;
-    private bool _hasUnsavedChanges;
-    private bool _hasUnsavedRomBankChanges;
-    private bool _hasUnsavedHeaderLanguageChanges;
     private bool _closeConfirmed;
-    private string _activeCharacterProfileName = CharacterProfileStore.Current.SelectedProfileName;
-    private OotPreviewWindow? _previewWindow;
+    private bool _suppressCharacterProfileTextRemap;
+    private string _activeCharacterProfileName = CharacterProfileStore.DefaultProfileName;
+    private IMessagePreviewWindow? _previewWindow;
     private CharacterProfileWindow? _characterProfileWindow;
     private GlyphRemapWindow? _glyphRemapWindow;
     private TweaksWindow? _tweaksWindow;
@@ -57,30 +46,31 @@ public sealed partial class MainWindow : Window
 
         UpdateWindowTitle();
         SystemBackdrop = new MicaBackdrop();
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(1025, 700));
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(1260, 700));
         WindowSizeLimits.SetMinimumSize(this, 1025, 700);
         WindowIcon.Apply(this);
         AppWindow.TitleBar.ResetToDefault();
         WindowTheme.Register(this);
 
         MessageList.ItemsSource = _items;
-        TypeCombo.ItemsSource = MessageTypeCatalog.Items;
         TypeCombo.DisplayMemberPath = nameof(MessageTypeItem.Name);
-        PositionCombo.ItemsSource = PositionNames;
+        PositionCombo.DisplayMemberPath = nameof(MessagePositionItem.Name);
+        InitializeMajorasMaskMetadataControls();
+        SyncActiveCharacterProfileName();
+        RefreshAuxiliaryWindowsForLoadedDocument();
         UpdateLanguageMenuState();
-        UpdateRomToolState();
         UpdateGlyphProfileMenu();
-        CharacterProfileStore.Current.AutomaticProfileChanged += OnCharacterProfileMenuChanged;
-        CharacterProfileStore.Current.ProfilesChanged += OnCharacterProfileMenuChanged;
-        CharacterProfileStore.Current.SelectionChanged += OnCharacterProfileSelectionChanged;
-        CharacterProfileStore.Current.MappingsChanged += OnCharacterProfileMappingsChanged;
+        _characterProfileRuntime.AutomaticProfileChanged += OnCharacterProfileMenuChanged;
+        _characterProfileRuntime.ProfilesChanged += OnCharacterProfileMenuChanged;
+        _characterProfileRuntime.SelectionChanged += OnCharacterProfileSelectionChanged;
+        _characterProfileRuntime.MappingsChanged += OnCharacterProfileMappingsChanged;
         AppWindow.Closing += OnAppWindowClosing;
         Closed += OnMainWindowClosed;
     }
 
     private async void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
-        if (_closeConfirmed || !_hasUnsavedChanges)
+        if (_closeConfirmed || !_session.HasUnsavedChanges)
         {
             return;
         }
@@ -96,6 +86,9 @@ public sealed partial class MainWindow : Window
     }
 
     private void OnMainWindowClosed(object sender, WindowEventArgs args)
+        => CloseAuxiliaryWindows();
+
+    private void CloseAuxiliaryWindows()
     {
         _previewWindow?.Close();
         _previewWindow = null;
@@ -111,12 +104,15 @@ public sealed partial class MainWindow : Window
         _promptEditorWindow = null;
         _textureManagerWindow?.Close();
         _textureManagerWindow = null;
+        _sohModMakerWindow?.Close();
+        _sohModMakerWindow = null;
     }
 
     private void UpdateWindowTitle()
     {
-        Title = _documentKind switch
+        Title = _session.Kind switch
         {
+            DocumentKind.Project => $"{AppMetadata.MainWindowTitle} - {CurrentGameProfile.DisplayName} Project",
             DocumentKind.DataFiles => $"{AppMetadata.MainWindowTitle} - Data Files",
             DocumentKind.Header => $"{AppMetadata.MainWindowTitle} - Header{GetHeaderTitleSuffix()}",
             DocumentKind.Rom => $"{AppMetadata.MainWindowTitle} - {GetRomTitle()}",
@@ -126,20 +122,23 @@ public sealed partial class MainWindow : Window
 
     private string GetRomTitle()
     {
-        if (_romData is null)
+        if (_session.RomData is null)
         {
             return "ROM";
         }
 
-        string romFormat = _romData.WasCompressed ? "Compressed ROM" : "Decompressed ROM";
-        string title = $"{_romData.Profile.Name} - {romFormat}";
-        if (_romData.ActiveSection == RomMessageSection.Credits)
+        string romFormat = _session.RomData.WasCompressed ? "Compressed ROM" : "Decompressed ROM";
+        string title = $"{_session.RomData.Profile.Name} - {romFormat}";
+        if (_session.RomData.ActiveSection == RomMessageSection.Credits)
         {
             title += " - Credits";
         }
-        else if (_romData.Profile.MessageBanks.Count > 1)
+        else if (_session.RomData.Profile.Capabilities.SupportsMultipleMessageBanks)
         {
-            title += $" - {_romData.Profile.MessageBanks[_romData.ActiveMessageBankIndex].Name}";
+            IReadOnlyList<MessageBankProfile> banks = _session.RomData.Profile.GameProfile.MessageBankLayout.GetEditableBanks(_session.RomData.Profile);
+            title += _session.RomData.ActiveMessageBankIndex >= 0 && _session.RomData.ActiveMessageBankIndex < banks.Count
+                ? $" - {banks[_session.RomData.ActiveMessageBankIndex].Name}"
+                : $" - Language {_session.RomData.ActiveMessageBankIndex + 1}";
         }
 
         return title;
@@ -154,15 +153,24 @@ public sealed partial class MainWindow : Window
     }
 
     private string GetHeaderTitleSuffix()
-        => _headerLanguageEntries is not null && _headerLanguageEntries.Count > 1
-            ? $" - {GetHeaderLanguageName(_activeHeaderLanguageIndex)}"
+        => _session.HeaderLanguageEntries is not null && _session.HeaderLanguageEntries.Count > 1
+            ? $" - {GetHeaderLanguageName(_session.ActiveHeaderLanguageIndex)}"
             : string.Empty;
 
     private void OnCharacterProfileSelectionChanged(object? sender, CharacterProfileSelectionChangedEventArgs e)
     {
+        bool suppressTextRemap = _suppressCharacterProfileTextRemap;
         DispatcherQueue.TryEnqueue(() =>
         {
-            RemapEditorTextForCharacterProfileChange(e);
+            if (suppressTextRemap)
+            {
+                _activeCharacterProfileName = e.SelectedProfileName;
+            }
+            else
+            {
+                RemapEditorTextForCharacterProfileChange(e);
+            }
+
             UpdatePreview();
         });
     }
@@ -182,7 +190,7 @@ public sealed partial class MainWindow : Window
         GlyphProfileMenu.Items.Add(new MenuFlyoutSeparator());
         AddGlyphProfileMenuItem("Default", CharacterProfileStore.DefaultProfileName);
 
-        foreach (string profileName in CharacterProfileStore.Current.NamedProfileNames)
+        foreach (string profileName in _characterProfileRuntime.NamedProfileNames)
         {
             AddGlyphProfileMenuItem(profileName, profileName);
         }
@@ -193,19 +201,45 @@ public sealed partial class MainWindow : Window
         var item = new ToggleMenuFlyoutItem
         {
             Text = text,
-            IsChecked = CharacterProfileStore.Current.AutomaticProfileNameSetting == profileName,
+            IsChecked = _characterProfileRuntime.AutomaticProfileNameSetting == profileName,
         };
         item.Click += (_, _) =>
         {
-            CharacterProfileStore.Current.SetAutomaticProfile(profileName);
+            _characterProfileRuntime.SetAutomaticProfile(profileName);
             UpdateGlyphProfileMenu();
         };
         GlyphProfileMenu.Items.Add(item);
     }
 
-    [LibraryImport("user32.dll", EntryPoint = "LoadCursorW")]
-    private static partial IntPtr LoadCursor(IntPtr hInstance, int lpCursorName);
+    private void SetActiveCharacterProfileGame(GameKind gameKind)
+    {
+        _suppressCharacterProfileTextRemap = true;
+        try
+        {
+            _characterProfileRuntime.SetActiveGame(gameKind);
+            SyncActiveCharacterProfileName();
+        }
+        finally
+        {
+            _suppressCharacterProfileTextRemap = false;
+        }
+    }
 
-    [LibraryImport("user32.dll")]
-    private static partial IntPtr SetCursor(IntPtr hCursor);
+    private void ClearCustomGlyphProfileSelection()
+    {
+        _characterProfileRuntime.ClearCustomGlyphs();
+        SyncActiveCharacterProfileName();
+    }
+
+    private void SyncActiveCharacterProfileName()
+    {
+        _activeCharacterProfileName = _characterProfileRuntime.SelectedProfileName;
+    }
+
+    private GameProfile? ActiveGameProfile => _session.ActiveGameProfile;
+
+    private bool HasActiveProject => _session.HasActiveProject;
+
+    private GameProfile CurrentGameProfile => _session.CurrentGameProfile;
+
 }

@@ -26,6 +26,7 @@ TestResults/
 *.snupkg
 project.lock.json
 artifacts/
+.local/
 
 # Windows App SDK / packaging output
 AppPackages/

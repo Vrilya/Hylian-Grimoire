@@ -155,7 +155,12 @@ public sealed partial class PromptEditorWindow : Window
             return;
         }
 
-        PromptEditorLanguage language = PromptEditorProfileCatalog.Languages[_languageKey];
+        if (_profile is null)
+        {
+            return;
+        }
+
+        PromptEditorLanguage language = _profile.Languages[_languageKey];
         PromptEditorDefaults defaults = language.Defaults[selected.Kind];
         int index = _lines.FindIndex(line => line.Kind == selected.Kind);
         _lines[index] = selected with
@@ -171,9 +176,14 @@ public sealed partial class PromptEditorWindow : Window
 
     private void OnResetAll(object sender, RoutedEventArgs e)
     {
-        PromptEditorLanguage language = PromptEditorProfileCatalog.Languages[_languageKey];
+        if (_profile is null)
+        {
+            return;
+        }
+
+        PromptEditorLanguage language = _profile.Languages[_languageKey];
         _lines.Clear();
-        _lines.AddRange(PromptEditorService.CreateDefaultLines(language));
+        _lines.AddRange(PromptEditorService.CreateDefaultLines(_profile, language));
         RefreshListSelection(0);
         TryWrite();
         ShowSelectedLine();
@@ -190,7 +200,7 @@ public sealed partial class PromptEditorWindow : Window
         try
         {
             PromptEditorService.Write(_romData.DecompressedRom, _profile, _languageKey, _lines);
-            _onChanged(PromptEditorService.IsPatchActive(PromptEditorProfileCatalog.Languages[_languageKey], _lines)
+            _onChanged(PromptEditorService.IsPatchActive(_profile.Languages[_languageKey], _lines)
                 ? "Updated prompt positions."
                 : "Prompt patch removed.");
         }
@@ -202,7 +212,7 @@ public sealed partial class PromptEditorWindow : Window
 
     private static string GetProfileText(PromptEditorProfile profile, string languageKey)
     {
-        string languageLabel = PromptEditorProfileCatalog.Languages.TryGetValue(languageKey, out PromptEditorLanguage? language)
+        string languageLabel = profile.Languages.TryGetValue(languageKey, out PromptEditorLanguage? language)
             ? language.Label
             : languageKey;
         return $"{profile.DisplayName} - {languageLabel}";

@@ -137,8 +137,8 @@ public sealed partial class SohModMakerWindow
             _archiveTextureResources = BuildArchiveTextureResources(_existingEntries, _textures, _romData?.DecompressedRom);
             PopulateTextureTree();
             UpdateWorkspaceSummary();
-            StatusText.Text = $"Created {Path.GetFileName(path)} with {_selectedResources.Count} textures and {textPayloads.Count} text resources.";
-            _onChanged($"Created {Path.GetFileName(path)}.");
+            StatusText.Text = $"Created mod with {_selectedResources.Count} textures and {textPayloads.Count} text resources.";
+            _onChanged("Created SoH mod.");
         }
         catch (Exception ex)
         {

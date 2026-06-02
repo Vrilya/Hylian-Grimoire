@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -43,10 +43,10 @@ public sealed partial class OotMessagePreviewView : UserControl
         OotPreviewStyle style,
         IReadOnlyList<MessageToken> messageTokens,
         bool showAlignmentGuides,
-        IOotGlyphSource? glyphSource = null,
+        IGlyphSource? glyphSource = null,
         MessageEncodingProfile? encodingProfile = null)
     {
-        glyphSource ??= OotGlyphSources.ActiveProfile;
+        glyphSource ??= OotGlyphSources.OriginalAssets;
         encodingProfile ??= MessageEncodingProfile.Default;
         bool darkText = style == OotPreviewStyle.NoneDarkText;
         var pages = OotPreviewTextPage.FromMessageTokensPages(messageTokens, encodingProfile);

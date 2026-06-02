@@ -29,6 +29,7 @@
             VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="8">
                 <Border
+                    x:Name="BootLogoCard"
                     Padding="12"
                     CornerRadius="8"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
@@ -73,6 +74,7 @@
                 </Border>
 
                 <Border
+                    x:Name="ColorCard"
                     Padding="12"
                     CornerRadius="8"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
@@ -117,6 +119,7 @@
                 </Border>
 
                 <Border
+                    x:Name="ViPalCard"
                     Padding="12"
                     CornerRadius="8"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
@@ -161,6 +164,52 @@
                 </Border>
 
                 <Border
+                    x:Name="MmFpalCard"
+                    Padding="12"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="N64 VI PAL timing"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Replaces embedded NTSC N64 VI timing values with PAL N64 timing values, marks the ROM as PAL, and allows PAL startup on MM US.&#x0a;&#x0a;ROMs: MM NTSC-U" />
+                        </StackPanel>
+                        <TextBlock
+                            x:Name="MmFpalStatusText"
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
+
+                        <ToggleSwitch
+                            x:Name="MmFpalSwitch"
+                            Grid.Column="1"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnMmFpalToggled" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    x:Name="ViSelectorCard"
                     Padding="12"
                     CornerRadius="8"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
@@ -205,6 +254,7 @@
                 </Border>
 
                 <Border
+                    x:Name="NoControllerCard"
                     Padding="12"
                     CornerRadius="8"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
@@ -249,6 +299,7 @@
                 </Border>
 
                 <Border
+                    x:Name="CreditsCard"
                     Padding="12"
                     CornerRadius="8"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
@@ -293,6 +344,7 @@
                 </Border>
 
                 <Border
+                    x:Name="AntiPiracyCard"
                     Padding="12"
                     CornerRadius="8"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">

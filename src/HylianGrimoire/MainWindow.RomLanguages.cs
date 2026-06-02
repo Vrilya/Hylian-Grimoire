@@ -7,15 +7,9 @@ namespace HylianGrimoire;
 
 public sealed partial class MainWindow
 {
-    private async void OnSelectLanguage1(object sender, RoutedEventArgs e) => await SelectLanguageAsync(0);
-
-    private async void OnSelectLanguage2(object sender, RoutedEventArgs e) => await SelectLanguageAsync(1);
-
-    private async void OnSelectLanguage3(object sender, RoutedEventArgs e) => await SelectLanguageAsync(2);
-
     private async Task SelectLanguageAsync(int languageIndex)
     {
-        if (_documentKind == DocumentKind.Header)
+        if (_session.Kind == DocumentKind.Header)
         {
             SelectHeaderLanguage(languageIndex);
             return;
@@ -26,9 +20,9 @@ public sealed partial class MainWindow
 
     private void SelectHeaderLanguage(int languageIndex)
     {
-        if (_headerLanguageEntries is null
-            || !_headerLanguageEntries.ContainsKey(languageIndex)
-            || languageIndex == _activeHeaderLanguageIndex)
+        if (_session.HeaderLanguageEntries is null
+            || !_session.HeaderLanguageEntries.ContainsKey(languageIndex)
+            || languageIndex == _session.ActiveHeaderLanguageIndex)
         {
             return;
         }
@@ -36,34 +30,17 @@ public sealed partial class MainWindow
         CommitCurrent();
         CommitHeaderLanguageChanges();
         int selectedOrdinal = GetSelectedVisibleOrdinal();
-        bool currentLanguageWasDirty = !string.Equals(
-            GetDocumentFingerprint(),
-            _cleanDocumentFingerprint,
-            StringComparison.Ordinal);
+        bool currentLanguageWasDirty = _session.IsCurrentViewDirty();
 
-        _activeHeaderLanguageIndex = languageIndex;
-        _entries = _headerLanguageEntries[languageIndex];
-        _currentIdx = -1;
-        RefreshAuxiliaryWindowsForLoadedDocument();
+        _session.SwitchHeaderLanguage(languageIndex);
 
         if (currentLanguageWasDirty)
         {
             MarkHeaderLanguageDirty();
         }
 
-        UpdateWindowTitle();
-        UpdateLanguageMenuState();
-        ClearSearch();
-        PopulateList();
-
-        if (_items.Count > 0)
-        {
-            SelectVisibleOrdinal(selectedOrdinal);
-        }
-        else
-        {
-            ClearEditor();
-        }
+        RefreshDocumentShell();
+        RefreshMessageListAndRestoreVisibleOrdinal(selectedOrdinal);
 
         MarkCurrentViewClean();
         SetStatus($"Switched to {GetHeaderLanguageName(languageIndex)}.");
@@ -71,48 +48,36 @@ public sealed partial class MainWindow
 
     private async Task SelectRomLanguageAsync(int bankIndex)
     {
-        if (_romData is null ||
-            (_romData.ActiveSection == RomMessageSection.Messages && bankIndex == _romData.ActiveMessageBankIndex))
+        if (_session.RomData is null ||
+            (_session.RomData.ActiveSection == RomMessageSection.Messages && bankIndex == _session.RomData.ActiveMessageBankIndex))
         {
             return;
         }
 
         CommitCurrent();
         int selectedOrdinal = GetSelectedVisibleOrdinal();
-        bool currentBankWasDirty = !string.Equals(
-            GetDocumentFingerprint(),
-            _cleanDocumentFingerprint,
-            StringComparison.Ordinal);
-        bool alreadyHadRomBankChanges = _hasUnsavedRomBankChanges;
+        bool currentBankWasDirty = _session.IsCurrentViewDirty();
+        bool alreadyHadRomBankChanges = _session.HasUnsavedRomBankChanges;
 
         try
         {
-            _romData = RomMessageService.SwitchMessageBank(_romData, _entries, bankIndex, currentBankWasDirty);
-            _entries = _romData.Entries;
-            _currentIdx = -1;
-            RefreshAuxiliaryWindowsForLoadedDocument();
+            _session.UseRomData(RomMessageService.SwitchMessageBank(
+                _session.RomData,
+                _session.Entries,
+                bankIndex,
+                currentBankWasDirty,
+                CreateCurrentEncodingProfile()));
 
             if (currentBankWasDirty || alreadyHadRomBankChanges)
             {
                 MarkRomBankDirty();
             }
 
-            UpdateWindowTitle();
-            UpdateLanguageMenuState();
-            ClearSearch();
-            PopulateList();
-
-            if (_items.Count > 0)
-            {
-                SelectVisibleOrdinal(selectedOrdinal);
-            }
-            else
-            {
-                ClearEditor();
-            }
+            RefreshDocumentShell();
+            RefreshMessageListAndRestoreVisibleOrdinal(selectedOrdinal);
 
             MarkCurrentViewClean();
-            SetStatus($"Switched to {_romData.Profile.MessageBanks[bankIndex].Name}.");
+            SetStatus($"Switched to {GetRomMessageBankName(_session.RomData, bankIndex)}.");
         }
         catch (Exception ex)
         {
@@ -122,7 +87,7 @@ public sealed partial class MainWindow
 
     private async void OnToggleCreditsMode(object sender, RoutedEventArgs e)
     {
-        if (_romData is null)
+        if (_session.RomData is null)
         {
             CreditsModeItem.IsChecked = false;
             return;
@@ -131,7 +96,7 @@ public sealed partial class MainWindow
         var requestedSection = CreditsModeItem.IsChecked == true
             ? RomMessageSection.Credits
             : RomMessageSection.Messages;
-        if (requestedSection == _romData.ActiveSection)
+        if (requestedSection == _session.RomData.ActiveSection)
         {
             return;
         }
@@ -141,49 +106,37 @@ public sealed partial class MainWindow
 
     private async Task SelectRomSectionAsync(RomMessageSection section)
     {
-        if (_romData is null)
+        if (_session.RomData is null)
         {
             return;
         }
 
         CommitCurrent();
         int selectedOrdinal = GetSelectedVisibleOrdinal();
-        bool currentSectionWasDirty = !string.Equals(
-            GetDocumentFingerprint(),
-            _cleanDocumentFingerprint,
-            StringComparison.Ordinal);
-        bool alreadyHadRomBankChanges = _hasUnsavedRomBankChanges;
+        bool currentSectionWasDirty = _session.IsCurrentViewDirty();
+        bool alreadyHadRomBankChanges = _session.HasUnsavedRomBankChanges;
 
         try
         {
-            _romData = RomMessageService.SwitchMessageSection(_romData, _entries, section, currentSectionWasDirty);
-            _entries = _romData.Entries;
-            _currentIdx = -1;
-            RefreshAuxiliaryWindowsForLoadedDocument();
+            _session.UseRomData(RomMessageService.SwitchMessageSection(
+                _session.RomData,
+                _session.Entries,
+                section,
+                currentSectionWasDirty,
+                CreateCurrentEncodingProfile()));
 
             if (currentSectionWasDirty || alreadyHadRomBankChanges)
             {
                 MarkRomBankDirty();
             }
 
-            UpdateWindowTitle();
-            UpdateLanguageMenuState();
-            ClearSearch();
-            PopulateList();
-
-            if (_items.Count > 0)
-            {
-                SelectVisibleOrdinal(selectedOrdinal);
-            }
-            else
-            {
-                ClearEditor();
-            }
+            RefreshDocumentShell();
+            RefreshMessageListAndRestoreVisibleOrdinal(selectedOrdinal);
 
             MarkCurrentViewClean();
             SetStatus(section == RomMessageSection.Credits
                 ? "Switched to Credits."
-                : $"Switched to {_romData.Profile.MessageBanks[_romData.ActiveMessageBankIndex].Name}.");
+                : $"Switched to {GetRomMessageBankName(_session.RomData, _session.RomData.ActiveMessageBankIndex)}.");
         }
         catch (Exception ex)
         {
@@ -194,56 +147,90 @@ public sealed partial class MainWindow
 
     private void UpdateLanguageMenuState()
     {
-        bool isRom = _documentKind == DocumentKind.Rom && _romData is not null;
-        bool isCredits = _romData?.ActiveSection == RomMessageSection.Credits;
-        bool isMultiHeader = _documentKind == DocumentKind.Header
-            && _headerLanguageEntries is not null
-            && _headerLanguageEntries.Count > 1;
+        LanguageMenuFlyout.Items.Clear();
+
+        bool isRom = _session.Kind == DocumentKind.Rom && _session.RomData is not null;
+        bool isCredits = _session.RomData?.ActiveSection == RomMessageSection.Credits;
+        bool isMultiHeader = _session.Kind == DocumentKind.Header
+            && _session.HeaderLanguageEntries is not null
+            && _session.HeaderLanguageEntries.Count > 1;
 
         if (isMultiHeader)
         {
             LanguageMenu.IsEnabled = true;
             CreditsModeItem.IsEnabled = false;
             CreditsModeItem.IsChecked = false;
-            UpdateHeaderLanguageItem(Language1Item, 0);
-            UpdateHeaderLanguageItem(Language2Item, 1);
-            UpdateHeaderLanguageItem(Language3Item, 2);
+            PopulateHeaderLanguageMenu();
             return;
         }
 
-        int bankCount = _romData?.Profile.MessageBanks.Count ?? 0;
-        int activeBank = _romData?.ActiveMessageBankIndex ?? -1;
+        int bankCount = _session.RomData is null
+            ? 0
+            : _session.RomData.Profile.GameProfile.MessageBankLayout.GetEditableBanks(_session.RomData.Profile).Count;
+        int activeBank = _session.RomData?.ActiveMessageBankIndex ?? -1;
+        bool supportsMultipleMessageBanks = _session.RomData?.Profile.Capabilities.SupportsMultipleMessageBanks == true;
+        bool supportsCredits = _session.RomData?.Profile.Capabilities.SupportsCreditsEditing == true;
 
-        LanguageMenu.IsEnabled = isRom && bankCount > 1 && !isCredits;
+        LanguageMenu.IsEnabled = isRom && supportsMultipleMessageBanks && !isCredits;
 
-        CreditsModeItem.IsEnabled = isRom;
+        CreditsModeItem.IsEnabled = isRom && supportsCredits;
         CreditsModeItem.IsChecked = isCredits;
 
-        UpdateLanguageItem(Language1Item, bankCount, activeBank, 0);
-        UpdateLanguageItem(Language2Item, bankCount, activeBank, 1);
-        UpdateLanguageItem(Language3Item, bankCount, activeBank, 2);
+        PopulateRomLanguageMenu(bankCount, activeBank);
     }
 
-    private static void UpdateLanguageItem(MenuFlyoutItem item, int bankCount, int activeBank, int itemIndex)
+    private void PopulateHeaderLanguageMenu()
     {
-        item.IsEnabled = itemIndex < bankCount && itemIndex != activeBank;
-        item.Visibility = itemIndex < bankCount ? Visibility.Visible : Visibility.Collapsed;
-        item.Icon = itemIndex == activeBank ? new SymbolIcon(Symbol.Accept) : null;
+        if (_session.HeaderLanguageEntries is null)
+        {
+            return;
+        }
+
+        foreach (int languageIndex in _session.HeaderLanguageEntries.Keys.Order())
+        {
+            LanguageMenuFlyout.Items.Add(CreateLanguageMenuItem(
+                GetHeaderLanguageName(languageIndex),
+                languageIndex,
+                languageIndex == _session.ActiveHeaderLanguageIndex));
+        }
     }
 
-    private void UpdateHeaderLanguageItem(MenuFlyoutItem item, int itemIndex)
+    private void PopulateRomLanguageMenu(int bankCount, int activeBank)
     {
-        bool exists = _headerLanguageEntries?.ContainsKey(itemIndex) == true;
-        item.IsEnabled = exists && itemIndex != _activeHeaderLanguageIndex;
-        item.Visibility = exists ? Visibility.Visible : Visibility.Collapsed;
-        item.Icon = itemIndex == _activeHeaderLanguageIndex ? new SymbolIcon(Symbol.Accept) : null;
+        if (_session.RomData is null)
+        {
+            return;
+        }
+
+        for (int bankIndex = 0; bankIndex < bankCount; bankIndex++)
+        {
+            LanguageMenuFlyout.Items.Add(CreateLanguageMenuItem(
+                GetRomMessageBankName(_session.RomData, bankIndex),
+                bankIndex,
+                bankIndex == activeBank));
+        }
+    }
+
+    private MenuFlyoutItem CreateLanguageMenuItem(string text, int languageIndex, bool isActive)
+    {
+        var item = new MenuFlyoutItem
+        {
+            Text = text,
+            IsEnabled = !isActive,
+            Icon = isActive ? new SymbolIcon(Symbol.Accept) : null,
+        };
+        item.Click += async (_, _) => await SelectLanguageAsync(languageIndex);
+        return item;
     }
 
     private static string GetHeaderLanguageName(int languageIndex)
-        => languageIndex switch
-        {
-            1 => "Language 2",
-            2 => "Language 3",
-            _ => "Language 1",
-        };
+        => $"Language {languageIndex + 1}";
+
+    private static string GetRomMessageBankName(RomMessageData romData, int bankIndex)
+    {
+        IReadOnlyList<MessageBankProfile> banks = romData.Profile.GameProfile.MessageBankLayout.GetEditableBanks(romData.Profile);
+        return bankIndex >= 0 && bankIndex < banks.Count
+            ? banks[bankIndex].Name
+            : $"Language {bankIndex + 1}";
+    }
 }

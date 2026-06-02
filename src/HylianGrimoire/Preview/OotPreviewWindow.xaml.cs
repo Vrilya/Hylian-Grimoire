@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -6,11 +6,12 @@ using HylianGrimoire.Codecs;
 using HylianGrimoire.Glyphs;
 using HylianGrimoire.Interop;
 using HylianGrimoire.Models;
+using HylianGrimoire.Services;
 using WinRT.Interop;
 
 namespace HylianGrimoire.Preview;
 
-public sealed partial class OotPreviewWindow : Window
+public sealed partial class OotPreviewWindow : Window, IMessagePreviewWindow
 {
     private const double MinZoom = 0.5;
     private const double MaxZoom = 2.5;
@@ -25,11 +26,19 @@ public sealed partial class OotPreviewWindow : Window
     private bool _initialized;
     private OotPreviewStyle _style = OotPreviewStyle.Black;
     private MessageEncodingProfile _encodingProfile = MessageEncodingProfile.Default;
-    private IOotGlyphSource _glyphSource = OotGlyphSources.ActiveProfile;
+    private IGlyphSource _glyphSource = OotGlyphSources.OriginalAssets;
     private IReadOnlyList<MessageToken> _messageTokens = [];
 
+    public event EventHandler? PreviewClosed;
+
     public OotPreviewWindow()
+        : this(MessageEncodingProfile.Default)
     {
+    }
+
+    public OotPreviewWindow(MessageEncodingProfile encodingProfile)
+    {
+        _encodingProfile = encodingProfile;
         InitializeComponent();
         SystemBackdrop = new MicaBackdrop();
         AppWindow.Resize(new Windows.Graphics.SizeInt32(800, 730));
@@ -39,6 +48,7 @@ public sealed partial class OotPreviewWindow : Window
         RowsPerColumnBox.SelectedIndex = 4;
         ApplyColumnLayout();
         _initialized = true;
+        Closed += (_, _) => PreviewClosed?.Invoke(this, EventArgs.Empty);
     }
 
     public void SetMessage(OotPreviewStyle style, IReadOnlyList<MessageToken> messageTokens)
@@ -48,10 +58,28 @@ public sealed partial class OotPreviewWindow : Window
         RenderCurrentMessage();
     }
 
+    public void SetEmpty()
+    {
+        SetMessage(OotPreviewStyle.Black, Array.Empty<MessageToken>());
+    }
+
+    public void SetMessage(
+        MessageEntry entry,
+        string editorText,
+        IGlyphSource glyphSource,
+        MessageEncodingProfile encodingProfile)
+    {
+        SetMessage(
+            OotMessageTypeCatalog.ToPreviewStyle(entry.Type),
+            MessageTextSyntax.FromEditorText(editorText),
+            glyphSource,
+            encodingProfile);
+    }
+
     public void SetMessage(
         OotPreviewStyle style,
         IReadOnlyList<MessageToken> messageTokens,
-        IOotGlyphSource glyphSource,
+        IGlyphSource glyphSource,
         MessageEncodingProfile encodingProfile)
     {
         _style = style;
@@ -61,7 +89,7 @@ public sealed partial class OotPreviewWindow : Window
         RenderCurrentMessage();
     }
 
-    public void SetGlyphSource(IOotGlyphSource glyphSource)
+    public void SetGlyphSource(IGlyphSource glyphSource)
     {
         _glyphSource = glyphSource;
         RenderCurrentMessage();

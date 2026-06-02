@@ -1,6 +1,7 @@
 using System.Text;
 using HylianGrimoire.Codecs;
 using HylianGrimoire.Compression;
+using HylianGrimoire.Glyphs;
 using HylianGrimoire.Headers;
 using HylianGrimoire.Models;
 using HylianGrimoire.Rom;
@@ -77,8 +78,9 @@ public sealed class RomCompressionTests
         byte[] file1 = Encoding.ASCII.GetBytes("compressed-" + new string('Q', 128));
         byte[] compressedFile1 = Yaz0Codec.Encode(file1);
         byte[] rom = CreateSyntheticNtsc12Rom(compressedFile1, compressedSecondEntry: true);
+        var progressReports = new List<RomFileOperationProgress>();
 
-        RomCompressionResult result = RomCompressionService.DecompressRom(rom);
+        RomCompressionResult result = RomCompressionService.DecompressRom(rom, new CaptureProgress(progressReports.Add));
 
         Assert.Equal("NTSC 1.2", result.Profile.Name);
         Assert.Equal(file1, result.Data.AsSpan(0xe000, file1.Length).ToArray());
@@ -86,6 +88,8 @@ public sealed class RomCompressionTests
         Assert.Equal(0u, ReadUInt32BigEndian(result.Data, 0x7960 + 12));
         Assert.Equal(0xe000u, ReadUInt32BigEndian(result.Data, 0x7960 + 30 * 16 + 8));
         Assert.Equal(0u, ReadUInt32BigEndian(result.Data, 0x7960 + 30 * 16 + 12));
+        Assert.Equal(0, progressReports.First().Percent);
+        Assert.Equal(100, progressReports.Last().Percent);
     }
 
     [Fact]
@@ -93,7 +97,7 @@ public sealed class RomCompressionTests
     {
         byte[] file1 = Encoding.ASCII.GetBytes("compress-me-" + new string('R', 256));
         byte[] rom = CreateSyntheticNtsc12Rom(file1, compressedSecondEntry: false);
-        var progressReports = new List<RomCompressionProgress>();
+        var progressReports = new List<RomFileOperationProgress>();
 
         RomCompressionResult compressed = RomCompressionService.CompressRom(
             rom,
@@ -154,6 +158,528 @@ public sealed class RomCompressionTests
         AssertRetailDecompressesToFixture(root, "pal11_orig.z64");
         AssertRetailDecompressesToFixture(root, "palgc_orig.z64");
         AssertRetailDecompressesToFixture(root, "palmq_orig.z64");
+    }
+
+    [Fact]
+    public void LocalMajorasMaskFixtureDecompressesByteForByteWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+            "mm_us_n64_compressed.z64",
+            "mm_us_n64_decompressed.z64",
+            out string compressedPath,
+            out string decompressedPath))
+        {
+            return;
+        }
+
+        RomCompressionResult decompressed = RomCompressionService.DecompressRom(File.ReadAllBytes(compressedPath));
+
+        Assert.Equal("Majora's Mask NTSC-U", decompressed.Profile.Name);
+        Assert.True(decompressed.Profile.SupportsMessageEditing);
+        Assert.Equal(File.ReadAllBytes(decompressedPath), decompressed.Data);
+    }
+
+    [Fact]
+    public void LocalMajorasMaskUsGameCubeFixtureDecompressesByteForByteWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+            "mm_us_gc_compressed.z64",
+            "mm_us_gc_decompressed.z64",
+            out string compressedPath,
+            out string decompressedPath))
+        {
+            return;
+        }
+
+        RomCompressionResult decompressed = RomCompressionService.DecompressRom(File.ReadAllBytes(compressedPath));
+
+        Assert.Equal("Majora's Mask NTSC-U GameCube", decompressed.Profile.Name);
+        Assert.True(decompressed.Profile.SupportsMessageEditing);
+        Assert.Equal(File.ReadAllBytes(decompressedPath), decompressed.Data);
+    }
+
+    [Fact]
+    public void LocalMajorasMaskEuFixtureDecompressesByteForByteWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+            "mm_eu_1.0_n64_compressed.z64",
+            "mm_eu_1.0_n64_decompressed.z64",
+            out string compressedPath,
+            out string decompressedPath))
+        {
+            return;
+        }
+
+        RomCompressionResult decompressed = RomCompressionService.DecompressRom(File.ReadAllBytes(compressedPath));
+
+        Assert.Equal("Majora's Mask EU 1.0", decompressed.Profile.Name);
+        Assert.True(decompressed.Profile.SupportsMessageEditing);
+        Assert.True(decompressed.Profile.Capabilities.SupportsMultipleMessageBanks);
+        Assert.True(decompressed.Profile.Capabilities.SupportsCreditsEditing);
+        Assert.Equal(File.ReadAllBytes(decompressedPath), decompressed.Data);
+    }
+
+    [Fact]
+    public void LocalMajorasMaskEu11FixtureDecompressesByteForByteWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+            "mm_eu_1.1_n64_compressed.z64",
+            "mm_eu_1.1_n64_decompressed.z64",
+            out string compressedPath,
+            out string decompressedPath))
+        {
+            return;
+        }
+
+        RomCompressionResult decompressed = RomCompressionService.DecompressRom(File.ReadAllBytes(compressedPath));
+
+        Assert.Equal("Majora's Mask EU 1.1", decompressed.Profile.Name);
+        Assert.True(decompressed.Profile.SupportsMessageEditing);
+        Assert.True(decompressed.Profile.Capabilities.SupportsMultipleMessageBanks);
+        Assert.True(decompressed.Profile.Capabilities.SupportsCreditsEditing);
+        Assert.Equal(File.ReadAllBytes(decompressedPath), decompressed.Data);
+    }
+
+    [Fact]
+    public void LocalMajorasMaskEuGameCubeFixtureDecompressesByteForByteWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+            "mm_eu_gc_compressed.z64",
+            "mm_eu_gc_decompressed.z64",
+            out string compressedPath,
+            out string decompressedPath))
+        {
+            return;
+        }
+
+        RomCompressionResult decompressed = RomCompressionService.DecompressRom(File.ReadAllBytes(compressedPath));
+
+        Assert.Equal("Majora's Mask EU GameCube", decompressed.Profile.Name);
+        Assert.True(decompressed.Profile.SupportsMessageEditing);
+        Assert.True(decompressed.Profile.Capabilities.SupportsMultipleMessageBanks);
+        Assert.True(decompressed.Profile.Capabilities.SupportsCreditsEditing);
+        Assert.Equal(File.ReadAllBytes(decompressedPath), decompressed.Data);
+    }
+
+    [Fact]
+    public void LocalMajorasMaskProjectFixtureLoadsRomMessagesWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+            "mm_us_n64_compressed.z64",
+            "mm_us_n64_decompressed.z64",
+            out string compressedPath,
+            out string decompressedPath))
+        {
+            return;
+        }
+
+        AssertLoadsMajorasMaskMessagesFromRom(compressedPath, wasCompressed: true);
+        AssertLoadsMajorasMaskMessagesFromRom(decompressedPath, wasCompressed: false);
+        AssertLoadsMajorasMaskCreditsFromRom(compressedPath, wasCompressed: true);
+        AssertLoadsMajorasMaskCreditsFromRom(decompressedPath, wasCompressed: false);
+    }
+
+    [Fact]
+    public void LocalMajorasMaskUsGameCubeProjectFixtureLoadsRomMessagesWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+            "mm_us_gc_compressed.z64",
+            "mm_us_gc_decompressed.z64",
+            out string compressedPath,
+            out string decompressedPath))
+        {
+            return;
+        }
+
+        AssertLoadsMajorasMaskMessagesFromRom(
+            compressedPath,
+            wasCompressed: true,
+            expectedProfileName: "Majora's Mask NTSC-U GameCube",
+            expectedGlyphDataOffset: 0xadb000,
+            expectedWidthTableOffset: 0xc73f10,
+            expectedFontBaseline: RomFontBaseline.MajorasMaskUsGameCube);
+        AssertLoadsMajorasMaskMessagesFromRom(
+            decompressedPath,
+            wasCompressed: false,
+            expectedProfileName: "Majora's Mask NTSC-U GameCube",
+            expectedGlyphDataOffset: 0xadb000,
+            expectedWidthTableOffset: 0xc73f10,
+            expectedFontBaseline: RomFontBaseline.MajorasMaskUsGameCube);
+        AssertLoadsMajorasMaskCreditsFromRom(
+            compressedPath,
+            wasCompressed: true,
+            expectedProfileName: "Majora's Mask NTSC-U GameCube");
+        AssertLoadsMajorasMaskCreditsFromRom(
+            decompressedPath,
+            wasCompressed: false,
+            expectedProfileName: "Majora's Mask NTSC-U GameCube");
+    }
+
+    [Fact]
+    public void LocalMajorasMaskEuProjectFixtureLoadsRomMessagesWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+            "mm_eu_1.0_n64_compressed.z64",
+            "mm_eu_1.0_n64_decompressed.z64",
+            out string compressedPath,
+            out string decompressedPath))
+        {
+            return;
+        }
+
+        AssertLoadsMajorasMaskEuMessagesFromRom(compressedPath, wasCompressed: true);
+        AssertLoadsMajorasMaskEuMessagesFromRom(decompressedPath, wasCompressed: false);
+        AssertLoadsMajorasMaskEuCreditsFromRom(compressedPath, wasCompressed: true);
+        AssertLoadsMajorasMaskEuCreditsFromRom(decompressedPath, wasCompressed: false);
+    }
+
+    [Fact]
+    public void LocalMajorasMaskEu11ProjectFixtureLoadsRomMessagesWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+            "mm_eu_1.1_n64_compressed.z64",
+            "mm_eu_1.1_n64_decompressed.z64",
+            out string compressedPath,
+            out string decompressedPath))
+        {
+            return;
+        }
+
+        AssertLoadsMajorasMaskEuMessagesFromRom(
+            compressedPath,
+            wasCompressed: true,
+            expectedProfileName: "Majora's Mask EU 1.1",
+            expectedWidthTableOffset: 0xdac9d0);
+        AssertLoadsMajorasMaskEuMessagesFromRom(
+            decompressedPath,
+            wasCompressed: false,
+            expectedProfileName: "Majora's Mask EU 1.1",
+            expectedWidthTableOffset: 0xdac9d0);
+        AssertLoadsMajorasMaskEuCreditsFromRom(
+            compressedPath,
+            wasCompressed: true,
+            expectedProfileName: "Majora's Mask EU 1.1");
+        AssertLoadsMajorasMaskEuCreditsFromRom(
+            decompressedPath,
+            wasCompressed: false,
+            expectedProfileName: "Majora's Mask EU 1.1");
+    }
+
+    [Fact]
+    public void LocalMajorasMaskEuGameCubeProjectFixtureLoadsRomMessagesWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+            "mm_eu_gc_compressed.z64",
+            "mm_eu_gc_decompressed.z64",
+            out string compressedPath,
+            out string decompressedPath))
+        {
+            return;
+        }
+
+        AssertLoadsMajorasMaskEuMessagesFromRom(
+            compressedPath,
+            wasCompressed: true,
+            expectedProfileName: "Majora's Mask EU GameCube",
+            expectedGlyphDataOffset: 0xaaf000,
+            expectedWidthTableOffset: 0xdb99d0);
+        AssertLoadsMajorasMaskEuMessagesFromRom(
+            decompressedPath,
+            wasCompressed: false,
+            expectedProfileName: "Majora's Mask EU GameCube",
+            expectedGlyphDataOffset: 0xaaf000,
+            expectedWidthTableOffset: 0xdb99d0);
+        AssertLoadsMajorasMaskEuCreditsFromRom(
+            compressedPath,
+            wasCompressed: true,
+            expectedProfileName: "Majora's Mask EU GameCube");
+        AssertLoadsMajorasMaskEuCreditsFromRom(
+            decompressedPath,
+            wasCompressed: false,
+            expectedProfileName: "Majora's Mask EU GameCube");
+    }
+
+    [Fact]
+    public void LocalMajorasMaskProjectFixtureSavesDecompressedMessagesByteForByteWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_decompressed.z64", out string decompressedPath))
+        {
+            return;
+        }
+
+        string tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.z64");
+        try
+        {
+            RomMessageData data = RomMessageService.LoadMessages(decompressedPath);
+            RomMessageService.SaveMessages(tempPath, data, data.Entries, compressOverride: false);
+
+            Assert.Equal(File.ReadAllBytes(decompressedPath), File.ReadAllBytes(tempPath));
+        }
+        finally
+        {
+            File.Delete(tempPath);
+        }
+    }
+
+    [Fact]
+    public void LocalMajorasMaskEuProjectFixtureSavesDecompressedMessagesByteForByteWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_eu_1.0_n64_decompressed.z64", out string decompressedPath))
+        {
+            return;
+        }
+
+        for (int bankIndex = 0; bankIndex < 4; bankIndex++)
+        {
+            AssertSavesMajorasMaskSectionByteForByte(decompressedPath, bankIndex, RomMessageSection.Messages);
+        }
+
+        AssertSavesMajorasMaskSectionByteForByte(decompressedPath, messageBankIndex: 0, RomMessageSection.Credits);
+    }
+
+    [Fact]
+    public void LocalMajorasMaskEu11ProjectFixtureSavesDecompressedMessagesByteForByteWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_eu_1.1_n64_decompressed.z64", out string decompressedPath))
+        {
+            return;
+        }
+
+        for (int bankIndex = 0; bankIndex < 4; bankIndex++)
+        {
+            AssertSavesMajorasMaskSectionByteForByte(decompressedPath, bankIndex, RomMessageSection.Messages);
+        }
+
+        AssertSavesMajorasMaskSectionByteForByte(decompressedPath, messageBankIndex: 0, RomMessageSection.Credits);
+    }
+
+    [Fact]
+    public void LocalMajorasMaskEuGameCubeProjectFixtureSavesDecompressedMessagesByteForByteWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_eu_gc_decompressed.z64", out string decompressedPath))
+        {
+            return;
+        }
+
+        for (int bankIndex = 0; bankIndex < 4; bankIndex++)
+        {
+            AssertSavesMajorasMaskSectionByteForByte(decompressedPath, bankIndex, RomMessageSection.Messages);
+        }
+
+        AssertSavesMajorasMaskSectionByteForByte(decompressedPath, messageBankIndex: 0, RomMessageSection.Credits);
+    }
+
+    [Fact]
+    public void LocalMajorasMaskUsGameCubeProjectFixtureSavesDecompressedMessagesByteForByteWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_gc_decompressed.z64", out string decompressedPath))
+        {
+            return;
+        }
+
+        AssertSavesMajorasMaskSectionByteForByte(decompressedPath, messageBankIndex: 0, RomMessageSection.Messages);
+        AssertSavesMajorasMaskSectionByteForByte(decompressedPath, messageBankIndex: 0, RomMessageSection.Credits);
+    }
+
+    [Fact]
+    public void LocalMajorasMaskProjectFixtureReloadsChangedRomFontWidthWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_decompressed.z64", out string decompressedPath))
+        {
+            return;
+        }
+
+        string tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.z64");
+        try
+        {
+            RomMessageData data = RomMessageService.LoadMessages(decompressedPath);
+            RomFontService.WriteWidth(data.DecompressedRom, data.FontResources, 0x7b, 12.0f);
+
+            RomMessageService.SaveMessages(tempPath, data, data.Entries, compressOverride: false);
+            RomMessageData reloaded = RomMessageService.LoadMessages(tempPath);
+
+            Assert.Equal(12.0f, RomFontService.ReadWidth(reloaded.DecompressedRom, reloaded.FontResources, 0x7b));
+        }
+        finally
+        {
+            File.Delete(tempPath);
+        }
+    }
+
+    [Fact]
+    public void LocalMajorasMaskProjectFixtureSavesCompressedTextAndGlyphChangesWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_compressed.z64", out string compressedPath))
+        {
+            return;
+        }
+
+        string tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.z64");
+        try
+        {
+            RomMessageData data = RomMessageService.LoadMessages(compressedPath);
+            MessageEntry strayFairy = Assert.Single(data.Entries, entry => entry.Id == 0x0011);
+            strayFairy.Text = strayFairy.Text.Replace("Stray Fairy", "Lost Fairy", StringComparison.Ordinal);
+
+            byte[] replacementGlyph = RomFontService.ReadGlyph(data.DecompressedRom, data.FontResources, 0x7d);
+            RomFontService.WriteGlyph(data.DecompressedRom, data.FontResources, 0x7b, replacementGlyph);
+            RomFontService.WriteWidth(data.DecompressedRom, data.FontResources, 0x7b, 12.0f);
+
+            RomMessageService.SaveMessages(tempPath, data, data.Entries, compressOverride: true);
+            RomMessageData reloaded = RomMessageService.LoadMessages(tempPath);
+
+            Assert.True(reloaded.WasCompressed);
+            MessageEntry reloadedStrayFairy = Assert.Single(reloaded.Entries, entry => entry.Id == 0x0011);
+            Assert.Contains("Lost Fairy", reloadedStrayFairy.Text);
+            Assert.Equal(
+                replacementGlyph,
+                RomFontService.ReadGlyph(reloaded.DecompressedRom, reloaded.FontResources, 0x7b));
+            Assert.Equal(12.0f, RomFontService.ReadWidth(reloaded.DecompressedRom, reloaded.FontResources, 0x7b));
+        }
+        finally
+        {
+            File.Delete(tempPath);
+        }
+    }
+
+    [Fact]
+    public void LocalMajorasMaskProjectFixtureExportsDataFilesByteForByteWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_decompressed.z64", out string decompressedPath))
+        {
+            return;
+        }
+
+        string tempDir = Path.Combine(Path.GetTempPath(), "HylianGrimoireTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        string tblPath = Path.Combine(tempDir, "nes_message_data_static.tbl");
+        string binPath = Path.Combine(tempDir, "nes_message_data_static.bin");
+        try
+        {
+            RomMessageData data = RomMessageService.LoadMessages(decompressedPath);
+            List<MessageEntry> entries = MessageExportService.GetTableFileSaveEntries(
+                data.Entries,
+                excludeFontOrderEntry: true,
+                data.Profile.GameProfile);
+            MessageFileService.SaveTableFiles(entries, tblPath, binPath, data.Profile.GameProfile);
+
+            MessageBankProfile bank = data.Profile.DefaultMessageBank;
+            byte[] expectedTable = data.DecompressedRom.AsSpan(bank.MessageTableOffset, bank.MessageTableSize).ToArray();
+            byte[] expectedMessages = data.DecompressedRom.AsSpan(bank.MessageDataOffset, bank.MessageDataSize).ToArray();
+
+            Assert.Equal(expectedTable, File.ReadAllBytes(tblPath));
+            Assert.Equal(expectedMessages, File.ReadAllBytes(binPath));
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void LocalMajorasMaskFixtureCompressesToLoadableRomWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_decompressed.z64", out string decompressedPath))
+        {
+            return;
+        }
+
+        RomCompressionResult compressed = RomCompressionService.CompressRom(File.ReadAllBytes(decompressedPath));
+        RomCompressionResult decompressed = RomCompressionService.DecompressRom(compressed.Data);
+
+        Assert.Equal("Majora's Mask NTSC-U", compressed.Profile.Name);
+        Assert.Equal(32 * 0x100000, compressed.Data.Length);
+        AssertRomEqualExceptChecksum(File.ReadAllBytes(decompressedPath), decompressed.Data);
+    }
+
+    [Fact]
+    public void LocalMajorasMaskFixtureCompressesByteForByteWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+            "mm_us_n64_compressed.z64",
+            "mm_us_n64_decompressed.z64",
+            out string compressedPath,
+            out string decompressedPath))
+        {
+            return;
+        }
+
+        RomCompressionResult compressed = RomCompressionService.CompressRom(File.ReadAllBytes(decompressedPath));
+
+        Assert.Equal("Majora's Mask NTSC-U", compressed.Profile.Name);
+        Assert.Equal(File.ReadAllBytes(compressedPath), compressed.Data);
+    }
+
+    [Fact]
+    public void LocalMajorasMaskUsGameCubeFixtureCompressesByteForByteWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+            "mm_us_gc_compressed.z64",
+            "mm_us_gc_decompressed.z64",
+            out string compressedPath,
+            out string decompressedPath))
+        {
+            return;
+        }
+
+        RomCompressionResult compressed = RomCompressionService.CompressRom(File.ReadAllBytes(decompressedPath));
+
+        Assert.Equal("Majora's Mask NTSC-U GameCube", compressed.Profile.Name);
+        Assert.Equal(File.ReadAllBytes(compressedPath), compressed.Data);
+    }
+
+    [Fact]
+    public void LocalMajorasMaskEuFixtureCompressesByteForByteWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+            "mm_eu_1.0_n64_compressed.z64",
+            "mm_eu_1.0_n64_decompressed.z64",
+            out string compressedPath,
+            out string decompressedPath))
+        {
+            return;
+        }
+
+        RomCompressionResult compressed = RomCompressionService.CompressRom(File.ReadAllBytes(decompressedPath));
+
+        Assert.Equal("Majora's Mask EU 1.0", compressed.Profile.Name);
+        Assert.Equal(File.ReadAllBytes(compressedPath), compressed.Data);
+    }
+
+    [Fact]
+    public void LocalMajorasMaskEu11FixtureCompressesByteForByteWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+            "mm_eu_1.1_n64_compressed.z64",
+            "mm_eu_1.1_n64_decompressed.z64",
+            out string compressedPath,
+            out string decompressedPath))
+        {
+            return;
+        }
+
+        RomCompressionResult compressed = RomCompressionService.CompressRom(File.ReadAllBytes(decompressedPath));
+
+        Assert.Equal("Majora's Mask EU 1.1", compressed.Profile.Name);
+        Assert.Equal(File.ReadAllBytes(compressedPath), compressed.Data);
+    }
+
+    [Fact]
+    public void LocalMajorasMaskEuGameCubeFixtureCompressesByteForByteWhenAvailable()
+    {
+        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+            "mm_eu_gc_compressed.z64",
+            "mm_eu_gc_decompressed.z64",
+            out string compressedPath,
+            out string decompressedPath))
+        {
+            return;
+        }
+
+        RomCompressionResult compressed = RomCompressionService.CompressRom(File.ReadAllBytes(decompressedPath));
+
+        Assert.Equal("Majora's Mask EU GameCube", compressed.Profile.Name);
+        Assert.Equal(File.ReadAllBytes(compressedPath), compressed.Data);
     }
 
     [Fact]
@@ -336,15 +862,29 @@ public sealed class RomCompressionTests
     [Fact]
     public void LocalModernJapaneseAndEnglishHeaderOffersOnlyWesternSlotsWhenAvailable()
     {
-        string path = @"D:\test30\testntsc.h";
-        if (!File.Exists(path))
+        string path = Path.Combine(Path.GetTempPath(), $"modern-header-{Guid.NewGuid():N}.h");
+        File.WriteAllText(path, """
+        DEFINE_MESSAGE(0x0001, TEXTBOX_TYPE_BLUE, TEXTBOX_POS_BOTTOM,
+        MSG("JPN")
+        ,
+        MSG("NES")
+        ,
+        MSG(/* MISSING */)
+        ,
+        MSG(/* MISSING */)
+        )
+        """);
+
+        try
         {
-            return;
+            List<CHeaderMessageSlot> slots = HeaderDocumentService.GetAvailableWesternSlots(path);
+
+            Assert.Equal([CHeaderMessageSlot.Nes], slots);
         }
-
-        List<CHeaderMessageSlot> slots = HeaderDocumentService.GetAvailableWesternSlots(path);
-
-        Assert.Equal([CHeaderMessageSlot.Nes], slots);
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Fact]
@@ -388,6 +928,11 @@ public sealed class RomCompressionTests
         Assert.Equal(RomFontBaseline.PalGameCube, GetProfile("PAL GameCube").FontBaseline);
         Assert.Equal(RomFontBaseline.PalGameCube, GetProfile("PAL Master Quest").FontBaseline);
         Assert.Equal(RomFontBaseline.Standard, GetProfile("NTSC 1.2").FontBaseline);
+        Assert.Equal(RomFontBaseline.MajorasMask, GetProfile("Majora's Mask NTSC-U").FontBaseline);
+        Assert.Equal(RomFontBaseline.MajorasMaskUsGameCube, GetProfile("Majora's Mask NTSC-U GameCube").FontBaseline);
+        Assert.Equal(RomFontBaseline.MajorasMaskEu, GetProfile("Majora's Mask EU 1.0").FontBaseline);
+        Assert.Equal(RomFontBaseline.MajorasMaskEu, GetProfile("Majora's Mask EU 1.1").FontBaseline);
+        Assert.Equal(RomFontBaseline.MajorasMaskEu, GetProfile("Majora's Mask EU GameCube").FontBaseline);
     }
 
     [Fact]
@@ -399,6 +944,8 @@ public sealed class RomCompressionTests
         Assert.Equal(8.0, RomFontBaselineMetrics.GetDefaultAdvance(RomFontBaseline.Standard, 0x20));
         Assert.Equal(8.0, RomFontBaselineMetrics.GetDefaultAdvance(RomFontBaseline.PalGameCube, 0x20));
         Assert.Equal(8.0, RomFontBaselineMetrics.GetDefaultAdvance(RomFontBaseline.PalMultiLanguage, 0x20));
+        Assert.Equal(MmGlyphMetrics.GetDefaultAdvance(0x9e), RomFontBaselineMetrics.GetDefaultAdvance(RomFontBaseline.MajorasMask, 0x9e));
+        Assert.Equal(MmGlyphMetrics.GetDefaultAdvance(0x9e), RomFontBaselineMetrics.GetDefaultAdvance(RomFontBaseline.MajorasMaskEu, 0x9e));
     }
 
     [Fact]
@@ -717,6 +1264,158 @@ public sealed class RomCompressionTests
         Assert.All(credits.Entries, entry => Assert.Equal(11, entry.Type));
     }
 
+    private static void AssertLoadsMajorasMaskMessagesFromRom(
+        string romPath,
+        bool wasCompressed,
+        string expectedProfileName = "Majora's Mask NTSC-U",
+        int expectedGlyphDataOffset = 0xacc000,
+        int expectedWidthTableOffset = 0xc669b0,
+        RomFontBaseline expectedFontBaseline = RomFontBaseline.MajorasMask)
+    {
+        RomMessageData data = RomMessageService.LoadMessages(romPath);
+
+        Assert.Equal(expectedProfileName, data.Profile.Name);
+        Assert.Equal(expectedFontBaseline, data.Profile.FontBaseline);
+        Assert.Equal(0, data.ActiveMessageBankIndex);
+        Assert.Equal(RomMessageSection.Messages, data.ActiveSection);
+        Assert.Equal(wasCompressed, data.WasCompressed);
+        Assert.Equal(4589, data.Entries.Count);
+        Assert.Equal(0x0000, data.Entries[0].Id);
+        Assert.Equal(0xfffd, data.Entries[^1].Id);
+        Assert.Contains(data.Entries, entry => entry.Id == 0xfffc);
+        Assert.NotEqual(RomFontResources.Empty, data.FontResources);
+        Assert.Equal(expectedGlyphDataOffset, data.FontResources.GlyphDataOffset);
+        Assert.Equal(expectedWidthTableOffset, data.FontResources.WidthTableOffset);
+        Assert.Equal(156, data.FontResources.GlyphCount);
+        Assert.Equal(MmGlyphMetrics.DefaultWidths.Length, data.FontResources.WidthCount);
+        Assert.Equal(9.0f, RomFontService.ReadWidth(data.DecompressedRom, data.FontResources, 0x9e));
+        Assert.Equal(
+            MmGlyphCatalog.GetOriginalGlyphBytes(0x9e),
+            RomFontService.ReadGlyph(data.DecompressedRom, data.FontResources, 0x9e));
+        Assert.Equal(
+            MmGlyphCatalog.GetOriginalGlyphBytes(0x2c, expectedFontBaseline),
+            RomFontService.ReadGlyph(data.DecompressedRom, data.FontResources, 0x2c));
+        if (expectedFontBaseline == RomFontBaseline.MajorasMask)
+        {
+            Assert.False(MmGlyphCatalog.GetOriginalGlyphBytes(0x2c, RomFontBaseline.MajorasMaskEu)
+                .SequenceEqual(RomFontService.ReadGlyph(data.DecompressedRom, data.FontResources, 0x2c)));
+        }
+        Assert.NotEqual(
+            RomFontService.ReadGlyph(data.DecompressedRom, data.FontResources, 0x9d),
+            RomFontService.ReadGlyph(data.DecompressedRom, data.FontResources, 0x9e));
+
+        MessageEntry strayFairy = Assert.Single(data.Entries, entry => entry.Id == 0x0011);
+        var metadata = Assert.IsType<MajorasMaskMessageMetadata>(strayFairy.CodecMetadata);
+        Assert.Equal(0x11, metadata.IconId);
+        Assert.Contains("Stray Fairy", strayFairy.Text);
+        Assert.Contains("[delay:000a]", strayFairy.Text);
+    }
+
+    private static void AssertLoadsMajorasMaskEuMessagesFromRom(
+        string romPath,
+        bool wasCompressed,
+        string expectedProfileName = "Majora's Mask EU 1.0",
+        int expectedGlyphDataOffset = 0xaa0000,
+        int expectedWidthTableOffset = 0xdac8b0)
+    {
+        string[] expectedTexts =
+        [
+            "Blue Rupee",
+            "Blauer Rubin",
+            "Rubis bleu",
+            "Rupia Azul",
+        ];
+
+        for (int bankIndex = 0; bankIndex < expectedTexts.Length; bankIndex++)
+        {
+            RomMessageData data = RomMessageService.LoadMessages(romPath, messageBankIndex: bankIndex);
+
+            Assert.Equal(expectedProfileName, data.Profile.Name);
+            Assert.Equal(RomFontBaseline.MajorasMaskEu, data.Profile.FontBaseline);
+            Assert.Equal(4, data.Profile.MessageBanks.Count);
+            Assert.True(data.Profile.Capabilities.SupportsMultipleMessageBanks);
+            Assert.Equal(bankIndex, data.ActiveMessageBankIndex);
+            Assert.Equal(RomMessageSection.Messages, data.ActiveSection);
+            Assert.Equal(wasCompressed, data.WasCompressed);
+            Assert.NotEmpty(data.Entries);
+            Assert.Equal(0x0000, data.Entries[0].Id);
+            Assert.Equal(0xfffd, data.Entries[^1].Id);
+            Assert.Contains(data.Entries, entry => entry.Id == 0xfffc);
+            Assert.NotEqual(RomFontResources.Empty, data.FontResources);
+            Assert.Equal(expectedGlyphDataOffset, data.FontResources.GlyphDataOffset);
+            Assert.Equal(expectedWidthTableOffset, data.FontResources.WidthTableOffset);
+            Assert.Equal(156, data.FontResources.GlyphCount);
+            Assert.Equal(MmGlyphMetrics.DefaultWidths.Length, data.FontResources.WidthCount);
+            Assert.Equal(
+                MmGlyphCatalog.GetOriginalGlyphBytes(0x2c, RomFontBaseline.MajorasMaskEu),
+                RomFontService.ReadGlyph(data.DecompressedRom, data.FontResources, 0x2c));
+            Assert.False(MmGlyphCatalog.GetOriginalGlyphBytes(0x2c, RomFontBaseline.MajorasMask)
+                .SequenceEqual(RomFontService.ReadGlyph(data.DecompressedRom, data.FontResources, 0x2c)));
+
+            MessageEntry blueRupee = Assert.Single(data.Entries, entry => entry.Id == 0x0002);
+            Assert.Contains(expectedTexts[bankIndex], blueRupee.Text);
+            Assert.IsType<MajorasMaskMessageMetadata>(blueRupee.CodecMetadata);
+        }
+    }
+
+    private static void AssertLoadsMajorasMaskCreditsFromRom(
+        string romPath,
+        bool wasCompressed,
+        string expectedProfileName = "Majora's Mask NTSC-U")
+    {
+        RomMessageData credits = RomMessageService.LoadMessages(
+            romPath,
+            section: RomMessageSection.Credits);
+
+        Assert.Equal(expectedProfileName, credits.Profile.Name);
+        Assert.Equal(RomMessageSection.Credits, credits.ActiveSection);
+        Assert.Equal(wasCompressed, credits.WasCompressed);
+        Assert.Equal(45, credits.Entries.Count);
+        Assert.Equal(0x4e20, credits.Entries[0].Id);
+        Assert.Equal(0x4e4c, credits.Entries[^1].Id);
+        Assert.All(credits.Entries, entry => Assert.Equal(11, entry.Type));
+    }
+
+    private static void AssertLoadsMajorasMaskEuCreditsFromRom(
+        string romPath,
+        bool wasCompressed,
+        string expectedProfileName = "Majora's Mask EU 1.0")
+    {
+        RomMessageData credits = RomMessageService.LoadMessages(
+            romPath,
+            section: RomMessageSection.Credits);
+
+        Assert.Equal(expectedProfileName, credits.Profile.Name);
+        Assert.Equal(RomMessageSection.Credits, credits.ActiveSection);
+        Assert.Equal(wasCompressed, credits.WasCompressed);
+        Assert.Equal(45, credits.Entries.Count);
+        Assert.Equal(0x4e20, credits.Entries[0].Id);
+        Assert.Equal(0x4e4c, credits.Entries[^1].Id);
+        Assert.All(credits.Entries, entry => Assert.Equal(11, entry.Type));
+    }
+
+    private static void AssertSavesMajorasMaskSectionByteForByte(
+        string decompressedPath,
+        int messageBankIndex,
+        RomMessageSection section)
+    {
+        string tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.z64");
+        try
+        {
+            RomMessageData data = RomMessageService.LoadMessages(
+                decompressedPath,
+                messageBankIndex,
+                section);
+            RomMessageService.SaveMessages(tempPath, data, data.Entries, compressOverride: false);
+
+            Assert.Equal(File.ReadAllBytes(decompressedPath), File.ReadAllBytes(tempPath));
+        }
+        finally
+        {
+            File.Delete(tempPath);
+        }
+    }
+
     private static void AssertSavesMessagesRoundtrip(string romPath, string expectedDecompressedPath)
     {
         AssertSavesRomSectionRoundtrip(romPath, expectedDecompressedPath, RomMessageSection.Messages);
@@ -810,6 +1509,13 @@ public sealed class RomCompressionTests
         }
     }
 
+    private static void AssertRomEqualExceptChecksum(byte[] expected, byte[] actual)
+    {
+        Assert.Equal(expected.Length, actual.Length);
+        AssertRangesEqual(expected, actual, 0, 0x10);
+        AssertRangesEqual(expected, actual, 0x18, expected.Length - 0x18);
+    }
+
     private static void AssertRangesEqual(byte[] expected, byte[] actual, int offset, int length)
     {
         byte[] expectedRange = expected.AsSpan(offset, length).ToArray();
@@ -890,8 +1596,8 @@ public sealed class RomCompressionTests
         data[offset + 3] = (byte)value;
     }
 
-    private sealed class CaptureProgress(Action<RomCompressionProgress> onReport) : IProgress<RomCompressionProgress>
+    private sealed class CaptureProgress(Action<RomFileOperationProgress> onReport) : IProgress<RomFileOperationProgress>
     {
-        public void Report(RomCompressionProgress value) => onReport(value);
+        public void Report(RomFileOperationProgress value) => onReport(value);
     }
 }

@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using HylianGrimoire.Services;
 
 namespace HylianGrimoire.Soh;
 
@@ -21,17 +22,19 @@ internal sealed class SohO2rArchiveWriter
             throw new InvalidOperationException("No resources were selected.");
         }
 
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputPath))!);
-        using var stream = File.Create(outputPath);
-        using var archive = new ZipArchive(stream, ZipArchiveMode.Create);
-
-        foreach ((string path, byte[] data) in _entries)
+        using var stream = new MemoryStream();
+        using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
         {
-            ZipArchiveEntry entry = archive.CreateEntry(path, CompressionLevel.SmallestSize);
-            entry.LastWriteTime = ZipEpoch;
-            using Stream entryStream = entry.Open();
-            entryStream.Write(data, 0, data.Length);
+            foreach ((string path, byte[] data) in _entries)
+            {
+                ZipArchiveEntry entry = archive.CreateEntry(path, CompressionLevel.SmallestSize);
+                entry.LastWriteTime = ZipEpoch;
+                using Stream entryStream = entry.Open();
+                entryStream.Write(data, 0, data.Length);
+            }
         }
+
+        AtomicFileWriter.WriteAllBytes(outputPath, stream.ToArray());
     }
 
     public static IReadOnlySet<string> ReadResourcePaths(string inputPath)
