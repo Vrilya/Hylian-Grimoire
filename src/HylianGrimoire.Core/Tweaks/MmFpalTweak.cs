@@ -112,6 +112,11 @@ public static class MmFpalTweak
             return;
         }
 
+        if (enabled && MmViSelectorTweak.HasPatchedPayload(decompressedRom, profile))
+        {
+            throw new InvalidOperationException("Disable the MM VI selector before enabling the MM N64 VI PAL timing tweak.");
+        }
+
         foreach (Patch patch in ViTimingPatches)
         {
             CopyPatch(decompressedRom, patchProfile.ViModeOffset + patch.RelativeOffset, enabled ? patch.Patched : patch.Original);

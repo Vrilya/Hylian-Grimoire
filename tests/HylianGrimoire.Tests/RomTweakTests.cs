@@ -156,6 +156,95 @@ public sealed class RomTweakTests
     }
 
     [Fact]
+    public void MmViSelectorTweakTogglesMajorasMaskUsRom()
+    {
+        RomVersionProfile profile = GetProfile("Majora's Mask NTSC-U");
+        byte[] rom = File.ReadAllBytes(GetRequiredMajorasMaskFixture("mm_us_n64_decompressed.z64"));
+        byte[] original = (byte[])rom.Clone();
+
+        Assert.Equal(RomTweakState.Off, MmViSelectorTweak.GetStatus(rom, profile).State);
+        Assert.False(MmViSelectorTweak.HasPatchedPayload(rom, profile));
+        Assert.Equal((byte)'E', rom[0x3E]);
+        Assert.Equal(0x00C7A4E0u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC53EB4, sizeof(uint))));
+        Assert.Equal(0x00C7ADF0u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC53EB8, sizeof(uint))));
+        Assert.Equal(0x00C7A4E0u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0x1A700, sizeof(uint))));
+        Assert.Equal(0x00C7ADF0u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0x1A704, sizeof(uint))));
+        Assert.Equal(0x10410006u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0x13E0, sizeof(uint))));
+        Assert.Equal(0x8CC60300u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC0EE64, sizeof(uint))));
+
+        MmViSelectorTweak.SetEnabled(rom, profile, enabled: true);
+        Assert.Equal(RomTweakState.On, MmViSelectorTweak.GetStatus(rom, profile).State);
+        Assert.True(MmViSelectorTweak.HasPatchedPayload(rom, profile));
+        Assert.Equal((byte)'P', rom[0x3E]);
+        Assert.Equal(0x00C7A4E0u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC53EB4, sizeof(uint))));
+        Assert.Equal(0x00C7ADF0u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC53EB8, sizeof(uint))));
+        Assert.Equal(0x80800910u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC53EC0, sizeof(uint))));
+        Assert.Equal(0x80800444u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC53EC8, sizeof(uint))));
+        Assert.Equal(0x80800414u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC53ECC, sizeof(uint))));
+        Assert.Equal(0x00C7A4E0u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0x1A700, sizeof(uint))));
+        Assert.Equal(0x00C7ADF0u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0x1A704, sizeof(uint))));
+        Assert.Equal(0x00C7A4E0u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0x1A708, sizeof(uint))));
+        Assert.Equal(0x00000000u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0x1A70C, sizeof(uint))));
+        Assert.Equal(0x256B3F30u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC7A8D0, sizeof(uint))));
+        Assert.Equal(0x2C620003u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC0F7F8, sizeof(uint))));
+        Assert.Equal(0x04541E3Au, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC75600, sizeof(uint))));
+        Assert.Equal(0x00170C69u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC75608, sizeof(uint))));
+        Assert.Equal(0x0C6F0C6Du, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC7560C, sizeof(uint))));
+        Assert.Equal(0x002F0269u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC75614, sizeof(uint))));
+        Assert.Equal(0x10410006u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0x13E0, sizeof(uint))));
+        Assert.Equal(0x8CC60300u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC0EE64, sizeof(uint))));
+
+        MmViSelectorTweak.SetEnabled(rom, profile, enabled: false);
+        Assert.Equal(RomTweakState.Off, MmViSelectorTweak.GetStatus(rom, profile).State);
+        Assert.False(MmViSelectorTweak.HasPatchedPayload(rom, profile));
+        Assert.Equal(original, rom);
+    }
+
+    [Fact]
+    public void MmViSelectorTweakUsesFullTitleOverlayLoad()
+    {
+        RomVersionProfile profile = GetProfile("Majora's Mask NTSC-U");
+        byte[] rom = File.ReadAllBytes(GetRequiredMajorasMaskFixture("mm_us_n64_decompressed.z64"));
+
+        MmViSelectorTweak.SetEnabled(rom, profile, enabled: true);
+
+        DmaEntry titleOverlayEntry = Assert.Single(DmaTable.Parse(rom, profile), entry => entry.VirtualStart == 0x00C7A4E0);
+        uint rowRomStart = BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC53EB4, sizeof(uint)));
+        uint rowRomEnd = BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC53EB8, sizeof(uint)));
+        uint rowVramStart = BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC53EBC, sizeof(uint)));
+        uint rowVramEnd = BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC53EC0, sizeof(uint)));
+
+        Assert.Equal(0x00C7A4E0u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC53EB4, sizeof(uint))));
+        Assert.Equal(titleOverlayEntry.VirtualStart, rowRomStart);
+        Assert.Equal(titleOverlayEntry.VirtualEnd, rowRomEnd);
+        Assert.Equal((uint)titleOverlayEntry.VirtualSize, rowVramEnd - rowVramStart);
+        Assert.Equal(0x00000000u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC7AA7C, sizeof(uint))));
+        Assert.Equal(0x00000070u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC7ADEC, sizeof(uint))));
+    }
+
+    [Fact]
+    public void MmViSelectorAndMmFpalTweaksAreMutuallyExclusive()
+    {
+        RomVersionProfile profile = GetProfile("Majora's Mask NTSC-U");
+        byte[] rom = File.ReadAllBytes(GetRequiredMajorasMaskFixture("mm_us_n64_decompressed.z64"));
+        byte[] original = (byte[])rom.Clone();
+
+        MmFpalTweak.SetEnabled(rom, profile, enabled: true);
+        Assert.Equal(RomTweakState.On, MmFpalTweak.GetStatus(rom, profile).State);
+        Assert.Throws<InvalidOperationException>(() => MmViSelectorTweak.SetEnabled(rom, profile, enabled: true));
+
+        MmFpalTweak.SetEnabled(rom, profile, enabled: false);
+        Assert.Equal(original, rom);
+
+        MmViSelectorTweak.SetEnabled(rom, profile, enabled: true);
+        Assert.Equal(RomTweakState.On, MmViSelectorTweak.GetStatus(rom, profile).State);
+        Assert.Throws<InvalidOperationException>(() => MmFpalTweak.SetEnabled(rom, profile, enabled: true));
+
+        MmViSelectorTweak.SetEnabled(rom, profile, enabled: false);
+        Assert.Equal(original, rom);
+    }
+
+    [Fact]
     public void MmFpalTweakRejectsCompressedMajorasMaskUsGameCubeRom()
     {
         const string fixtureName = "mm_us_gc_compressed.z64";

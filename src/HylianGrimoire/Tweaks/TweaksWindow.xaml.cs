@@ -79,6 +79,15 @@ public sealed partial class TweaksWindow : Window
             "Disabled N64 VI PAL timing tweak.");
     }
 
+    private async void OnMmViSelectorToggled(object sender, RoutedEventArgs e)
+    {
+        await ApplyTweakAsync(
+            MmViSelectorSwitch,
+            (romData, enabled) => MmViSelectorTweak.SetEnabled(romData.DecompressedRom, romData.Profile, enabled),
+            "Enabled MM FPAL/MPAL selector tweak.",
+            "Disabled MM FPAL/MPAL selector tweak.");
+    }
+
     private async void OnNoControllerToggled(object sender, RoutedEventArgs e)
     {
         await ApplyTweakAsync(
@@ -150,6 +159,8 @@ public sealed partial class TweaksWindow : Window
             {
                 RefreshTweak(tweak);
             }
+
+            RefreshMajorasMaskMutualExclusion();
         }
         finally
         {
@@ -208,6 +219,13 @@ public sealed partial class TweaksWindow : Window
             MmFpalStatusText,
             romData => MmFpalTweak.GetStatus(romData.DecompressedRom, romData.Profile),
             ShowMixedAsOn: false),
+        new(
+            GameKind.MajorasMask,
+            MmViSelectorCard,
+            MmViSelectorSwitch,
+            MmViSelectorStatusText,
+            romData => MmViSelectorTweak.GetStatus(romData.DecompressedRom, romData.Profile),
+            ShowMixedAsOn: false),
     ];
 
     private void RefreshTweak(TweakUi tweak)
@@ -220,6 +238,29 @@ public sealed partial class TweaksWindow : Window
         tweak.Switch.IsOn = status.State == RomTweakState.On
             || tweak.ShowMixedAsOn && status.State == RomTweakState.Mixed;
         tweak.StatusText.Text = status.Detail;
+    }
+
+    private void RefreshMajorasMaskMutualExclusion()
+    {
+        if (_romData?.Profile.Game != GameKind.MajorasMask)
+        {
+            return;
+        }
+
+        RomTweakStatus fpalStatus = MmFpalTweak.GetStatus(_romData.DecompressedRom, _romData.Profile);
+        bool selectorHasPayload = MmViSelectorTweak.HasPatchedPayload(_romData.DecompressedRom, _romData.Profile);
+        bool fpalBlocksSelector = fpalStatus.State is RomTweakState.On
+            || fpalStatus.State == RomTweakState.Mixed && !selectorHasPayload;
+
+        if (fpalBlocksSelector)
+        {
+            MmViSelectorSwitch.IsEnabled = false;
+        }
+
+        if (selectorHasPayload)
+        {
+            MmFpalSwitch.IsEnabled = false;
+        }
     }
 
     private RomTweakStatus GetStatus(TweakUi tweak) =>
