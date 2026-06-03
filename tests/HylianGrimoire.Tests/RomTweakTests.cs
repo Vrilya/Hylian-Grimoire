@@ -91,12 +91,15 @@ public sealed class RomTweakTests
     }
 
     [Theory]
-    [InlineData("Majora's Mask NTSC-U", "mm_us_n64_decompressed.z64", 0xC0F7F8, 0x18FC0)]
+    [InlineData("Majora's Mask NTSC-U", "mm_us_n64_decompressed.z64", 0xC0F7F8, 0x18FC0, 0x13E0, 0xC0EE64, 0xC75600)]
     public void MmFpalTweakTogglesMajorasMaskUsRom(
         string profileName,
         string fixtureName,
         int regionCheckOffset,
-        int viModeOffset)
+        int viModeOffset,
+        int idleVideoNtscBranchOffset,
+        int notebookTvTypeOffset,
+        int viConfigurePalTableOffset)
     {
         RomVersionProfile profile = GetProfile(profileName);
         byte[] rom = File.ReadAllBytes(GetRequiredMajorasMaskFixture(fixtureName));
@@ -108,6 +111,12 @@ public sealed class RomTweakTests
         Assert.Equal(0x03E52239u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viModeOffset + 0x0C, sizeof(uint))));
         Assert.Equal(0x00000400u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viModeOffset + 0x2C, sizeof(uint))));
         Assert.Equal(0x00000400u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viModeOffset + 0x40, sizeof(uint))));
+        Assert.Equal(0x10410006u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(idleVideoNtscBranchOffset, sizeof(uint))));
+        Assert.Equal(0x8CC60300u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(notebookTvTypeOffset, sizeof(uint))));
+        Assert.Equal(0x0404233Au, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viConfigurePalTableOffset, sizeof(uint))));
+        Assert.Equal(0x00150C69u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viConfigurePalTableOffset + 0x08, sizeof(uint))));
+        Assert.Equal(0x0C6F0C6Eu, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viConfigurePalTableOffset + 0x0C, sizeof(uint))));
+        Assert.Equal(0x005F0239u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viConfigurePalTableOffset + 0x14, sizeof(uint))));
         if (regionCheckOffset >= 0)
         {
             Assert.Equal(0x00001025u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(regionCheckOffset, sizeof(uint))));
@@ -118,8 +127,14 @@ public sealed class RomTweakTests
         Assert.Equal((byte)'P', rom[0x3E]);
         Assert.Equal(0x2C000000u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viModeOffset, sizeof(uint))));
         Assert.Equal(0x04541E3Au, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viModeOffset + 0x0C, sizeof(uint))));
-        Assert.Equal(0x00000354u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viModeOffset + 0x2C, sizeof(uint))));
-        Assert.Equal(0x00000354u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viModeOffset + 0x40, sizeof(uint))));
+        Assert.Equal(0x00000400u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viModeOffset + 0x2C, sizeof(uint))));
+        Assert.Equal(0x00000400u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viModeOffset + 0x40, sizeof(uint))));
+        Assert.Equal(0x10410030u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(idleVideoNtscBranchOffset, sizeof(uint))));
+        Assert.Equal(0x24060000u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(notebookTvTypeOffset, sizeof(uint))));
+        Assert.Equal(0x04541E3Au, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viConfigurePalTableOffset, sizeof(uint))));
+        Assert.Equal(0x00170C69u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viConfigurePalTableOffset + 0x08, sizeof(uint))));
+        Assert.Equal(0x0C6F0C6Du, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viConfigurePalTableOffset + 0x0C, sizeof(uint))));
+        Assert.Equal(0x002F0269u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(viConfigurePalTableOffset + 0x14, sizeof(uint))));
         if (regionCheckOffset >= 0)
         {
             Assert.Equal(0x2C620003u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(regionCheckOffset, sizeof(uint))));

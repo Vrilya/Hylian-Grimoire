@@ -187,7 +187,7 @@
                                 Height="28"
                                 Padding="0"
                                 Content="?"
-                                ToolTipService.ToolTip="Replaces embedded NTSC N64 VI timing values with PAL N64 timing values, marks the ROM as PAL, and allows PAL startup on MM US.&#x0a;&#x0a;ROMs: MM NTSC-U" />
+                                ToolTipService.ToolTip="Replaces embedded NTSC N64 VI timing values with PAL N64 timing values, uses PAL video scaling at startup, patches the dynamic PAL VI table used by Bombers' Notebook, marks the ROM as PAL, and allows PAL startup on MM US.&#x0a;&#x0a;ROMs: MM NTSC-U" />
                         </StackPanel>
                         <TextBlock
                             x:Name="MmFpalStatusText"

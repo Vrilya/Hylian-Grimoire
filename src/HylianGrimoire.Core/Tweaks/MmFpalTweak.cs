@@ -10,11 +10,20 @@ public static class MmFpalTweak
 
     private static readonly IReadOnlyDictionary<string, PatchProfile> ProfilesByName = new Dictionary<string, PatchProfile>(StringComparer.Ordinal)
     {
-        ["Majora's Mask NTSC-U"] = new(ViModeOffset: 0x18FC0, RegionCheckOffset: 0xC0F7F8),
+        ["Majora's Mask NTSC-U"] = new(
+            ViModeOffset: 0x18FC0,
+            IdleVideoNtscBranchOffset: 0x13E0,
+            NotebookTvTypeOffset: 0xC0EE64,
+            ViConfigurePalTableOffset: 0xC75600,
+            RegionCheckOffset: 0xC0F7F8),
     };
 
     private static readonly byte[] OriginalHeader = [OriginalHeaderRegion];
     private static readonly byte[] PatchedHeader = [PatchedHeaderRegion];
+    private static readonly byte[] OriginalIdleVideoNtscBranch = Convert.FromHexString("10410006");
+    private static readonly byte[] PatchedIdleVideoNtscBranch = Convert.FromHexString("10410030");
+    private static readonly byte[] OriginalNotebookTvType = Convert.FromHexString("8cc60300");
+    private static readonly byte[] PatchedNotebookTvType = Convert.FromHexString("24060000");
     private static readonly byte[] OriginalRegionCheck = Convert.FromHexString("00001025");
     private static readonly byte[] PatchedRegionCheck = Convert.FromHexString("2c620003");
 
@@ -26,12 +35,24 @@ public static class MmFpalTweak
         P(0x14, "00000c15", "00170c69"),
         P(0x18, "0c150c15", "0c6f0c6d"),
         P(0x1C, "006c02ec", "00800300"),
-        P(0x2C, "00000400", "00000354"),
         P(0x30, "002501ff", "002f0269"),
         P(0x34, "000e0204", "0009026b"),
-        P(0x40, "00000400", "00000354"),
         P(0x44, "002501ff", "002f0269"),
         P(0x48, "000e0204", "0009026b"),
+    ];
+
+    private static readonly Patch[] ViYScaleResetPatches =
+    [
+        P(0x2C, "00000400", "00000400"),
+        P(0x40, "00000400", "00000400"),
+    ];
+
+    private static readonly Patch[] ViConfigurePalTablePatches =
+    [
+        P(0x00, "0404233a", "04541e3a"),
+        P(0x08, "00150c69", "00170c69"),
+        P(0x0C, "0c6f0c6e", "0c6f0c6d"),
+        P(0x14, "005f0239", "002f0269"),
     ];
 
     public static RomTweakStatus GetStatus(ReadOnlySpan<byte> decompressedRom, RomVersionProfile profile)
@@ -96,7 +117,26 @@ public static class MmFpalTweak
             CopyPatch(decompressedRom, patchProfile.ViModeOffset + patch.RelativeOffset, enabled ? patch.Patched : patch.Original);
         }
 
+        foreach (Patch patch in ViYScaleResetPatches)
+        {
+            CopyPatch(decompressedRom, patchProfile.ViModeOffset + patch.RelativeOffset, patch.Original);
+        }
+
+        foreach (Patch patch in ViConfigurePalTablePatches)
+        {
+            CopyPatch(
+                decompressedRom,
+                patchProfile.ViConfigurePalTableOffset + patch.RelativeOffset,
+                enabled ? patch.Patched : patch.Original);
+        }
+
         CopyPatch(decompressedRom, HeaderRegionOffset, enabled ? PatchedHeader : OriginalHeader);
+        CopyPatch(
+            decompressedRom,
+            patchProfile.IdleVideoNtscBranchOffset,
+            enabled ? PatchedIdleVideoNtscBranch : OriginalIdleVideoNtscBranch);
+        CopyPatch(decompressedRom, patchProfile.NotebookTvTypeOffset, enabled ? PatchedNotebookTvType : OriginalNotebookTvType);
+
         if (patchProfile.RegionCheckOffset is int regionCheckOffset)
         {
             CopyPatch(decompressedRom, regionCheckOffset, enabled ? PatchedRegionCheck : OriginalRegionCheck);
@@ -120,6 +160,22 @@ public static class MmFpalTweak
         }
 
         states.Add(new ComponentState("ROM region code", GetPatchState(rom, HeaderRegionOffset, OriginalHeader, PatchedHeader)));
+        states.Add(new ComponentState(
+            "PAL video init path",
+            GetPatchState(rom, patchProfile.IdleVideoNtscBranchOffset, OriginalIdleVideoNtscBranch, PatchedIdleVideoNtscBranch)));
+        states.Add(new ComponentState(
+            "Bombers' Notebook VI timing source",
+            GetPatchState(rom, patchProfile.NotebookTvTypeOffset, OriginalNotebookTvType, PatchedNotebookTvType)));
+        foreach (Patch patch in ViConfigurePalTablePatches)
+        {
+            states.Add(new ComponentState(
+                $"dynamic PAL VI timing field 0x{patch.RelativeOffset:X2}",
+                GetPatchState(
+                    rom,
+                    patchProfile.ViConfigurePalTableOffset + patch.RelativeOffset,
+                    patch.Original,
+                    patch.Patched)));
+        }
 
         if (patchProfile.RegionCheckOffset is int regionCheckOffset)
         {
@@ -152,9 +208,35 @@ public static class MmFpalTweak
             }
         }
 
+        foreach (Patch patch in ViYScaleResetPatches)
+        {
+            if (!HasPatchRange(rom, patchProfile.ViModeOffset + patch.RelativeOffset, patch.Original.Length))
+            {
+                return false;
+            }
+        }
+
         if (!HasPatchRange(rom, HeaderRegionOffset, OriginalHeader.Length))
         {
             return false;
+        }
+
+        if (!HasPatchRange(rom, patchProfile.IdleVideoNtscBranchOffset, OriginalIdleVideoNtscBranch.Length))
+        {
+            return false;
+        }
+
+        if (!HasPatchRange(rom, patchProfile.NotebookTvTypeOffset, OriginalNotebookTvType.Length))
+        {
+            return false;
+        }
+
+        foreach (Patch patch in ViConfigurePalTablePatches)
+        {
+            if (!HasPatchRange(rom, patchProfile.ViConfigurePalTableOffset + patch.RelativeOffset, patch.Original.Length))
+            {
+                return false;
+            }
         }
 
         return patchProfile.RegionCheckOffset is not int regionCheckOffset
@@ -174,7 +256,12 @@ public static class MmFpalTweak
         return new Patch(relativeOffset, Convert.FromHexString(original), Convert.FromHexString(patched));
     }
 
-    private sealed record PatchProfile(int ViModeOffset, int? RegionCheckOffset);
+    private sealed record PatchProfile(
+        int ViModeOffset,
+        int IdleVideoNtscBranchOffset,
+        int NotebookTvTypeOffset,
+        int ViConfigurePalTableOffset,
+        int? RegionCheckOffset);
 
     private sealed record Patch(int RelativeOffset, byte[] Original, byte[] Patched);
 
