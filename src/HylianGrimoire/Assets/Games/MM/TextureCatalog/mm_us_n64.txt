@@ -518,12 +518,12 @@ archives/schedule_dma_static_yar|gBombersNotebookPhotoRosaSistersTex|bombers_not
 archives/schedule_dma_static_yar|gBombersNotebookPhotoShiroTex|bombers_notebook_photo_shiro|8800|RGBA16|32|32|CmpDmaArchive|A8C000|6A10
 archives/schedule_dma_static_yar|gBombersNotebookPhotoToiletHandTex|bombers_notebook_photo_toilet_hand|6000|RGBA16|32|32|CmpDmaArchive|A8C000|6A10
 archives/schedule_dma_static_yar|gBombersNotebookPhotoTotoTex|bombers_notebook_photo_toto|4000|RGBA16|32|32|CmpDmaArchive|A8C000|6A10
-code/code|sCircleTex|circle|C74DD0|I4|64|64
-code/code|sDebugDisplayBallTex|debug_ball|C511F8|I8|16|16
-code/code|sDebugDisplayCircleTex|debug_circle|C510F8|I8|16|16
-code/code|sDebugDisplayCrossTex|debug_cross|C513F8|I8|16|16
-code/code|sDebugDisplayCursorTex|debug_cursor|C512F8|I8|16|16
-code/code|sWhiteSquareTex|white_square|C55078|I4|16|16
+code|sCircleTex|circle|C74DD0|I4|64|64
+code|sDebugDisplayBallTex|debug_ball|C511F8|I8|16|16
+code|sDebugDisplayCircleTex|debug_circle|C510F8|I8|16|16
+code|sDebugDisplayCrossTex|debug_cross|C513F8|I8|16|16
+code|sDebugDisplayCursorTex|debug_cursor|C512F8|I8|16|16
+code|sWhiteSquareTex|white_square|C55078|I4|16|16
 interface/do_action_static|gDoActionAttackENGTex|attack_eng|AC0000|IA4|48|16
 interface/do_action_static|gDoActionCheckENGTex|check_eng|AC0180|IA4|48|16
 interface/do_action_static|gDoActionClimbENGTex|climb_eng|AC1080|IA4|48|16
@@ -8756,4 +8756,4 @@ overlays/ovl_Oceff_Wipe2|sEponaSongEffect2Tex|eponas_song_effect_2|DF9C30|I4|64|
 overlays/ovl_Oceff_Wipe3|sSariaSongEffectTex|saria_song_effect|DFABA0|I8|64|64
 overlays/ovl_Oceff_Wipe4|sScarecrowSongEffectTex|scarecrow_song_effect|E10930|I8|32|64
 overlays/ovl_Oceff_Wipe7|sSongofHealingEffectTex|song_of_healing_effect|1032FA0|I8|32|64
-scenes/Z2_SECOM/Z2_SECOM|gSakonsHidoutConveyorBeltTex|sakons_hideout_conveyor_belt|2A807F0|RGBA16|32|32
+scenes/Z2_SECOM|gSakonsHidoutConveyorBeltTex|sakons_hideout_conveyor_belt|2A807F0|RGBA16|32|32

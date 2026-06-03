@@ -252,9 +252,7 @@ function generateProfile(profile) {
       }
 
       const file = files.get(fileName);
-      const group = groupPrefix === "."
-        ? fileName
-        : `${groupPrefix}/${fileName}`;
+      const group = getTextureGroup(groupPrefix, fileName);
       const textureNodes = [...block.body.matchAll(/<Texture\b(?<attrs>[^/>]*?)\/>/gi)];
 
       for (const node of textureNodes) {
@@ -548,6 +546,19 @@ function readAttrs(text) {
 
 function parseHex(value) {
   return Number.parseInt(value.replace(/^0x/i, ""), 16);
+}
+
+function getTextureGroup(groupPrefix, fileName) {
+  if (groupPrefix === ".") {
+    return fileName;
+  }
+
+  const parts = groupPrefix.split("/").filter(Boolean);
+  if (parts.at(-1)?.toLowerCase() === fileName.toLowerCase()) {
+    return groupPrefix;
+  }
+
+  return `${groupPrefix}/${fileName}`;
 }
 
 function toCatalogFormat(format) {

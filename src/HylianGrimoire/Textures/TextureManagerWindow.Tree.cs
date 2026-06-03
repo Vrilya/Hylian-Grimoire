@@ -40,15 +40,7 @@ public sealed partial class TextureManagerWindow
 
         foreach (TextureFolderItem folder in BuildTextureTree(textures))
         {
-            var groupNode = new TreeViewNode
-            {
-                Content = folder,
-                IsExpanded = false,
-            };
-
-            AddPlaceholderIfNeeded(groupNode, folder);
-
-            TextureTree.RootNodes.Add(groupNode);
+            TextureTree.RootNodes.Add(CreateFolderNode(folder, isExpanded: false));
         }
 
         TextureTree.IsEnabled = true;
@@ -68,15 +60,12 @@ public sealed partial class TextureManagerWindow
         }
 
         args.Node.Children.Clear();
+        args.Node.HasUnrealizedChildren = false;
+        folder.IsPopulated = true;
+
         foreach (TextureFolderItem childFolder in folder.Folders.Values.OrderBy(folder => folder.Name))
         {
-            var childNode = new TreeViewNode
-            {
-                Content = childFolder,
-                IsExpanded = false,
-            };
-            AddPlaceholderIfNeeded(childNode, childFolder);
-            args.Node.Children.Add(childNode);
+            args.Node.Children.Add(CreateFolderNode(childFolder, isExpanded: false));
         }
 
         foreach (TextureDefinition texture in folder.Textures.OrderBy(texture => texture.Name))
@@ -86,8 +75,6 @@ public sealed partial class TextureManagerWindow
                 Content = new TextureListItem(texture),
             });
         }
-
-        folder.IsPopulated = true;
     }
 
     private void OnTextureSelectionChanged(TreeView sender, TreeViewSelectionChangedEventArgs e)
@@ -137,11 +124,11 @@ public sealed partial class TextureManagerWindow
         return [.. root.Folders.Values.OrderBy(folder => folder.Name)];
     }
 
-    private static void AddPlaceholderIfNeeded(TreeViewNode node, TextureFolderItem folder)
-    {
-        if (folder.Folders.Count > 0 || folder.Textures.Count > 0)
+    private static TreeViewNode CreateFolderNode(TextureFolderItem folder, bool isExpanded)
+        => new()
         {
-            node.Children.Add(new TreeViewNode { Content = "Loading..." });
-        }
-    }
+            Content = folder,
+            IsExpanded = isExpanded,
+            HasUnrealizedChildren = folder.Folders.Count > 0 || folder.Textures.Count > 0,
+        };
 }

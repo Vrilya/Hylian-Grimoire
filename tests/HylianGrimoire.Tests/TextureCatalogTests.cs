@@ -26,6 +26,29 @@ public sealed class TextureCatalogTests
         Assert.Equal(expectedCount, textures.Count);
     }
 
+    [Fact]
+    public void Texture_groups_do_not_repeat_adjacent_path_segments()
+    {
+        foreach (RomVersionProfile profile in RomVersionDatabase.Profiles)
+        {
+            if (!TextureCatalog.TryGetTextures(profile, out IReadOnlyList<TextureDefinition>? textures))
+            {
+                continue;
+            }
+
+            foreach (TextureDefinition texture in textures)
+            {
+                string[] parts = texture.Group.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 1; i < parts.Length; i++)
+                {
+                    Assert.False(
+                        string.Equals(parts[i - 1], parts[i], StringComparison.OrdinalIgnoreCase),
+                        $"{profile.Name} {texture.Group}/{texture.Name} repeats adjacent texture tree segments.");
+                }
+            }
+        }
+    }
+
     [Theory]
     [InlineData("Retail NTSC 1.2", "gTitleTheLegendOfTextTex", 0x17b3700, TextureFormat.I8, 72, 8)]
     [InlineData("Retail PAL 1.0", "gAttackDoActionENGTex", 0x8a6000, TextureFormat.IA4, 48, 16)]
