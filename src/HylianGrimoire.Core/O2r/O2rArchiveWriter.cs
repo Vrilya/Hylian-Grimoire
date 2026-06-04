@@ -1,9 +1,9 @@
 using System.IO.Compression;
 using HylianGrimoire.Services;
 
-namespace HylianGrimoire.Soh;
+namespace HylianGrimoire.O2r;
 
-internal sealed class SohO2rArchiveWriter
+public sealed class O2rArchiveWriter
 {
     private static readonly DateTimeOffset ZipEpoch = new(1980, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
@@ -38,9 +38,7 @@ internal sealed class SohO2rArchiveWriter
     }
 
     public static IReadOnlySet<string> ReadResourcePaths(string inputPath)
-    {
-        return ReadEntries(inputPath).Keys.ToHashSet(StringComparer.Ordinal);
-    }
+        => ReadEntries(inputPath).Keys.ToHashSet(StringComparer.Ordinal);
 
     public static IReadOnlyDictionary<string, byte[]> ReadEntries(string inputPath)
     {

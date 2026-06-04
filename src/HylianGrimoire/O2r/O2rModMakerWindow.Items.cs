@@ -4,9 +4,9 @@ using HylianGrimoire.Textures;
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
 
-namespace HylianGrimoire.Soh;
+namespace HylianGrimoire.O2r;
 
-public sealed partial class SohModMakerWindow
+public sealed partial class O2rModMakerWindow
 {
     public sealed class TextureListItem(TextureDefinition texture) : NotifyItem
     {
@@ -29,7 +29,7 @@ public sealed partial class SohModMakerWindow
     {
         private bool _isChecked;
 
-        public ArchiveTextureListItem(SohArchiveTextureResource resource)
+        public ArchiveTextureListItem(O2rArchiveTextureResource resource)
         {
             Resource = resource;
             ResourcePath = resource.ResourcePath;
@@ -37,7 +37,7 @@ public sealed partial class SohModMakerWindow
             DisplayBrush = resource.DisplayBrush;
         }
 
-        public SohArchiveTextureResource Resource { get; }
+        public O2rArchiveTextureResource Resource { get; }
 
         public string ResourcePath { get; }
 
@@ -52,7 +52,7 @@ public sealed partial class SohModMakerWindow
         }
     }
 
-    public sealed class TextureFolderItem(string name) : NotifyItem
+    public sealed class TextureFolderItem(string name, O2rModPortProfile portProfile) : NotifyItem
     {
         private bool _isChecked;
 
@@ -62,7 +62,7 @@ public sealed partial class SohModMakerWindow
 
         public List<TextureDefinition> Textures { get; } = [];
 
-        public List<SohArchiveTextureResource> ArchiveTextures { get; } = [];
+        public List<O2rArchiveTextureResource> ArchiveTextures { get; } = [];
 
         public int TotalCount { get; private set; }
 
@@ -82,7 +82,7 @@ public sealed partial class SohModMakerWindow
         {
             if (!Folders.TryGetValue(childName, out TextureFolderItem? folder))
             {
-                folder = new TextureFolderItem(childName);
+                folder = new TextureFolderItem(childName, portProfile);
                 Folders.Add(childName, folder);
             }
 
@@ -109,10 +109,10 @@ public sealed partial class SohModMakerWindow
         {
             foreach (TextureDefinition texture in Textures)
             {
-                yield return SohResourcePacker.GetTextureResourcePath(texture);
+                yield return portProfile.GetTextureResourcePath(texture);
             }
 
-            foreach (SohArchiveTextureResource texture in ArchiveTextures)
+            foreach (O2rArchiveTextureResource texture in ArchiveTextures)
             {
                 yield return texture.ResourcePath;
             }
@@ -133,47 +133,34 @@ public sealed partial class SohModMakerWindow
         }
     }
 
-    public sealed record SohArchiveTextureResource(string ResourcePath, SohArchiveTextureStatus Status)
+    public sealed record O2rArchiveTextureResource(string ResourcePath, O2rArchiveTextureStatus Status)
     {
         public string Name => Path.GetFileName(ResourcePath);
 
         public string DisplayText => Status switch
         {
-            SohArchiveTextureStatus.DiffersFromRom => $"{Name}  override",
-            SohArchiveTextureStatus.External => $"{Name}  external",
+            O2rArchiveTextureStatus.DiffersFromRom => $"{Name}  override",
+            O2rArchiveTextureStatus.External => $"{Name}  external",
             _ => Name,
         };
 
         public string StatusText => Status switch
         {
-            SohArchiveTextureStatus.MatchesRom => "Matches loaded ROM.",
-            SohArchiveTextureStatus.DiffersFromRom => "Overrides loaded ROM.",
-            SohArchiveTextureStatus.External => "Not found in loaded ROM catalog.",
+            O2rArchiveTextureStatus.MatchesRom => "Matches loaded ROM.",
+            O2rArchiveTextureStatus.DiffersFromRom => "Overrides loaded ROM.",
+            O2rArchiveTextureStatus.External => "Not found in loaded ROM catalog.",
             _ => "Existing .o2r texture resource.",
         };
 
         public Brush? DisplayBrush => Status switch
         {
-            SohArchiveTextureStatus.DiffersFromRom => new SolidColorBrush(Colors.LightSalmon),
-            SohArchiveTextureStatus.External => new SolidColorBrush(Colors.LightSkyBlue),
+            O2rArchiveTextureStatus.DiffersFromRom => new SolidColorBrush(Colors.LightSalmon),
+            O2rArchiveTextureStatus.External => new SolidColorBrush(Colors.LightSkyBlue),
             _ => null,
         };
     }
 
-    public sealed record SohTextResourceItem(
-        string DisplayName,
-        string ResourcePath,
-        SohTextResourceKind Kind,
-        int BankIndex);
-
-    private sealed record SohTextPayload(string ResourcePath, byte[] Data);
-
-    public enum SohTextResourceKind
-    {
-        CurrentDocument,
-        MessageBank,
-        Credits,
-    }
+    private sealed record O2rTextPayload(string ResourcePath, byte[] Data);
 
     private enum ResourceViewMode
     {
@@ -181,7 +168,7 @@ public sealed partial class SohModMakerWindow
         Mod,
     }
 
-    public enum SohArchiveTextureStatus
+    public enum O2rArchiveTextureStatus
     {
         InArchive,
         MatchesRom,
@@ -205,7 +192,7 @@ public sealed partial class SohModMakerWindow
         }
     }
 
-    private sealed class ProgressScope(SohModMakerWindow owner) : IDisposable
+    private sealed class ProgressScope(O2rModMakerWindow owner) : IDisposable
     {
         private bool _disposed;
 

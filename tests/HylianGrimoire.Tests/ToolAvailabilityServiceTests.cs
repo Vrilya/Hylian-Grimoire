@@ -45,7 +45,7 @@ public sealed class ToolAvailabilityServiceTests
         Assert.True(availability.CanUseGlyphTools);
         Assert.True(availability.CanRemapGlyphBytes);
         Assert.True(availability.CanUseMessagePreview);
-        Assert.True(availability.CanUseSohModMaker);
+        Assert.True(availability.CanUseO2rModMaker);
         Assert.False(availability.CanSaveLoadedRom);
         Assert.False(availability.CanImportHeaderIntoRom);
         Assert.False(availability.CanUseTweaks);
@@ -75,11 +75,11 @@ public sealed class ToolAvailabilityServiceTests
         Assert.True(availability.CanUseTitleText);
         Assert.True(availability.CanUsePromptEditor);
         Assert.True(availability.CanUseTextureManager);
-        Assert.True(availability.CanUseSohModMaker);
+        Assert.True(availability.CanUseO2rModMaker);
     }
 
     [Fact]
-    public void MajorasMaskRetailRomUsesMajorasMaskToolSurface()
+    public void MajorasMaskUsRomEnables2S2hO2rModMaker()
     {
         RomVersionProfile profile = GetProfile("Majora's Mask NTSC-U");
         List<MessageEntry> entries = [CreateEntry(0x0001)];
@@ -102,8 +102,41 @@ public sealed class ToolAvailabilityServiceTests
         Assert.True(availability.CanUseTitleText);
         Assert.True(availability.CanUsePromptEditor);
         Assert.True(availability.CanUseTextureManager);
-        Assert.False(availability.CanUseSohModMaker);
+        Assert.True(availability.CanUseO2rModMaker);
         Assert.False(availability.CanUseFontOrder);
+    }
+
+    [Fact]
+    public void MajorasMaskUsGameCubeRomEnablesTextOnly2S2hO2rModMaker()
+    {
+        RomVersionProfile profile = GetProfile("Majora's Mask NTSC-U GameCube");
+        List<MessageEntry> entries = [CreateEntry(0x0001)];
+        RomMessageData romData = CreateRomData(profile, entries);
+
+        ToolAvailability availability = ToolAvailabilityService.Build(
+            profile.GameProfile,
+            DocumentKind.Rom,
+            entries,
+            romData);
+
+        Assert.True(availability.CanUseO2rModMaker);
+        Assert.False(availability.CanUseTextureManager);
+    }
+
+    [Fact]
+    public void MajorasMaskEuRomDoesNotEnable2S2hO2rModMaker()
+    {
+        RomVersionProfile profile = GetProfile("Majora's Mask EU 1.0");
+        List<MessageEntry> entries = [CreateEntry(0x0001)];
+        RomMessageData romData = CreateRomData(profile, entries);
+
+        ToolAvailability availability = ToolAvailabilityService.Build(
+            profile.GameProfile,
+            DocumentKind.Rom,
+            entries,
+            romData);
+
+        Assert.False(availability.CanUseO2rModMaker);
     }
 
     private static MessageEntry CreateEntry(int id) =>

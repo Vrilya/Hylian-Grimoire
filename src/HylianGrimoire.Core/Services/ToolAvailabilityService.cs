@@ -1,5 +1,6 @@
 using HylianGrimoire.Games;
 using HylianGrimoire.Models;
+using HylianGrimoire.O2r;
 using HylianGrimoire.PromptEditor;
 using HylianGrimoire.Rom;
 using HylianGrimoire.Textures;
@@ -24,6 +25,10 @@ public static class ToolAvailabilityService
         bool canUseTextureManager = romData is not null
             && capabilities.SupportsTextureManager
             && TextureCatalog.TryGetTextures(romData.Profile, out _);
+        bool canUseO2rModMaker = capabilities.SupportsO2rModMaker
+            && O2rModPortProfileCatalog.TryGetProfile(activeGameProfile, romData?.Profile, out O2rModPortProfile o2rProfile)
+            && ((hasEntries && (romData is not null || o2rProfile.SupportsCurrentDocumentTextResources))
+                || (romData is not null && canUseTextureManager));
 
         return new ToolAvailability(
             HasActiveProject: hasActiveProject,
@@ -44,8 +49,7 @@ public static class ToolAvailabilityService
                 && capabilities.SupportsPromptEditor
                 && PromptEditorProfileCatalog.TryGetProfile(romData.Profile, out _),
             CanUseTextureManager: canUseTextureManager,
-            CanUseSohModMaker: capabilities.SupportsSohModMaker
-                && (hasEntries || (romData is not null && canUseTextureManager)),
+            CanUseO2rModMaker: canUseO2rModMaker,
             CanUseTweaks: romData?.Profile.IsRetail == true && capabilities.SupportsRomTweaks);
     }
 }

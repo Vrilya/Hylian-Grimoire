@@ -5,9 +5,9 @@ using Windows.Storage;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
 
-namespace HylianGrimoire.Soh;
+namespace HylianGrimoire.O2r;
 
-public sealed partial class SohModMakerWindow
+public sealed partial class O2rModMakerWindow
 {
     private async Task<string?> PickOpenO2rAsync()
     {
@@ -22,10 +22,10 @@ public sealed partial class SohModMakerWindow
     {
         var picker = new FileSavePicker
         {
-            SuggestedFileName = "HylianGrimoireMod",
+            SuggestedFileName = _portProfile.SuggestedFileName,
         };
         InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
-        picker.FileTypeChoices.Add("SoH O2R mod", [".o2r"]);
+        picker.FileTypeChoices.Add(_portProfile.FileTypeDescription, [".o2r"]);
         StorageFile? file = await picker.PickSaveFileAsync();
         return file?.Path;
     }

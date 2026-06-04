@@ -1,9 +1,9 @@
 using HylianGrimoire.Textures;
 using Microsoft.UI.Xaml;
 
-namespace HylianGrimoire.Soh;
+namespace HylianGrimoire.O2r;
 
-public sealed partial class SohModMakerWindow
+public sealed partial class O2rModMakerWindow
 {
     private async void OnLoadExistingMod(object sender, RoutedEventArgs e)
     {
@@ -15,26 +15,26 @@ public sealed partial class SohModMakerWindow
 
         try
         {
-            _existingEntries = SohO2rArchiveWriter.ReadEntries(path);
+            _existingEntries = O2rArchiveWriter.ReadEntries(path);
             IReadOnlySet<string> resources = _existingEntries.Keys.ToHashSet(StringComparer.Ordinal);
             _selectedResources.Clear();
             _selectedTextResources.Clear();
             _archiveTextureResources = BuildArchiveTextureResources(_existingEntries, _textures, _romData?.DecompressedRom);
-            foreach (SohArchiveTextureResource resource in _archiveTextureResources)
+            foreach (O2rArchiveTextureResource resource in _archiveTextureResources)
             {
                 _selectedResources.Add(resource.ResourcePath);
             }
 
             foreach (TextureDefinition texture in _textures)
             {
-                string resourcePath = SohResourcePacker.GetTextureResourcePath(texture);
+                string resourcePath = _portProfile.GetTextureResourcePath(texture);
                 if (resources.Contains(resourcePath))
                 {
                     _selectedResources.Add(resourcePath);
                 }
             }
 
-            foreach (SohTextResourceItem textResource in _textResources)
+            foreach (O2rTextResourceDefinition textResource in _textResources)
             {
                 if (resources.Contains(textResource.ResourcePath))
                 {

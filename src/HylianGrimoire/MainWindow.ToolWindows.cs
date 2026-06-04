@@ -1,7 +1,7 @@
 using Microsoft.UI.Xaml;
 using HylianGrimoire.Models;
+using HylianGrimoire.O2r;
 using HylianGrimoire.PromptEditor;
-using HylianGrimoire.Soh;
 using HylianGrimoire.Textures;
 
 namespace HylianGrimoire;
@@ -88,47 +88,49 @@ public sealed partial class MainWindow
         _textureManagerWindow.Activate();
     }
 
-    private void OnOpenSohModMaker(object sender, RoutedEventArgs e)
+    private void OnOpenO2rModMaker(object sender, RoutedEventArgs e)
     {
-        if (!CanUseSohModMakerTool())
+        if (!CanUseO2rModMakerTool())
         {
             return;
         }
 
         try
         {
-            if (_sohModMakerWindow is null)
+            O2rModPortProfile portProfile = O2rModPortProfileCatalog.GetProfile(CurrentGameProfile, _session.RomData?.Profile);
+            if (_o2rModMakerWindow is null)
             {
-                var window = new SohModMakerWindow(
+                var window = new O2rModMakerWindow(
+                    portProfile,
                     _session.RomData,
-                    GetCurrentEntriesForSohModMaker,
-                    GetCurrentTextLanguagesForSohModMaker,
+                    GetCurrentEntriesForO2rModMaker,
+                    GetCurrentTextLanguagesForO2rModMaker,
                     CreateCurrentEncodingProfile(),
-                    OnSohModMakerChanged);
-                window.Closed += (_, _) => _sohModMakerWindow = null;
-                _sohModMakerWindow = window;
+                    OnO2rModMakerChanged);
+                window.Closed += (_, _) => _o2rModMakerWindow = null;
+                _o2rModMakerWindow = window;
             }
             else
             {
-                _sohModMakerWindow.SetRomData(_session.RomData, CreateCurrentEncodingProfile());
+                _o2rModMakerWindow.SetContext(portProfile, _session.RomData, CreateCurrentEncodingProfile());
             }
 
-            _sohModMakerWindow.Activate();
+            _o2rModMakerWindow.Activate();
         }
         catch (Exception ex)
         {
-            _sohModMakerWindow = null;
-            _ = ShowErrorAsync("Failed to open SoH Mod Maker", ex.Message);
+            _o2rModMakerWindow = null;
+            _ = ShowErrorAsync("Failed to open O2R Mod Maker", ex.Message);
         }
     }
 
-    private List<MessageEntry> GetCurrentEntriesForSohModMaker()
+    private List<MessageEntry> GetCurrentEntriesForO2rModMaker()
     {
         CommitCurrent();
         return _session.Entries.ToList();
     }
 
-    private IReadOnlyDictionary<int, List<MessageEntry>> GetCurrentTextLanguagesForSohModMaker()
+    private IReadOnlyDictionary<int, List<MessageEntry>> GetCurrentTextLanguagesForO2rModMaker()
     {
         CommitCurrent();
 
@@ -146,7 +148,7 @@ public sealed partial class MainWindow
         };
     }
 
-    private void OnSohModMakerChanged(string status)
+    private void OnO2rModMakerChanged(string status)
     {
         SetStatus(status);
     }
@@ -200,9 +202,9 @@ public sealed partial class MainWindow
         _textureManagerWindow = null;
     }
 
-    private void CloseSohModMakerWindow()
+    private void CloseO2rModMakerWindow()
     {
-        _sohModMakerWindow?.Close();
-        _sohModMakerWindow = null;
+        _o2rModMakerWindow?.Close();
+        _o2rModMakerWindow = null;
     }
 }

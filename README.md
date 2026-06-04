@@ -22,7 +22,7 @@ The editor works with extracted message files, C message headers, and `.z64` ROM
 - Manage game-specific glyph profiles for editor display characters, glyph images, and preview glyph widths without accidentally changing the intended byte values.
 - Read glyph images and widths directly from ROMs, edit them in the Glyph Manager, and write the changes back to the ROM.
 - Export and replace supported ROM textures as PNG files with exact byte-preserving round-tripping.
-- Create and edit SoH `.o2r` mod files with selected text and texture resources.
+- Create and edit `.o2r` mod files for supported ports with selected text and texture resources.
 - Remap glyph byte usage across the active script.
 - Edit supported ROM title-screen text.
 - Edit supported pause-menu prompt positions.
@@ -73,11 +73,11 @@ The Texture Manager exports and replaces supported Ocarina of Time and Majora's 
 
 Folder export and folder replace use the same grouped texture layout, making it practical to work on many image assets at once while still preserving exact binary round-tripping.
 
-## SoH Mod Maker
+## O2R Mod Maker
 
-![SoH Mod Maker](media/sohmodmaker.png)
+![O2R Mod Maker](media/sohmodmaker.png)
 
-The SoH Mod Maker creates and edits Ocarina of Time `.o2r` mod files from the resources Hylian Grimoire already understands. It can include selected texture resources, selected text resources, or both, and it can load an existing mod so its current contents can be inspected before saving a new version.
+The O2R Mod Maker creates and edits `.o2r` mod files from the resources Hylian Grimoire already understands. It supports Ship of Harkinian for Ocarina of Time and 2 Ship 2 Harkinian for Majora's Mask US profiles. It can include selected texture resources, selected text resources, or both where the selected port/profile supports them, and it can load an existing mod so its current contents can be inspected before saving a new version.
 
 Texture resources use the same catalog and naming as the Texture Manager, so exported/replaced assets and mod resources stay consistent. When a loaded `.o2r` already contains resources that differ from the loaded ROM, Hylian Grimoire warns before overwriting them.
 
@@ -193,10 +193,11 @@ For compatibility, the tests can still fall back to discovering an older fixture
 
 ```text
 src/HylianGrimoire.Core/         Core library for codecs, games, ROM handling, headers, services, sessions, and testable domain logic
+src/HylianGrimoire.Core/O2r/     O2R port profiles, archive writing, and resource packing
 src/HylianGrimoire/              WinUI 3 application, windows, dialogs, app assets, and UI composition
 src/HylianGrimoire/Assets/       Runtime visual/font/texture assets copied into the app output
 src/HylianGrimoire/Interop/      Windows window theming, icons, sizing, cursor, and native interop helpers
-src/HylianGrimoire/Soh/          Ocarina of Time SoH .o2r mod creation and resource packing
+src/HylianGrimoire/O2r/          O2R Mod Maker window and UI workflow
 tests/HylianGrimoire.Tests/      xUnit tests for codecs, import/export, ROM round-tripping, tools, sessions, and workflow parity
 tools/                           Local helper tools and scripts
 media/                           README screenshots

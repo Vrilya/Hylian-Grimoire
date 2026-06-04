@@ -2,9 +2,9 @@ using HylianGrimoire.Textures;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
-namespace HylianGrimoire.Soh;
+namespace HylianGrimoire.O2r;
 
-public sealed partial class SohModMakerWindow
+public sealed partial class O2rModMakerWindow
 {
     private void OnTextureTreeExpanding(TreeView sender, TreeViewExpandingEventArgs args)
     {
@@ -27,7 +27,7 @@ public sealed partial class SohModMakerWindow
             });
         }
 
-        foreach (SohArchiveTextureResource texture in folder.ArchiveTextures.OrderBy(texture => texture.Name))
+        foreach (O2rArchiveTextureResource texture in folder.ArchiveTextures.OrderBy(texture => texture.Name))
         {
             args.Node.Children.Add(new TreeViewNode
             {
@@ -58,7 +58,7 @@ public sealed partial class SohModMakerWindow
         if (_romData is null)
         {
             ClearPreview();
-            string resourcePath = SohResourcePacker.GetTextureResourcePath(item.Texture);
+            string resourcePath = _portProfile.GetTextureResourcePath(item.Texture);
             DetailsText.Text =
                 $"{resourcePath}\n" +
                 "Texture preview requires a loaded ROM.\n" +
@@ -70,7 +70,7 @@ public sealed partial class SohModMakerWindow
         {
             UpdatePreviewImage(item.Texture);
             int byteLength = TextureCodec.GetByteLength(item.Texture.Width, item.Texture.Height, item.Texture.Format);
-            string resourcePath = SohResourcePacker.GetTextureResourcePath(item.Texture);
+            string resourcePath = _portProfile.GetTextureResourcePath(item.Texture);
             DetailsText.Text =
                 $"{resourcePath}\n" +
                 $"0x{item.Texture.RomAddress:X}  {item.Texture.Width}x{item.Texture.Height}  {item.Texture.Format}  {byteLength} bytes\n" +
@@ -147,7 +147,7 @@ public sealed partial class SohModMakerWindow
         }
         else if (itemContext is TextureListItem item)
         {
-            string resourcePath = SohResourcePacker.GetTextureResourcePath(item.Texture);
+            string resourcePath = _portProfile.GetTextureResourcePath(item.Texture);
             if (shouldSelect)
             {
                 _selectedResources.Add(resourcePath);
@@ -210,15 +210,15 @@ public sealed partial class SohModMakerWindow
             ? _textures
             : _textures
                 .Where(IsTextureSelected)
-                .Where(texture => !selectedArchiveResourcePaths.Contains(SohResourcePacker.GetTextureResourcePath(texture)))
+                .Where(texture => !selectedArchiveResourcePaths.Contains(_portProfile.GetTextureResourcePath(texture)))
                 .ToList();
-        IReadOnlyList<SohArchiveTextureResource> visibleArchiveTextures = _resourceViewMode == ResourceViewMode.Mod
+        IReadOnlyList<O2rArchiveTextureResource> visibleArchiveTextures = _resourceViewMode == ResourceViewMode.Mod
             ? _archiveTextureResources
                 .Where(resource => _selectedResources.Contains(resource.ResourcePath))
                 .ToList()
             : [];
 
-        foreach (TextureFolderItem folder in BuildTextureTree(visibleTextures, visibleArchiveTextures))
+        foreach (TextureFolderItem folder in BuildTextureTree(visibleTextures, visibleArchiveTextures, _portProfile))
         {
             TextureTree.RootNodes.Add(CreateFolderNode(folder, isExpanded: false));
         }
@@ -301,7 +301,7 @@ public sealed partial class SohModMakerWindow
     }
 
     private bool IsTextureSelected(TextureDefinition texture)
-        => _selectedResources.Contains(SohResourcePacker.GetTextureResourcePath(texture));
+        => _selectedResources.Contains(_portProfile.GetTextureResourcePath(texture));
 
     private static TextureFolderItem? GetFolderItem(TreeViewNode node)
         => node.Content as TextureFolderItem;
@@ -323,7 +323,7 @@ public sealed partial class SohModMakerWindow
         }
 
         return _textures
-            .Select(SohResourcePacker.GetTextureResourcePath)
+            .Select(_portProfile.GetTextureResourcePath)
             .Concat(_archiveTextureResources.Select(resource => resource.ResourcePath))
             .ToHashSet(StringComparer.Ordinal)
             .Count;
@@ -352,9 +352,10 @@ public sealed partial class SohModMakerWindow
 
     private static IReadOnlyList<TextureFolderItem> BuildTextureTree(
         IReadOnlyList<TextureDefinition> textures,
-        IReadOnlyList<SohArchiveTextureResource> archiveTextures)
+        IReadOnlyList<O2rArchiveTextureResource> archiveTextures,
+        O2rModPortProfile portProfile)
     {
-        var root = new TextureFolderItem(string.Empty);
+        var root = new TextureFolderItem(string.Empty, portProfile);
         foreach (TextureDefinition texture in textures)
         {
             TextureFolderItem folder = root;
@@ -366,7 +367,7 @@ public sealed partial class SohModMakerWindow
             folder.Textures.Add(texture);
         }
 
-        foreach (SohArchiveTextureResource texture in archiveTextures)
+        foreach (O2rArchiveTextureResource texture in archiveTextures)
         {
             TextureFolderItem folder = root;
             string[] parts = texture.ResourcePath.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries);

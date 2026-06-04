@@ -5,9 +5,9 @@ using HylianGrimoire.Textures;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 
-namespace HylianGrimoire.Soh;
+namespace HylianGrimoire.O2r;
 
-public sealed partial class SohModMakerWindow
+public sealed partial class O2rModMakerWindow
 {
     private const int PreviewPadding = 32;
 
@@ -41,7 +41,7 @@ public sealed partial class SohModMakerWindow
         PreviewImage.Source = new BitmapImage(new Uri(path));
     }
 
-    private void UpdateArchiveTexturePreview(SohArchiveTextureResource resource)
+    private void UpdateArchiveTexturePreview(O2rArchiveTextureResource resource)
     {
         try
         {
@@ -52,7 +52,7 @@ public sealed partial class SohModMakerWindow
                 return;
             }
 
-            SohTextureResource textureResource = SohTextureResource.Read(data);
+            O2rTextureResource textureResource = O2rTextureResource.Read(data);
             TextureDefinition? matchingTexture = FindTexture(resource.ResourcePath);
             using Bitmap bitmap = DecodeArchiveTexture(textureResource, matchingTexture);
             (int width, int height) = GetScaledPreviewSize(textureResource.Width, textureResource.Height);
@@ -80,7 +80,7 @@ public sealed partial class SohModMakerWindow
     }
 
     private Bitmap DecodeArchiveTexture(
-        SohTextureResource textureResource,
+        O2rTextureResource textureResource,
         TextureDefinition? matchingTexture)
     {
         if (textureResource.Format is not (TextureFormat.CI4 or TextureFormat.CI8))
@@ -122,7 +122,7 @@ public sealed partial class SohModMakerWindow
 
     private string GetPreviewPath(string name, string suffix = "texture")
     {
-        string root = Path.Combine(Path.GetTempPath(), "HylianGrimoireSohModPreview");
+        string root = Path.Combine(Path.GetTempPath(), "HylianGrimoireO2rModPreview");
         Directory.CreateDirectory(root);
         string safeName = string.Concat(name.Select(ch => Path.GetInvalidFileNameChars().Contains(ch) ? '_' : ch));
         return Path.Combine(root, $"{++_previewCounter:D4}_{safeName}_{suffix}.png");

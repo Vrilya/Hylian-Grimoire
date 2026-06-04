@@ -2,9 +2,9 @@ using HylianGrimoire.Models;
 using HylianGrimoire.Textures;
 using Microsoft.UI.Xaml;
 
-namespace HylianGrimoire.Soh;
+namespace HylianGrimoire.O2r;
 
-public sealed partial class SohModMakerWindow
+public sealed partial class O2rModMakerWindow
 {
     private async void OnCreateMod(object sender, RoutedEventArgs e)
     {
@@ -18,10 +18,10 @@ public sealed partial class SohModMakerWindow
 
         List<TextureDefinition> selectedTextures = includeTextures
             ? _textures
-                .Where(texture => _selectedResources.Contains(SohResourcePacker.GetTextureResourcePath(texture)))
+                .Where(texture => _selectedResources.Contains(_portProfile.GetTextureResourcePath(texture)))
                 .ToList()
             : [];
-        List<SohTextResourceItem> selectedTextResources = includeText
+        List<O2rTextResourceDefinition> selectedTextResources = includeText
             ? _textResources
                 .Where(resource => _selectedTextResources.Contains(resource.ResourcePath))
                 .ToList()
@@ -30,7 +30,7 @@ public sealed partial class SohModMakerWindow
             ? _existingEntries.Keys
                 .Where(IsTextureResourcePath)
                 .Where(_selectedResources.Contains)
-                .Except(selectedTextures.Select(SohResourcePacker.GetTextureResourcePath), StringComparer.Ordinal)
+                .Except(selectedTextures.Select(_portProfile.GetTextureResourcePath), StringComparer.Ordinal)
                 .ToHashSet(StringComparer.Ordinal)
             : [];
         HashSet<string> selectedExistingTextResources = [];
@@ -38,11 +38,11 @@ public sealed partial class SohModMakerWindow
         if (includeTextures && selectedTextures.Count > 0)
         {
             HashSet<string> overriddenPaths = _archiveTextureResources
-                .Where(resource => resource.Status == SohArchiveTextureStatus.DiffersFromRom)
+                .Where(resource => resource.Status == O2rArchiveTextureStatus.DiffersFromRom)
                 .Select(resource => resource.ResourcePath)
                 .ToHashSet(StringComparer.Ordinal);
             List<string> textureConflicts = selectedTextures
-                .Select(SohResourcePacker.GetTextureResourcePath)
+                .Select(_portProfile.GetTextureResourcePath)
                 .Where(overriddenPaths.Contains)
                 .ToList();
 
@@ -57,7 +57,7 @@ public sealed partial class SohModMakerWindow
                 if (overwrite == false)
                 {
                     selectedTextures = selectedTextures
-                        .Where(texture => !textureConflicts.Contains(SohResourcePacker.GetTextureResourcePath(texture)))
+                        .Where(texture => !textureConflicts.Contains(_portProfile.GetTextureResourcePath(texture)))
                         .ToList();
                     foreach (string resourcePath in textureConflicts)
                     {
@@ -68,7 +68,7 @@ public sealed partial class SohModMakerWindow
         }
 
         List<MessageEntry> currentEntries = _getCurrentEntries();
-        List<SohTextPayload> textPayloads = BuildTextPayloads(selectedTextResources, currentEntries);
+        List<O2rTextPayload> textPayloads = BuildTextPayloads(selectedTextResources, currentEntries);
 
         if (includeText && textPayloads.Count > 0)
         {
@@ -127,18 +127,19 @@ public sealed partial class SohModMakerWindow
                 selectedExistingTextureResources,
                 selectedExistingTextResources,
                 _existingEntries,
+                _portProfile,
                 replaceTextures: includeTextures,
                 replaceText: includeText,
                 progress));
 
             _existingModPath = path;
             _hasWorkspaceChanges = false;
-            _existingEntries = SohO2rArchiveWriter.ReadEntries(path);
+            _existingEntries = O2rArchiveWriter.ReadEntries(path);
             _archiveTextureResources = BuildArchiveTextureResources(_existingEntries, _textures, _romData?.DecompressedRom);
             PopulateTextureTree();
             UpdateWorkspaceSummary();
             StatusText.Text = $"Created mod with {_selectedResources.Count} textures and {textPayloads.Count} text resources.";
-            _onChanged("Created SoH mod.");
+            _onChanged($"Created {_portProfile.DisplayName} mod.");
         }
         catch (Exception ex)
         {
@@ -150,19 +151,20 @@ public sealed partial class SohModMakerWindow
         string outputPath,
         byte[]? rom,
         IReadOnlyList<TextureDefinition> textures,
-        IReadOnlyList<SohTextPayload> textPayloads,
+        IReadOnlyList<O2rTextPayload> textPayloads,
         IReadOnlySet<string> selectedExistingTextureResources,
         IReadOnlySet<string> selectedExistingTextResources,
         IReadOnlyDictionary<string, byte[]> existingEntries,
+        O2rModPortProfile portProfile,
         bool replaceTextures,
         bool replaceText,
         IProgress<int> progress)
     {
-        var archive = new SohO2rArchiveWriter();
+        var archive = new O2rArchiveWriter();
         foreach ((string resourcePath, byte[] data) in existingEntries)
         {
-            bool isText = IsTextResourcePath(resourcePath);
-            bool isTexture = IsTextureResourcePath(resourcePath);
+            bool isText = portProfile.IsTextResourcePath(resourcePath);
+            bool isTexture = !isText;
             if (replaceText && isText)
             {
                 if (!selectedExistingTextResources.Contains(resourcePath))
@@ -192,11 +194,11 @@ public sealed partial class SohModMakerWindow
 
             TextureDefinition texture = textures[i];
             byte[] raw = TextureRomService.ReadRaw(rom, texture);
-            archive.Add(SohResourcePacker.GetTextureResourcePath(texture), SohResourcePacker.PackTexture(texture, raw));
+            archive.Add(portProfile.GetTextureResourcePath(texture), O2rResourcePacker.PackTexture(texture, raw));
             progress.Report(GetPercent(++completed, total));
         }
 
-        foreach (SohTextPayload textPayload in textPayloads)
+        foreach (O2rTextPayload textPayload in textPayloads)
         {
             archive.Add(textPayload.ResourcePath, textPayload.Data);
             progress.Report(GetPercent(++completed, total));

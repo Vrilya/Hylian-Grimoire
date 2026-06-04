@@ -1,8 +1,8 @@
 <Window
-    x:Class="HylianGrimoire.Soh.SohModMakerWindow"
+    x:Class="HylianGrimoire.O2r.O2rModMakerWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="Hylian Grimoire - SoH Mod Maker">
+    Title="Hylian Grimoire - O2R Mod Maker">
 
     <Grid
         x:Name="RootGrid"
@@ -22,7 +22,8 @@
             </Grid.ColumnDefinitions>
 
             <TextBlock
-                Text="SoH Mod Maker"
+                x:Name="ToolTitleText"
+                Text="O2R Mod Maker"
                 Style="{ThemeResource TitleTextBlockStyle}" />
 
             <TextBlock

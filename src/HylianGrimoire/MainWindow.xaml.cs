@@ -7,12 +7,12 @@ using HylianGrimoire.Games;
 using HylianGrimoire.Interop;
 using HylianGrimoire.Models;
 using HylianGrimoire.Glyphs;
+using HylianGrimoire.O2r;
 using HylianGrimoire.Preview;
 using HylianGrimoire.PromptEditor;
 using HylianGrimoire.Rom;
 using HylianGrimoire.Services;
 using HylianGrimoire.Sessions;
-using HylianGrimoire.Soh;
 using HylianGrimoire.Textures;
 using HylianGrimoire.TitleText;
 using HylianGrimoire.Tweaks;
@@ -38,7 +38,7 @@ public sealed partial class MainWindow : Window
     private TitleTextWindow? _titleTextWindow;
     private PromptEditorWindow? _promptEditorWindow;
     private TextureManagerWindow? _textureManagerWindow;
-    private SohModMakerWindow? _sohModMakerWindow;
+    private O2rModMakerWindow? _o2rModMakerWindow;
 
     public MainWindow()
     {
@@ -104,8 +104,8 @@ public sealed partial class MainWindow : Window
         _promptEditorWindow = null;
         _textureManagerWindow?.Close();
         _textureManagerWindow = null;
-        _sohModMakerWindow?.Close();
-        _sohModMakerWindow = null;
+        _o2rModMakerWindow?.Close();
+        _o2rModMakerWindow = null;
     }
 
     private void UpdateWindowTitle()

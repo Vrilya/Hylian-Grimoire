@@ -15,5 +15,5 @@ public sealed record ToolAvailability(
     bool CanUseTitleText,
     bool CanUsePromptEditor,
     bool CanUseTextureManager,
-    bool CanUseSohModMaker,
+    bool CanUseO2rModMaker,
     bool CanUseTweaks);

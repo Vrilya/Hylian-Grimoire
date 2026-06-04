@@ -1,38 +1,34 @@
 using System.Buffers.Binary;
 using HylianGrimoire.Textures;
 
-namespace HylianGrimoire.Soh;
+namespace HylianGrimoire.O2r;
 
-internal sealed record SohTextureResource(
+public sealed record O2rTextureResource(
     TextureFormat Format,
     int Width,
     int Height,
     byte[] RawPixels)
 {
-    private const int ResourceHeaderSize = 0x40;
-    private const ulong ResourceMagic = 0xDEADBEEFDEADBEEF;
-    private const uint TextureResourceType = 0x4F544558; // OTEX
-
-    public static SohTextureResource Read(ReadOnlySpan<byte> data)
+    public static O2rTextureResource Read(ReadOnlySpan<byte> data)
     {
-        if (data.Length < ResourceHeaderSize + 16)
+        if (data.Length < O2rResourcePacker.ResourceHeaderSize + 16)
         {
             throw new InvalidDataException("OTEX resource is too small.");
         }
 
         uint type = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(0x04, 4));
-        if (type != TextureResourceType)
+        if (type != O2rResourcePacker.TextureResourceType)
         {
             throw new InvalidDataException("Resource is not an OTEX texture.");
         }
 
         ulong magic = BinaryPrimitives.ReadUInt64LittleEndian(data.Slice(0x0C, 8));
-        if (magic != ResourceMagic)
+        if (magic != O2rResourcePacker.ResourceMagic)
         {
             throw new InvalidDataException("OTEX resource has an invalid header.");
         }
 
-        ReadOnlySpan<byte> payload = data[ResourceHeaderSize..];
+        ReadOnlySpan<byte> payload = data[O2rResourcePacker.ResourceHeaderSize..];
         TextureFormat format = ReadFormat(BinaryPrimitives.ReadInt32LittleEndian(payload[..4]));
         int width = BinaryPrimitives.ReadInt32LittleEndian(payload.Slice(4, 4));
         int height = BinaryPrimitives.ReadInt32LittleEndian(payload.Slice(8, 4));
@@ -49,7 +45,7 @@ internal sealed record SohTextureResource(
             throw new InvalidDataException("OTEX resource is truncated.");
         }
 
-        return new SohTextureResource(format, width, height, payload.Slice(16, rawLength).ToArray());
+        return new O2rTextureResource(format, width, height, payload.Slice(16, rawLength).ToArray());
     }
 
     private static TextureFormat ReadFormat(int format)

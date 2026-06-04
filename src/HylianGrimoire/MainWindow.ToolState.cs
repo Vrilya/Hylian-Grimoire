@@ -1,5 +1,6 @@
 using HylianGrimoire.Games;
 using HylianGrimoire.Models;
+using HylianGrimoire.O2r;
 using HylianGrimoire.Services;
 
 namespace HylianGrimoire;
@@ -70,13 +71,14 @@ public sealed partial class MainWindow
             CloseTextureManagerWindow();
         }
 
-        if (availability.CanUseSohModMaker)
+        if (availability.CanUseO2rModMaker
+            && O2rModPortProfileCatalog.TryGetProfile(ActiveGameProfile, _session.RomData?.Profile, out O2rModPortProfile o2rProfile))
         {
-            _sohModMakerWindow?.SetRomData(_session.RomData);
+            _o2rModMakerWindow?.SetContext(o2rProfile, _session.RomData, CreateCurrentEncodingProfile());
         }
         else
         {
-            CloseSohModMakerWindow();
+            CloseO2rModMakerWindow();
         }
     }
 
@@ -98,7 +100,11 @@ public sealed partial class MainWindow
         TitleTextToolItem.IsEnabled = availability.CanUseTitleText;
         PromptEditorToolItem.IsEnabled = availability.CanUsePromptEditor;
         TextureManagerToolItem.IsEnabled = availability.CanUseTextureManager;
-        SohModMakerToolItem.IsEnabled = availability.CanUseSohModMaker;
+        O2rModMakerToolItem.IsEnabled = availability.CanUseO2rModMaker;
+        O2rModMakerToolItem.Text = availability.CanUseO2rModMaker
+            && O2rModPortProfileCatalog.TryGetProfile(ActiveGameProfile, _session.RomData?.Profile, out O2rModPortProfile menuO2rProfile)
+                ? menuO2rProfile.ToolTitle
+                : "O2R Mod Maker";
         TweaksToolItem.IsEnabled = availability.CanUseTweaks;
     }
 
@@ -117,5 +123,5 @@ public sealed partial class MainWindow
 
     private bool CanUseTextureManagerTool() => GetToolAvailability().CanUseTextureManager;
 
-    private bool CanUseSohModMakerTool() => GetToolAvailability().CanUseSohModMaker;
+    private bool CanUseO2rModMakerTool() => GetToolAvailability().CanUseO2rModMaker;
 }
