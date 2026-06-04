@@ -28,6 +28,7 @@ public sealed partial class MainWindow
         UpdateLanguageMenuState();
         RefreshAuxiliaryWindowsForLoadedDocument();
         SetStatus(string.Empty);
+        UpdateDiagnosticsContext();
     }
 
     private string GetActiveProjectDisplayName()

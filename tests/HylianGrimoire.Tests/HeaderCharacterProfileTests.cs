@@ -14,7 +14,8 @@ public sealed class HeaderCharacterProfileTests
     [Fact]
     public void OotHeaderExportWritesCanonicalHeaderTextForCustomEditorGlyphs()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         store.SetGameKind(GameKind.OcarinaOfTime);
         string profileName = $"Header export OoT {Guid.NewGuid():N}";
         string path = CreateTempHeaderPath();
@@ -47,7 +48,8 @@ public sealed class HeaderCharacterProfileTests
     [Fact]
     public void OotMultiLanguageHeaderSaveWritesCanonicalHeaderTextForCustomEditorGlyphs()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         store.SetGameKind(GameKind.OcarinaOfTime);
         string profileName = $"Header save OoT {Guid.NewGuid():N}";
         string path = CreateTempHeaderPath();
@@ -81,7 +83,8 @@ public sealed class HeaderCharacterProfileTests
     [Fact]
     public void MajorasMaskHeaderExportWritesCanonicalHeaderTextForCustomEditorGlyphs()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         store.SetGameKind(GameKind.MajorasMask);
         string profileName = $"Header export MM {Guid.NewGuid():N}";
         string path = CreateTempHeaderPath();
@@ -115,7 +118,8 @@ public sealed class HeaderCharacterProfileTests
     [Fact]
     public void MajorasMaskHeaderImportIntoRomEncodesVisualGlyphsWithActiveProfile()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         store.SetGameKind(GameKind.MajorasMask);
         string profileName = $"Header import ROM MM {Guid.NewGuid():N}";
         string path = CreateTempHeaderPath();

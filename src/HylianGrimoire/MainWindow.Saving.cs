@@ -25,7 +25,11 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            await ShowErrorAsync("Failed to save", ex.Message);
+            await ShowOperationExceptionAsync(
+                "Failed to save",
+                ex,
+                "Existing data files were left unchanged.",
+                "Save failed. Existing data files were left unchanged.");
             return null;
         }
     }
@@ -73,7 +77,11 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            await ShowErrorAsync("Failed to save header", ex.Message);
+            await ShowOperationExceptionAsync(
+                "Failed to save header",
+                ex,
+                "The existing header file was left unchanged.",
+                "Save failed. Existing header was left unchanged.");
             return false;
         }
     }
@@ -112,6 +120,7 @@ public sealed partial class MainWindow
         try
         {
             var encodingProfile = CreateEncodingProfile(romData.Profile.GameProfile);
+            int saveRevision = _session.ChangeRevision;
             RomMessageData savedRomData = await _romDocumentWorkflow.SaveAndReloadAsync(
                 path,
                 romData,
@@ -119,6 +128,15 @@ public sealed partial class MainWindow
                 encodingProfile,
                 compressOverride,
                 compress ? progress : null);
+
+            if (_session.ChangeRevision != saveRevision)
+            {
+                busy?.Dispose();
+                UpdateWindowTitle();
+                SetStatus("Saved ROM. Newer unsaved changes remain.");
+                return true;
+            }
+
             _session.RefreshRomDataAfterSave(savedRomData);
             MarkClean();
             RefreshDocumentShell();
@@ -129,7 +147,11 @@ public sealed partial class MainWindow
         catch (Exception ex)
         {
             busy?.Dispose();
-            await ShowErrorAsync("Failed to save ROM", ex.Message);
+            await ShowOperationExceptionAsync(
+                "Failed to save ROM",
+                ex,
+                "The existing ROM file was left unchanged. Your unsaved editor changes are still loaded.",
+                "Save failed. Existing ROM was left unchanged.");
             return false;
         }
     }

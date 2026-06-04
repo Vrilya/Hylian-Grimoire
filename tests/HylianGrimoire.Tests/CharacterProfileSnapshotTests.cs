@@ -14,7 +14,8 @@ public sealed class CharacterProfileSnapshotTests
     [Fact]
     public void SnapshotMatchesSelectedProfileMappings()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         store.SetGameKind(GameKind.OcarinaOfTime);
         string profileName = $"Snapshot {Guid.NewGuid():N}";
         string sourcePath = CreateTempGlyphImage();
@@ -61,7 +62,8 @@ public sealed class CharacterProfileSnapshotTests
     [Fact]
     public void SnapshotRemainsStableAfterSelectedProfileChanges()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         store.SetGameKind(GameKind.OcarinaOfTime);
         string profileName = $"Stable snapshot {Guid.NewGuid():N}";
 
@@ -92,7 +94,8 @@ public sealed class CharacterProfileSnapshotTests
     [Fact]
     public void OotSnapshotGlyphSourceRemainsStableAfterProfileChanges()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         store.SetGameKind(GameKind.OcarinaOfTime);
         string profileName = $"OoT source {Guid.NewGuid():N}";
 
@@ -119,7 +122,8 @@ public sealed class CharacterProfileSnapshotTests
     [Fact]
     public void MmSnapshotGlyphSourceRemainsStableAfterProfileChanges()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         store.SetGameKind(GameKind.MajorasMask);
         string profileName = $"MM source {Guid.NewGuid():N}";
 
@@ -147,7 +151,8 @@ public sealed class CharacterProfileSnapshotTests
     [Fact]
     public void GameGlyphCatalogUsesExplicitSnapshot()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         store.SetGameKind(GameKind.OcarinaOfTime);
         string profileName = $"Glyph catalog {Guid.NewGuid():N}";
         const byte value = 0x92;
@@ -181,7 +186,8 @@ public sealed class CharacterProfileSnapshotTests
     [Fact]
     public void GameGlyphCatalogRejectsSnapshotFromDifferentGame()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         store.SetGameKind(GameKind.MajorasMask);
         try
         {
@@ -199,7 +205,8 @@ public sealed class CharacterProfileSnapshotTests
     [Fact]
     public void EncodingProfileSnapshotRemainsStableAfterProfileChanges()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         store.SetGameKind(GameKind.OcarinaOfTime);
         string profileName = $"Encoding snapshot {Guid.NewGuid():N}";
 
@@ -231,7 +238,8 @@ public sealed class CharacterProfileSnapshotTests
     [Fact]
     public void OriginalEncodingProfileIgnoresCharacterProfileSnapshot()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         store.SetGameKind(GameKind.OcarinaOfTime);
         string profileName = $"Original encoding {Guid.NewGuid():N}";
 
@@ -256,7 +264,8 @@ public sealed class CharacterProfileSnapshotTests
     [Fact]
     public void EncodingProfileRejectsSnapshotFromDifferentGame()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         store.SetGameKind(GameKind.MajorasMask);
         try
         {
@@ -274,7 +283,8 @@ public sealed class CharacterProfileSnapshotTests
     [Fact]
     public void SnapshotForInactiveGameUsesThatGamesAutomaticProfile()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         store.SetGameKind(GameKind.MajorasMask);
         string mmProfileName = $"MM inactive {Guid.NewGuid():N}";
 
@@ -317,7 +327,8 @@ public sealed class CharacterProfileSnapshotTests
     [Fact]
     public void OotHeaderImporterUsesExplicitEncodingProfileSnapshot()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         store.SetGameKind(GameKind.OcarinaOfTime);
         string profileName = $"OoT header import {Guid.NewGuid():N}";
 
@@ -349,7 +360,8 @@ public sealed class CharacterProfileSnapshotTests
     [Fact]
     public void MmHeaderImporterUsesExplicitEncodingProfileSnapshot()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         store.SetGameKind(GameKind.MajorasMask);
         string profileName = $"MM header import {Guid.NewGuid():N}";
 

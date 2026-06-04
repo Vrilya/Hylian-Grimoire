@@ -118,7 +118,7 @@ public sealed partial class O2rModMakerWindow
         {
             var progress = new Progress<int>(UpdateProgress);
             using IDisposable busy = ShowProgress("Creating .o2r");
-            byte[]? rom = _romData?.DecompressedRom;
+            byte[]? rom = _romData?.DecompressedRom.ToArray();
             await Task.Run(() => CreateO2r(
                 path,
                 rom,

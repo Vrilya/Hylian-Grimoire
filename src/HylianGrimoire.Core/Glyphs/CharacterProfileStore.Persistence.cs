@@ -8,11 +8,6 @@ public sealed partial class CharacterProfileStore
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
-    private static string ConfigPath => Path.Combine(
-        Environment.GetEnvironmentVariable("OOT_EDITOR_CHARACTER_PROFILE_CONFIG_DIR")
-            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HylianGrimoire"),
-        "character_profiles.json");
-
     private void SaveConfig()
     {
         WriteConfig(new CharacterProfileConfig
@@ -29,23 +24,30 @@ public sealed partial class CharacterProfileStore
         Version++;
     }
 
-    private static CharacterProfileStore Load()
+    public static CharacterProfileStore Load(CharacterProfileStoreStorage storage)
     {
+        ArgumentNullException.ThrowIfNull(storage);
+
         try
         {
-            if (File.Exists(ConfigPath))
+            if (File.Exists(storage.ConfigPath))
             {
-                CharacterProfileConfig? config = JsonSerializer.Deserialize<CharacterProfileConfig>(File.ReadAllText(ConfigPath));
+                CharacterProfileConfig? config = JsonSerializer.Deserialize<CharacterProfileConfig>(
+                    File.ReadAllText(storage.ConfigPath));
                 List<CharacterProfile> profiles = SanitizeProfiles(config?.Profiles ?? []);
-                return new CharacterProfileStore(profiles, GetAutomaticProfiles(config));
+                return new CharacterProfileStore(storage, profiles, GetAutomaticProfiles(config));
             }
         }
         catch (Exception ex)
         {
-            return new CharacterProfileStore([], CreateDefaultAutomaticProfiles(), $"Character profiles could not be loaded: {ex.Message}");
+            return new CharacterProfileStore(
+                storage,
+                [],
+                CreateDefaultAutomaticProfiles(),
+                $"Character profiles could not be loaded: {ex.Message}");
         }
 
-        return new CharacterProfileStore([], CreateDefaultAutomaticProfiles());
+        return new CharacterProfileStore(storage, [], CreateDefaultAutomaticProfiles());
     }
 
     private static List<CharacterProfile> SanitizeProfiles(List<CharacterProfile> profiles)
@@ -89,10 +91,10 @@ public sealed partial class CharacterProfileStore
         return result;
     }
 
-    private static void WriteConfig(CharacterProfileConfig config)
+    private void WriteConfig(CharacterProfileConfig config)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath)!);
-        AtomicFileWriter.WriteAllText(ConfigPath, JsonSerializer.Serialize(config, JsonOptions));
+        Directory.CreateDirectory(Path.GetDirectoryName(_storage.ConfigPath)!);
+        AtomicFileWriter.WriteAllText(_storage.ConfigPath, JsonSerializer.Serialize(config, JsonOptions));
     }
 
     private static bool IsValidBase64(string value)

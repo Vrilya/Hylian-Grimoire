@@ -1,7 +1,5 @@
 using Microsoft.UI.Xaml;
 using HylianGrimoire.Models;
-using HylianGrimoire.O2r;
-using HylianGrimoire.PromptEditor;
 using HylianGrimoire.Textures;
 
 namespace HylianGrimoire;
@@ -15,17 +13,7 @@ public sealed partial class MainWindow
             return;
         }
 
-        if (_tweaksWindow is null)
-        {
-            _tweaksWindow = new Tweaks.TweaksWindow(_session.RomData, OnRomTweakChanged);
-            _tweaksWindow.Closed += (_, _) => _tweaksWindow = null;
-        }
-        else
-        {
-            _tweaksWindow.SetRomData(_session.RomData);
-        }
-
-        _tweaksWindow.Activate();
+        _toolWindows.OpenTweaks(_session.RomData);
     }
 
     private void OnOpenTitleText(object sender, RoutedEventArgs e)
@@ -35,17 +23,7 @@ public sealed partial class MainWindow
             return;
         }
 
-        if (_titleTextWindow is null)
-        {
-            _titleTextWindow = new TitleText.TitleTextWindow(_session.RomData, _session.RomData?.ActiveMessageBankIndex ?? 0, OnTitleTextChanged);
-            _titleTextWindow.Closed += (_, _) => _titleTextWindow = null;
-        }
-        else
-        {
-            _titleTextWindow.SetRomData(_session.RomData, _session.RomData?.ActiveMessageBankIndex ?? 0);
-        }
-
-        _titleTextWindow.Activate();
+        _toolWindows.OpenTitleText(_session.RomData);
     }
 
     private void OnOpenPromptEditor(object sender, RoutedEventArgs e)
@@ -55,17 +33,7 @@ public sealed partial class MainWindow
             return;
         }
 
-        if (_promptEditorWindow is null)
-        {
-            _promptEditorWindow = new PromptEditorWindow(_session.RomData, OnPromptEditorChanged);
-            _promptEditorWindow.Closed += (_, _) => _promptEditorWindow = null;
-        }
-        else
-        {
-            _promptEditorWindow.SetRomData(_session.RomData);
-        }
-
-        _promptEditorWindow.Activate();
+        _toolWindows.OpenPromptEditor(_session.RomData);
     }
 
     private void OnOpenTextureManager(object sender, RoutedEventArgs e)
@@ -75,17 +43,7 @@ public sealed partial class MainWindow
             return;
         }
 
-        if (_textureManagerWindow is null)
-        {
-            _textureManagerWindow = new TextureManagerWindow(_session.RomData, OnTextureManagerChanged);
-            _textureManagerWindow.Closed += (_, _) => _textureManagerWindow = null;
-        }
-        else
-        {
-            _textureManagerWindow.SetRomData(_session.RomData);
-        }
-
-        _textureManagerWindow.Activate();
+        _toolWindows.OpenTextureManager(_session.RomData);
     }
 
     private void OnOpenO2rModMaker(object sender, RoutedEventArgs e)
@@ -95,33 +53,7 @@ public sealed partial class MainWindow
             return;
         }
 
-        try
-        {
-            O2rModPortProfile portProfile = O2rModPortProfileCatalog.GetProfile(CurrentGameProfile, _session.RomData?.Profile);
-            if (_o2rModMakerWindow is null)
-            {
-                var window = new O2rModMakerWindow(
-                    portProfile,
-                    _session.RomData,
-                    GetCurrentEntriesForO2rModMaker,
-                    GetCurrentTextLanguagesForO2rModMaker,
-                    CreateCurrentEncodingProfile(),
-                    OnO2rModMakerChanged);
-                window.Closed += (_, _) => _o2rModMakerWindow = null;
-                _o2rModMakerWindow = window;
-            }
-            else
-            {
-                _o2rModMakerWindow.SetContext(portProfile, _session.RomData, CreateCurrentEncodingProfile());
-            }
-
-            _o2rModMakerWindow.Activate();
-        }
-        catch (Exception ex)
-        {
-            _o2rModMakerWindow = null;
-            _ = ShowErrorAsync("Failed to open O2R Mod Maker", ex.Message);
-        }
+        _toolWindows.OpenO2rModMaker(CurrentGameProfile, _session.RomData);
     }
 
     private List<MessageEntry> GetCurrentEntriesForO2rModMaker()
@@ -153,58 +85,28 @@ public sealed partial class MainWindow
         SetStatus(status);
     }
 
-    private void OnTextureManagerChanged(string status)
+    private void OnTextureManagerChanged(TextureManagerChange change)
     {
-        MarkRomBankDirty();
-        SetStatus(status);
+        if (change.MutatedRom)
+        {
+            ApplyRomMutation(change.Status);
+            return;
+        }
+
+        SetStatus(change.Status);
     }
 
     private void OnTitleTextChanged(string status)
-    {
-        MarkRomBankDirty();
-        SetStatus(status);
-    }
+        => ApplyRomMutation(status);
 
     private void OnPromptEditorChanged(string status)
-    {
-        MarkRomBankDirty();
-        SetStatus(status);
-    }
+        => ApplyRomMutation(status);
 
     private void OnRomTweakChanged(string status)
-    {
-        MarkRomBankDirty();
-        _promptEditorWindow?.SetRomData(_session.RomData);
-        SetStatus(status);
-    }
+        => ApplyRomMutation(status);
 
-    private void CloseTweaksWindow()
+    private void OnO2rModMakerOpenFailed(string message)
     {
-        _tweaksWindow?.Close();
-        _tweaksWindow = null;
-    }
-
-    private void CloseTitleTextWindow()
-    {
-        _titleTextWindow?.Close();
-        _titleTextWindow = null;
-    }
-
-    private void ClosePromptEditorWindow()
-    {
-        _promptEditorWindow?.Close();
-        _promptEditorWindow = null;
-    }
-
-    private void CloseTextureManagerWindow()
-    {
-        _textureManagerWindow?.Close();
-        _textureManagerWindow = null;
-    }
-
-    private void CloseO2rModMakerWindow()
-    {
-        _o2rModMakerWindow?.Close();
-        _o2rModMakerWindow = null;
+        _ = ShowErrorAsync("Failed to open O2R Mod Maker", message);
     }
 }

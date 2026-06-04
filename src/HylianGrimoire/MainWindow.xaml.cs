@@ -7,15 +7,11 @@ using HylianGrimoire.Games;
 using HylianGrimoire.Interop;
 using HylianGrimoire.Models;
 using HylianGrimoire.Glyphs;
-using HylianGrimoire.O2r;
 using HylianGrimoire.Preview;
-using HylianGrimoire.PromptEditor;
 using HylianGrimoire.Rom;
 using HylianGrimoire.Services;
 using HylianGrimoire.Sessions;
-using HylianGrimoire.Textures;
-using HylianGrimoire.TitleText;
-using HylianGrimoire.Tweaks;
+using HylianGrimoire.ToolWindows;
 
 namespace HylianGrimoire;
 
@@ -27,6 +23,7 @@ public sealed partial class MainWindow : Window
     private readonly RomDocumentWorkflow _romDocumentWorkflow = new();
     private readonly TableFileWorkflow _tableFileWorkflow = new();
     private readonly ObservableCollection<MessageItem> _items = new();
+    private readonly ToolWindowCoordinator _toolWindows;
     private bool _updating;
     private bool _closeConfirmed;
     private bool _suppressCharacterProfileTextRemap;
@@ -34,15 +31,21 @@ public sealed partial class MainWindow : Window
     private IMessagePreviewWindow? _previewWindow;
     private CharacterProfileWindow? _characterProfileWindow;
     private GlyphRemapWindow? _glyphRemapWindow;
-    private TweaksWindow? _tweaksWindow;
-    private TitleTextWindow? _titleTextWindow;
-    private PromptEditorWindow? _promptEditorWindow;
-    private TextureManagerWindow? _textureManagerWindow;
-    private O2rModMakerWindow? _o2rModMakerWindow;
 
     public MainWindow()
     {
         InitializeComponent();
+        _toolWindows = new ToolWindowCoordinator(
+            () => _session.RomData,
+            CreateCurrentEncodingProfile,
+            GetCurrentEntriesForO2rModMaker,
+            GetCurrentTextLanguagesForO2rModMaker,
+            OnO2rModMakerChanged,
+            OnTextureManagerChanged,
+            OnTitleTextChanged,
+            OnPromptEditorChanged,
+            OnRomTweakChanged,
+            OnO2rModMakerOpenFailed);
 
         UpdateWindowTitle();
         SystemBackdrop = new MicaBackdrop();
@@ -66,6 +69,7 @@ public sealed partial class MainWindow : Window
         _characterProfileRuntime.MappingsChanged += OnCharacterProfileMappingsChanged;
         AppWindow.Closing += OnAppWindowClosing;
         Closed += OnMainWindowClosed;
+        UpdateDiagnosticsContext();
     }
 
     private async void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
@@ -96,16 +100,7 @@ public sealed partial class MainWindow : Window
         _characterProfileWindow = null;
         _glyphRemapWindow?.Close();
         _glyphRemapWindow = null;
-        _tweaksWindow?.Close();
-        _tweaksWindow = null;
-        _titleTextWindow?.Close();
-        _titleTextWindow = null;
-        _promptEditorWindow?.Close();
-        _promptEditorWindow = null;
-        _textureManagerWindow?.Close();
-        _textureManagerWindow = null;
-        _o2rModMakerWindow?.Close();
-        _o2rModMakerWindow = null;
+        _toolWindows.CloseAll();
     }
 
     private void UpdateWindowTitle()
@@ -234,6 +229,7 @@ public sealed partial class MainWindow : Window
     private void SyncActiveCharacterProfileName()
     {
         _activeCharacterProfileName = _characterProfileRuntime.SelectedProfileName;
+        UpdateDiagnosticsContext();
     }
 
     private GameProfile? ActiveGameProfile => _session.ActiveGameProfile;

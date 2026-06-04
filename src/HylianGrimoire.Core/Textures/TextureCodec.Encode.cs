@@ -178,7 +178,6 @@ public static partial class TextureCodec
             Color color = palette[i];
             if (color.R == r && color.G == g && color.B == b && color.A == a)
             {
-                match = i;
                 if (preferredIndex == i)
                 {
                     return (byte)i;
@@ -187,8 +186,10 @@ public static partial class TextureCodec
                 if (match >= 0)
                 {
                     hasDuplicateMatch = true;
+                    continue;
                 }
 
+                match = i;
                 continue;
             }
         }

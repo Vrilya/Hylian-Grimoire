@@ -67,13 +67,10 @@ public sealed class TextureRomServiceTests
         Assert.Equal(before.Skip(36), rom.Skip(36));
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_us_n64_decompressed.z64")]
     public void ReadRaw_reads_cmpdma_archive_texture_from_decoded_payload()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_decompressed.z64", out string romPath))
-        {
-            return;
-        }
+        string romPath = LocalRomFixtures.GetRequiredMajorasMaskPath("mm_us_n64_decompressed.z64");
 
         byte[] rom = File.ReadAllBytes(romPath);
         TextureDefinition texture = GetMajorasMaskArchiveTexture();
@@ -87,13 +84,10 @@ public sealed class TextureRomServiceTests
             raw);
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_us_n64_decompressed.z64")]
     public void WriteRaw_preserves_cmpdma_archive_bytes_when_payload_is_unchanged()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_decompressed.z64", out string romPath))
-        {
-            return;
-        }
+        string romPath = LocalRomFixtures.GetRequiredMajorasMaskPath("mm_us_n64_decompressed.z64");
 
         byte[] rom = File.ReadAllBytes(romPath);
         TextureDefinition texture = GetMajorasMaskArchiveTexture();
@@ -105,13 +99,10 @@ public sealed class TextureRomServiceTests
         Assert.Equal(beforeArchive, rom.Skip(texture.ArchiveRomAddress.Value).Take(texture.ArchiveLength.Value));
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_us_n64_decompressed.z64")]
     public void WriteRaw_repacks_cmpdma_archive_and_preserves_readback()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_decompressed.z64", out string romPath))
-        {
-            return;
-        }
+        string romPath = LocalRomFixtures.GetRequiredMajorasMaskPath("mm_us_n64_decompressed.z64");
 
         byte[] rom = File.ReadAllBytes(romPath);
         TextureDefinition texture = GetMajorasMaskArchiveTexture();

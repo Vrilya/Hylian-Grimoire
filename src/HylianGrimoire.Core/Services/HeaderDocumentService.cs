@@ -193,7 +193,7 @@ public static class HeaderDocumentService
         {
             return MessageFileService.ImportHeaderContent(content, slot, allowWesternFallback, getEncodingProfile);
         }
-        catch (InvalidDataException ex) when (ex.Message == "No DEFINE_MESSAGE entries were found.")
+        catch (HeaderMessageEntriesNotFoundException)
         {
             return [];
         }

@@ -75,7 +75,7 @@ public sealed partial class MainWindow
 
     private void OnGlyphWindowDataChanged(object? sender, EventArgs e)
     {
-        MarkDirty();
+        ApplyRomMutation();
         UpdatePreview();
     }
 

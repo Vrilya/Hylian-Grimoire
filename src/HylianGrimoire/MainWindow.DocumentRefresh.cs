@@ -7,6 +7,7 @@ public sealed partial class MainWindow
         RefreshAuxiliaryWindowsForLoadedDocument();
         UpdateWindowTitle();
         UpdateLanguageMenuState();
+        UpdateDiagnosticsContext();
     }
 
     private void RefreshMessageListAndSelectFirst()

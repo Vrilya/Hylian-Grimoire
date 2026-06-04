@@ -192,7 +192,7 @@ public sealed partial class CharacterProfileStore
 
         if (deletedProfile is not null)
         {
-            CharacterProfileAssets.DeleteProfileAssets(deletedProfile);
+            CharacterProfileAssets.DeleteProfileAssets(ProfileAssetRoot, deletedProfile);
         }
         SelectedProfileName = DefaultProfileName;
         bool automaticProfileChanged = false;

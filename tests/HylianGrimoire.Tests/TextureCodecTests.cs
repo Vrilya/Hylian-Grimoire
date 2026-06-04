@@ -110,6 +110,36 @@ public sealed class TextureCodecTests
         Assert.Equal(original, encoded);
     }
 
+    [Fact]
+    public void Encode_ci4_changed_pixel_maps_to_unique_non_original_palette_index()
+    {
+        byte[] tlut = CreateTlut(16);
+        byte[] original = [0x23];
+
+        using Bitmap bitmap = TextureCodec.Decode(original, 2, 1, TextureFormat.CI4, tlut, 16);
+        using Bitmap replacementColor = TextureCodec.Decode([0x50], 1, 1, TextureFormat.CI4, tlut, 16);
+        bitmap.SetPixel(0, 0, replacementColor.GetPixel(0, 0));
+
+        byte[] encoded = TextureCodec.Encode(bitmap, 2, 1, TextureFormat.CI4, tlut, 16, original);
+
+        Assert.Equal([0x53], encoded);
+    }
+
+    [Fact]
+    public void Encode_ci8_changed_pixel_maps_to_unique_non_original_palette_index()
+    {
+        byte[] tlut = CreateTlut(256);
+        byte[] original = [2, 3];
+
+        using Bitmap bitmap = TextureCodec.Decode(original, 2, 1, TextureFormat.CI8, tlut, 256);
+        using Bitmap replacementColor = TextureCodec.Decode([5], 1, 1, TextureFormat.CI8, tlut, 256);
+        bitmap.SetPixel(0, 0, replacementColor.GetPixel(0, 0));
+
+        byte[] encoded = TextureCodec.Encode(bitmap, 2, 1, TextureFormat.CI8, tlut, 256, original);
+
+        Assert.Equal([5, 3], encoded);
+    }
+
     private static byte[] CreatePayload(int length)
     {
         byte[] payload = new byte[length];

@@ -100,7 +100,11 @@ public sealed partial class MainWindow
         }
     }
 
-    private void SetStatus(string message) => StatusText.Text = message;
+    private void SetStatus(string message)
+    {
+        StatusText.Text = message;
+        AppDiagnostics.UpdateStatus(message);
+    }
 
     private string GetEditorText() => TextEditor.Text.Replace("\r\n", "\n").Replace('\r', '\n');
 }

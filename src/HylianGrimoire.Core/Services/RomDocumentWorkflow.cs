@@ -8,10 +8,9 @@ public sealed class RomDocumentWorkflow
 {
     public Task<RomMessageData> LoadAsync(
         string path,
-        IProgress<RomFileOperationProgress>? progress = null,
-        CancellationToken cancellationToken = default)
+        IProgress<RomFileOperationProgress>? progress = null)
     {
-        return Task.Run(() => RomMessageService.LoadMessages(path, progress: progress), cancellationToken);
+        return Task.Run(() => RomMessageService.LoadMessages(path, progress: progress));
     }
 
     public Task<RomMessageData> SaveAndReloadAsync(
@@ -20,22 +19,23 @@ public sealed class RomDocumentWorkflow
         List<MessageEntry> entries,
         MessageEncodingProfile encodingProfile,
         bool? compressOverride = null,
-        IProgress<RomFileOperationProgress>? progress = null,
-        CancellationToken cancellationToken = default)
+        IProgress<RomFileOperationProgress>? progress = null)
     {
+        RomMessageData romSnapshot = romData.CreateSnapshot();
+        List<MessageEntry> entriesSnapshot = entries.Select(entry => entry.CreateSnapshot()).ToList();
+
         return Task.Run(
             () =>
             {
                 RomMessageService.SaveMessages(
                     path,
-                    romData,
-                    entries,
+                    romSnapshot,
+                    entriesSnapshot,
                     progress: progress,
                     compressOverride: compressOverride,
                     encodingProfile: encodingProfile);
 
-                return RomMessageService.LoadMessages(path, romData.ActiveMessageBankIndex, romData.ActiveSection);
-            },
-            cancellationToken);
+                return RomMessageService.LoadMessages(path, romSnapshot.ActiveMessageBankIndex, romSnapshot.ActiveSection);
+            });
     }
 }

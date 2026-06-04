@@ -51,7 +51,7 @@ public sealed class RomTweakTests
         Assert.Throws<InvalidOperationException>(() => GcBootLogoTweak.SetEnabled(rom, profile, enabled: true));
     }
 
-    [Fact]
+    [RetailDecompressedRomFixtureFact("oot_retail_ntsc_gc_decompressed.z64")]
     public void GcColorTweakTogglesRetailGameCubeRom()
     {
         RomVersionProfile profile = GetProfile("Retail NTSC GameCube");
@@ -66,7 +66,7 @@ public sealed class RomTweakTests
         Assert.Equal(RomTweakState.Off, GcColorTweak.GetStatus(rom, profile).State);
     }
 
-    [Fact]
+    [RetailDecompressedRomFixtureFact("oot_retail_pal_gc_decompressed.z64")]
     public void ViPalTweakTogglesRetailPalGameCubeRom()
     {
         RomVersionProfile profile = GetProfile("Retail PAL GameCube");
@@ -81,7 +81,7 @@ public sealed class RomTweakTests
         Assert.Equal(RomTweakState.Off, ViPalTweak.GetStatus(rom, profile).State);
     }
 
-    [Fact]
+    [RetailDecompressedRomFixtureFact("oot_retail_pal_gc_decompressed.z64")]
     public void ViPalTweakIsBuildDateRestricted()
     {
         RomVersionProfile profile = GetProfile("PAL GameCube");
@@ -90,7 +90,7 @@ public sealed class RomTweakTests
         Assert.Equal(RomTweakState.Unsupported, ViPalTweak.GetStatus(rom, profile).State);
     }
 
-    [Theory]
+    [MajorasMaskRomFixtureTheory("mm_us_n64_decompressed.z64")]
     [InlineData("Majora's Mask NTSC-U", "mm_us_n64_decompressed.z64", 0xC0F7F8, 0x18FC0, 0x13E0, 0xC0EE64, 0xC75600)]
     public void MmFpalTweakTogglesMajorasMaskUsRom(
         string profileName,
@@ -145,7 +145,7 @@ public sealed class RomTweakTests
         Assert.Equal(original, rom);
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_us_gc_decompressed.z64")]
     public void MmFpalTweakRejectsMajorasMaskUsGameCubeRom()
     {
         RomVersionProfile profile = GetProfile("Majora's Mask NTSC-U GameCube");
@@ -155,7 +155,7 @@ public sealed class RomTweakTests
         Assert.Throws<InvalidOperationException>(() => MmFpalTweak.SetEnabled(rom, profile, enabled: true));
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_us_n64_decompressed.z64")]
     public void MmViSelectorTweakTogglesMajorasMaskUsRom()
     {
         RomVersionProfile profile = GetProfile("Majora's Mask NTSC-U");
@@ -200,7 +200,7 @@ public sealed class RomTweakTests
         Assert.Equal(original, rom);
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_us_n64_decompressed.z64")]
     public void MmViSelectorTweakUsesFullTitleOverlayLoad()
     {
         RomVersionProfile profile = GetProfile("Majora's Mask NTSC-U");
@@ -222,7 +222,7 @@ public sealed class RomTweakTests
         Assert.Equal(0x00000070u, BinaryPrimitives.ReadUInt32BigEndian(rom.AsSpan(0xC7ADEC, sizeof(uint))));
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_us_n64_decompressed.z64")]
     public void MmViSelectorAndMmFpalTweaksAreMutuallyExclusive()
     {
         RomVersionProfile profile = GetProfile("Majora's Mask NTSC-U");
@@ -244,7 +244,7 @@ public sealed class RomTweakTests
         Assert.Equal(original, rom);
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_us_gc_compressed.z64")]
     public void MmFpalTweakRejectsCompressedMajorasMaskUsGameCubeRom()
     {
         const string fixtureName = "mm_us_gc_compressed.z64";
@@ -273,7 +273,7 @@ public sealed class RomTweakTests
         Assert.True(GetProfile(profileName).IsRetail);
     }
 
-    [Theory]
+    [RetailDecompressedRomFixtureTheory]
     [InlineData("Retail PAL 1.0", "oot_retail_pal_1.0_decompressed.z64")]
     [InlineData("Retail PAL 1.1", "oot_retail_pal_1.1_decompressed.z64")]
     public void ViSelectorTweakTogglesPalRetailRom(string profileName, string fixtureName)
@@ -292,7 +292,7 @@ public sealed class RomTweakTests
         Assert.Equal(original, rom);
     }
 
-    [Fact]
+    [RetailDecompressedRomFixtureFact("oot_retail_ntsc_1.2_decompressed.z64")]
     public void ViSelectorTweakRejectsNonPalRetailRom()
     {
         RomVersionProfile profile = GetProfile("Retail NTSC 1.2");
@@ -301,7 +301,7 @@ public sealed class RomTweakTests
         Assert.Equal(RomTweakState.Unsupported, ViSelectorTweak.GetStatus(rom, profile).State);
     }
 
-    [Fact]
+    [RetailDecompressedRomFixtureFact("oot_retail_ntsc_gc_decompressed.z64")]
     public void GcNoControllerTweakTogglesRetailGameCubeRom()
     {
         RomVersionProfile profile = GetProfile("Retail NTSC GameCube");
@@ -316,7 +316,7 @@ public sealed class RomTweakTests
         Assert.Equal(RomTweakState.Off, GcNoControllerTweak.GetStatus(rom, profile).State);
     }
 
-    [Fact]
+    [RetailDecompressedRomFixtureFact("oot_retail_ntsc_gc_decompressed.z64")]
     public void GcCreditsTweakTogglesRetailGameCubeRom()
     {
         RomVersionProfile profile = GetProfile("Retail NTSC GameCube");
@@ -331,7 +331,7 @@ public sealed class RomTweakTests
         Assert.Equal(RomTweakState.Off, GcCreditsTweak.GetStatus(rom, profile).State);
     }
 
-    [Theory]
+    [RetailDecompressedRomFixtureTheory]
     [InlineData("Retail NTSC 1.0", "oot_retail_ntsc_1.0_decompressed.z64")]
     [InlineData("Retail NTSC 1.1", "oot_retail_ntsc_1.1_decompressed.z64")]
     [InlineData("Retail NTSC 1.2", "oot_retail_ntsc_1.2_decompressed.z64")]
@@ -354,7 +354,7 @@ public sealed class RomTweakTests
         Assert.Equal(original, rom);
     }
 
-    [Fact]
+    [RetailDecompressedRomFixtureFact("oot_retail_ntsc_gc_decompressed.z64")]
     public void AntiPiracyTweakRejectsGameCubeRom()
     {
         RomVersionProfile profile = GetProfile("Retail NTSC GameCube");

@@ -7,7 +7,7 @@ public sealed record MajorasMaskMessageMetadata(
     ushort NextTextId,
     ushort FirstChoicePrice,
     ushort SecondChoicePrice,
-    ushort Unknown)
+    ushort Unknown) : IMessageEntryMetadataFingerprint
 {
     public int Type => (TextBoxProperties >> 8) & 0x0f;
 
@@ -62,6 +62,19 @@ public sealed record MajorasMaskMessageMetadata(
             (byte)((Unknown >> 8) & 0xff),
             (byte)(Unknown & 0xff),
         ];
+    }
+
+    public void AppendFingerprint(System.Text.StringBuilder fingerprint)
+    {
+        fingerprint
+            .Append("mm:")
+            .Append(TableTypePosition).Append(',')
+            .Append(TextBoxProperties).Append(',')
+            .Append(IconId).Append(',')
+            .Append(NextTextId).Append(',')
+            .Append(FirstChoicePrice).Append(',')
+            .Append(SecondChoicePrice).Append(',')
+            .Append(Unknown).Append('|');
     }
 
     private static ushort ApplyFlags(

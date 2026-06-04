@@ -146,6 +146,7 @@ public sealed partial class MainWindow
             _session.MarkSavedAsRom(path);
             UpdateWindowTitle();
             UpdateLanguageMenuState();
+            UpdateDiagnosticsContext();
         }
     }
 
@@ -211,7 +212,11 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            await ShowErrorAsync("Failed to export", ex.Message);
+            await ShowOperationExceptionAsync(
+                "Failed to export",
+                ex,
+                "The existing export file was left unchanged.",
+                "Export failed. Existing file was left unchanged.");
         }
     }
 
@@ -274,7 +279,7 @@ public sealed partial class MainWindow
             }
 
             _session.UseRomData(importResult.RomData);
-            MarkRomBankDirty();
+            ApplyRomMutation();
             RefreshDocumentShell();
             RefreshMessageListAndSelectFirst();
             SetStatus(choice.Value.AllWesternLanguages
@@ -283,7 +288,11 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            await ShowErrorAsync("Failed to import header into ROM", ex.Message);
+            await ShowOperationExceptionAsync(
+                "Failed to import header into ROM",
+                ex,
+                "The header import was not applied. Your loaded ROM data is still intact.",
+                "Import failed. Loaded ROM data was not changed.");
         }
     }
 

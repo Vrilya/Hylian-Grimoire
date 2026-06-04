@@ -17,7 +17,11 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            await ShowErrorAsync("Failed to load data files", ex.Message);
+            await ShowOperationExceptionAsync(
+                "Failed to load data files",
+                ex,
+                "No data files were loaded.",
+                "Load failed. No data files were loaded.");
         }
     }
 
@@ -35,7 +39,11 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            await ShowErrorAsync("Failed to load header", ex.Message);
+            await ShowOperationExceptionAsync(
+                "Failed to load header",
+                ex,
+                "No header was loaded.",
+                "Load failed. No header was loaded.");
         }
     }
 
@@ -59,7 +67,11 @@ public sealed partial class MainWindow
         catch (Exception ex)
         {
             busy?.Dispose();
-            await ShowErrorAsync("Failed to load ROM", ex.Message);
+            await ShowOperationExceptionAsync(
+                "Failed to load ROM",
+                ex,
+                "No ROM was loaded.",
+                "Load failed. No ROM was loaded.");
         }
     }
 

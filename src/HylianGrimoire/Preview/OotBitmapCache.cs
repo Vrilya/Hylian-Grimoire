@@ -12,7 +12,7 @@ public static class OotBitmapCache
     private static readonly string AssetRoot = Path.Combine(
         AppContext.BaseDirectory,
         HylianGrimoire.Games.GameProfiles.Get(HylianGrimoire.Games.GameKind.OcarinaOfTime).Assets.PreviewRoot);
-    private static readonly string CacheRoot = Path.Combine(Path.GetTempPath(), "HylianGrimoirePreviewCache");
+    private static readonly string CacheRoot = Path.Combine(Path.GetTempPath(), "HylianGrimoirePreviewCache", "oot");
 
     static OotBitmapCache()
     {
@@ -211,18 +211,60 @@ public static class OotBitmapCache
         IGlyphSource? glyphSource = null)
     {
         glyphSource ??= OotGlyphSources.OriginalAssets;
-        string tokenKey = string.Join('-', tokens.Select(token => $"{(int)token.Kind:x}{token.Value:x2}"));
-        string guideKey = showAlignmentGuides
-            ? $"guides-{AlignmentGuideCount}-{AlignmentGuideHalfSpan:0.###}-{AlignmentGuideCenterOffset:0.###}"
-            : "guides-off";
-        string output = GetCachePath($"preview-v16-glyph-{glyphSource.CacheKey}-{style}-{darkText}-{lastBox}-{guideKey}-{tokenKey}");
+        string output = GetRenderPreviewCachePath(style, tokens, darkText, lastBox, showAlignmentGuides, glyphSource);
+        if (!File.Exists(output))
+        {
+            RenderPreviewBitmap(style, tokens, darkText, lastBox, showAlignmentGuides, glyphSource).Dispose();
+        }
+
+        return new Uri(output);
+    }
+
+    public static Bitmap RenderPreviewBitmap(
+        OotPreviewStyle style,
+        IReadOnlyList<OotPreviewToken> tokens,
+        bool darkText,
+        bool lastBox,
+        bool showAlignmentGuides,
+        IGlyphSource? glyphSource = null)
+    {
+        glyphSource ??= OotGlyphSources.OriginalAssets;
+        string output = GetRenderPreviewCachePath(style, tokens, darkText, lastBox, showAlignmentGuides, glyphSource);
         if (File.Exists(output))
         {
-            return new Uri(output);
+            return new Bitmap(output);
         }
 
         Directory.CreateDirectory(CacheRoot);
 
+        Bitmap scaled = RenderPreviewUncached(style, tokens, darkText, lastBox, showAlignmentGuides, glyphSource);
+        scaled.Save(output, ImageFormat.Png);
+        return scaled;
+    }
+
+    private static string GetRenderPreviewCachePath(
+        OotPreviewStyle style,
+        IReadOnlyList<OotPreviewToken> tokens,
+        bool darkText,
+        bool lastBox,
+        bool showAlignmentGuides,
+        IGlyphSource glyphSource)
+    {
+        string tokenKey = string.Join('-', tokens.Select(token => $"{(int)token.Kind:x}{token.Value:x2}"));
+        string guideKey = showAlignmentGuides
+            ? $"guides-{AlignmentGuideCount}-{AlignmentGuideHalfSpan:0.###}-{AlignmentGuideCenterOffset:0.###}"
+            : "guides-off";
+        return GetCachePath($"preview-v16-glyph-{glyphSource.CacheKey}-{style}-{darkText}-{lastBox}-{guideKey}-{tokenKey}");
+    }
+
+    private static Bitmap RenderPreviewUncached(
+        OotPreviewStyle style,
+        IReadOnlyList<OotPreviewToken> tokens,
+        bool darkText,
+        bool lastBox,
+        bool showAlignmentGuides,
+        IGlyphSource glyphSource)
+    {
         int width = style == OotPreviewStyle.Credits ? 320 : 256;
         int height = style == OotPreviewStyle.Credits ? 240 : 72;
         using var canvas = new Bitmap(width, height, PixelFormat.Format32bppArgb);
@@ -239,7 +281,7 @@ public static class OotBitmapCache
             }
         }
 
-        using var scaled = new Bitmap((int)(canvas.Width * OutputScale), (int)(canvas.Height * OutputScale), PixelFormat.Format32bppArgb);
+        var scaled = new Bitmap((int)(canvas.Width * OutputScale), (int)(canvas.Height * OutputScale), PixelFormat.Format32bppArgb);
         using (var graphics = Graphics.FromImage(scaled))
         {
             graphics.Clear(Color.Transparent);
@@ -247,8 +289,7 @@ public static class OotBitmapCache
             graphics.DrawImage(canvas, 0, 0, scaled.Width, scaled.Height);
         }
 
-        scaled.Save(output, ImageFormat.Png);
-        return new Uri(output);
+        return scaled;
     }
 
     private static void DrawBox(Graphics graphics, OotPreviewStyle style)

@@ -35,51 +35,7 @@ public sealed partial class MainWindow
             _previewWindow?.Close();
         }
 
-        if (availability.CanUseTweaks)
-        {
-            _tweaksWindow?.SetRomData(_session.RomData);
-        }
-        else
-        {
-            CloseTweaksWindow();
-        }
-
-        if (availability.CanUseTitleText)
-        {
-            _titleTextWindow?.SetRomData(_session.RomData, _session.RomData?.ActiveMessageBankIndex ?? 0);
-        }
-        else
-        {
-            CloseTitleTextWindow();
-        }
-
-        if (availability.CanUsePromptEditor)
-        {
-            _promptEditorWindow?.SetRomData(_session.RomData);
-        }
-        else
-        {
-            ClosePromptEditorWindow();
-        }
-
-        if (availability.CanUseTextureManager)
-        {
-            _textureManagerWindow?.SetRomData(_session.RomData);
-        }
-        else
-        {
-            CloseTextureManagerWindow();
-        }
-
-        if (availability.CanUseO2rModMaker
-            && O2rModPortProfileCatalog.TryGetProfile(ActiveGameProfile, _session.RomData?.Profile, out O2rModPortProfile o2rProfile))
-        {
-            _o2rModMakerWindow?.SetContext(o2rProfile, _session.RomData, CreateCurrentEncodingProfile());
-        }
-        else
-        {
-            CloseO2rModMakerWindow();
-        }
+        _toolWindows.RefreshForLoadedDocument(availability, ActiveGameProfile, _session.RomData);
     }
 
     private void UpdateRomToolState()

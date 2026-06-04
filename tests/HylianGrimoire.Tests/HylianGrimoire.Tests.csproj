@@ -7,6 +7,10 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(EnableLegacyOotFixtureTests)' == 'true'">
+    <DefineConstants>$(DefineConstants);HYLIAN_GRIMOIRE_LEGACY_OOT_FIXTURE_TESTS</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\HylianGrimoire.Core\HylianGrimoire.Core.csproj" />
   </ItemGroup>

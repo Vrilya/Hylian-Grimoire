@@ -126,6 +126,28 @@ public sealed class DocumentSessionTests
     }
 
     [Fact]
+    public void RomBankDirtyTracksRomMutationOutsideMessageEntries()
+    {
+        RomMessageData loadedRom = CreateRomData([CreateEntry(0x0001, "Original")]);
+        var session = new DocumentSession();
+        session.LoadRom(loadedRom, "input.z64");
+
+        Assert.False(session.IsCurrentViewDirty());
+        Assert.False(session.HasUnsavedChanges);
+
+        session.MarkRomBankDirty();
+
+        Assert.False(session.IsCurrentViewDirty());
+        Assert.True(session.HasUnsavedRomBankChanges);
+        Assert.True(session.HasUnsavedChanges);
+
+        session.MarkCurrentViewClean();
+
+        Assert.True(session.HasUnsavedRomBankChanges);
+        Assert.True(session.HasUnsavedChanges);
+    }
+
+    [Fact]
     public void DirtyFingerprintIncludesMajorasMaskMetadata()
     {
         var metadata = new MajorasMaskMessageMetadata(
@@ -147,6 +169,26 @@ public sealed class DocumentSessionTests
         Assert.False(session.IsCurrentViewDirty());
 
         entry.CodecMetadata = metadata with { IconId = 0x02 };
+        session.MarkDirty();
+
+        Assert.True(session.IsCurrentViewDirty());
+        Assert.True(session.HasUnsavedChanges);
+    }
+
+    [Fact]
+    public void DirtyFingerprintUsesMetadataFingerprintInterface()
+    {
+        MessageEntry entry = CreateEntry(0x0200, "Metadata");
+        entry.CodecMetadata = new TestMetadata(1);
+        var session = new DocumentSession();
+        session.LoadTableFiles(
+            new MessageFileDocument([entry], GameProfiles.Get(GameKind.OcarinaOfTime)),
+            "test.tbl",
+            "test.bin");
+
+        Assert.False(session.IsCurrentViewDirty());
+
+        entry.CodecMetadata = new TestMetadata(2);
         session.MarkDirty();
 
         Assert.True(session.IsCurrentViewDirty());
@@ -177,5 +219,11 @@ public sealed class DocumentSessionTests
             [new MessageBankProfile("English", 0, 0, 0, 0)],
             new HashSet<int>());
         return new RomMessageData(entries, profile, false, [], RomFontResources.Empty, 0, RomMessageSection.Messages);
+    }
+
+    private sealed record TestMetadata(int Value) : IMessageEntryMetadataFingerprint
+    {
+        public void AppendFingerprint(System.Text.StringBuilder fingerprint)
+            => fingerprint.Append("test:").Append(Value).Append('|');
     }
 }

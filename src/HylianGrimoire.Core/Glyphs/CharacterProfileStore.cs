@@ -8,18 +8,21 @@ public sealed partial class CharacterProfileStore
     public const string DefaultProfileName = "Default";
     public const string CustomGlyphsProfileName = "Custom glyphs";
 
-    public static CharacterProfileStore Current { get; } = Load();
+    public static CharacterProfileStore Current { get; } = Load(CharacterProfileStoreStorage.CreateDefault());
 
+    private readonly CharacterProfileStoreStorage _storage;
     private readonly List<CharacterProfile> _profiles;
     private readonly Dictionary<GameKind, string> _automaticProfileByGame;
     private CharacterProfile? _temporaryProfile;
     private GameKind _activeGameKind = GameKind.OcarinaOfTime;
 
     private CharacterProfileStore(
+        CharacterProfileStoreStorage storage,
         List<CharacterProfile> profiles,
         Dictionary<GameKind, string> automaticProfileByGame,
         string? loadWarning = null)
     {
+        _storage = storage;
         _profiles = profiles;
         _automaticProfileByGame = automaticProfileByGame;
         SelectedProfileName = AutomaticProfileNameSetting == AutomaticProfileName

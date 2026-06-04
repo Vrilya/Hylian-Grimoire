@@ -17,13 +17,6 @@ namespace HylianGrimoire.Tests;
 
 public sealed class ExportParityTests
 {
-    public ExportParityTests()
-    {
-        Environment.SetEnvironmentVariable(
-            "OOT_EDITOR_CHARACTER_PROFILE_CONFIG_DIR",
-            Path.Combine(Path.GetTempPath(), "HylianGrimoireTests", Guid.NewGuid().ToString("N")));
-    }
-
     [Fact]
     public void WinUiMultilineTextRoundtripsWithoutChangingExportedBytes()
     {
@@ -1258,11 +1251,13 @@ public sealed class ExportParityTests
         Assert.Equal("âÂ", encodingProfile.HeaderTextToEditorText("âÂ"));
 
         string profileName = $"Swedish {Guid.NewGuid():N}";
-        CharacterProfileStore.Current.CreateProfile(profileName);
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
+        store.CreateProfile(profileName);
         try
         {
-            CharacterProfileStore.Current.SetDisplayChar(0x92, 'å');
-            MessageEncodingProfile profileEncoding = encodingProfile.WithCharacterProfileSnapshot(CharacterProfileStore.Current.CreateSnapshot());
+            store.SetDisplayChar(0x92, 'å');
+            MessageEncodingProfile profileEncoding = encodingProfile.WithCharacterProfileSnapshot(store.CreateSnapshot());
 
             Assert.Equal("å", DecodeEditorText([0x92, 0x02, 0x00, 0x00], profileEncoding));
             Assert.Equal([0x92, 0x02, 0x00, 0x00], EncodeEditorText("å", profileEncoding));
@@ -1279,8 +1274,8 @@ public sealed class ExportParityTests
         }
         finally
         {
-            CharacterProfileStore.Current.ResetDisplayChar(0x92);
-            CharacterProfileStore.Current.DeleteSelectedProfile();
+            store.ResetDisplayChar(0x92);
+            store.DeleteSelectedProfile();
         }
         Assert.Equal("â", DecodeEditorText([0x92, 0x02, 0x00, 0x00]));
     }
@@ -1288,8 +1283,10 @@ public sealed class ExportParityTests
     [Fact]
     public void OriginalEncodingProfileIgnoresCharacterProfilesForRomData()
     {
-        CharacterProfileStore.Current.CreateProfile("Swedish ROM");
-        CharacterProfileStore.Current.SetDisplayChar(0x92, 'å');
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
+        store.CreateProfile("Swedish ROM");
+        store.SetDisplayChar(0x92, 'å');
         try
         {
             Assert.Equal("â", DecodeEditorText([0x92, 0x02, 0x00, 0x00], MessageEncodingProfile.Original));
@@ -1298,26 +1295,28 @@ public sealed class ExportParityTests
         }
         finally
         {
-            CharacterProfileStore.Current.ResetDisplayChar(0x92);
-            CharacterProfileStore.Current.DeleteSelectedProfile();
+            store.ResetDisplayChar(0x92);
+            store.DeleteSelectedProfile();
         }
     }
 
     [Fact]
     public void CharacterProfileRemapKeepsBytesButUpdatesEditorCharacters()
     {
-        CharacterProfileStore.Current.CreateProfile("Swedish Remap");
-        CharacterProfileStore.Current.SetDisplayChar(0x82, 'Å');
-        CharacterProfileStore.Current.SetDisplayChar(0x92, 'å');
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
+        store.CreateProfile("Swedish Remap");
+        store.SetDisplayChar(0x82, 'Å');
+        store.SetDisplayChar(0x92, 'å');
         try
         {
-            string swedish = CharacterProfileStore.Current.RemapEditorText(
+            string swedish = store.RemapEditorText(
                 "Ââ [color:red]Ââ",
                 CharacterProfileStore.DefaultProfileName,
                 "Swedish Remap");
             Assert.Equal("Åå [color:red]Åå", swedish);
 
-            string defaultText = CharacterProfileStore.Current.RemapEditorText(
+            string defaultText = store.RemapEditorText(
                 swedish,
                 "Swedish Remap",
                 CharacterProfileStore.DefaultProfileName);
@@ -1325,27 +1324,29 @@ public sealed class ExportParityTests
         }
         finally
         {
-            CharacterProfileStore.Current.ResetDisplayChar(0x82);
-            CharacterProfileStore.Current.ResetDisplayChar(0x92);
-            CharacterProfileStore.Current.DeleteSelectedProfile();
+            store.ResetDisplayChar(0x82);
+            store.ResetDisplayChar(0x92);
+            store.DeleteSelectedProfile();
         }
     }
 
     [Fact]
     public void CharacterProfileRemapHandlesMajorasMaskEditorTags()
     {
-        CharacterProfileStore.Current.SetGameKind(GameKind.MajorasMask);
-        CharacterProfileStore.Current.CreateProfile("MM Remap");
-        CharacterProfileStore.Current.SetDisplayChar(0x9e, 'å');
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
+        store.SetGameKind(GameKind.MajorasMask);
+        store.CreateProfile("MM Remap");
+        store.SetDisplayChar(0x9e, 'å');
         try
         {
-            string custom = CharacterProfileStore.Current.RemapEditorText(
+            string custom = store.RemapEditorText(
                 "[delay:000a]ê [background][color:red]ê[break2]",
                 CharacterProfileStore.DefaultProfileName,
                 "MM Remap");
             Assert.Equal("[delay:000a]å [background][color:red]å[break2]", custom);
 
-            string defaultText = CharacterProfileStore.Current.RemapEditorText(
+            string defaultText = store.RemapEditorText(
                 custom,
                 "MM Remap",
                 CharacterProfileStore.DefaultProfileName);
@@ -1353,23 +1354,25 @@ public sealed class ExportParityTests
         }
         finally
         {
-            CharacterProfileStore.Current.ResetDisplayChar(0x9e);
-            CharacterProfileStore.Current.DeleteSelectedProfile();
-            CharacterProfileStore.Current.SetGameKind(GameKind.OcarinaOfTime);
+            store.ResetDisplayChar(0x9e);
+            store.DeleteSelectedProfile();
+            store.SetGameKind(GameKind.OcarinaOfTime);
         }
     }
 
     [Fact]
     public void DeletedCharacterProfileCanStillRemapBackToDefault()
     {
-        CharacterProfileStore.Current.CreateProfile("Deleted Swedish");
-        CharacterProfileStore.Current.SetDisplayChar(0x92, 'å');
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
+        store.CreateProfile("Deleted Swedish");
+        store.SetDisplayChar(0x92, 'å');
         CharacterProfile? deletedProfile = null;
-        CharacterProfileStore.Current.SelectionChanged += (_, args) => deletedProfile = args.PreviousProfile;
-        CharacterProfileStore.Current.DeleteSelectedProfile();
+        store.SelectionChanged += (_, args) => deletedProfile = args.PreviousProfile;
+        store.DeleteSelectedProfile();
 
         Assert.NotNull(deletedProfile);
-        string defaultText = CharacterProfileStore.Current.RemapEditorText(
+        string defaultText = store.RemapEditorText(
             "å",
             deletedProfile,
             CharacterProfileStore.DefaultProfileName);
@@ -1379,20 +1382,22 @@ public sealed class ExportParityTests
     [Fact]
     public void CharacterProfileWidthUsesCallerBaselineDefault()
     {
-        CharacterProfileStore.Current.CreateProfile("PAL baseline");
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
+        store.CreateProfile("PAL baseline");
         try
         {
-            CharacterProfileStore.Current.SetWidth(0x81, 6.0, 6.0);
-            Assert.False(CharacterProfileStore.Current.TryGetWidth(0x81, out _));
+            store.SetWidth(0x81, 6.0, 6.0);
+            Assert.False(store.TryGetWidth(0x81, out _));
 
-            CharacterProfileStore.Current.SetWidth(0x81, 12.0, 6.0);
-            Assert.True(CharacterProfileStore.Current.TryGetWidth(0x81, out double width));
+            store.SetWidth(0x81, 12.0, 6.0);
+            Assert.True(store.TryGetWidth(0x81, out double width));
             Assert.Equal(12.0, width);
         }
         finally
         {
-            CharacterProfileStore.Current.ResetWidth(0x81);
-            CharacterProfileStore.Current.DeleteSelectedProfile();
+            store.ResetWidth(0x81);
+            store.DeleteSelectedProfile();
         }
     }
 
@@ -1407,21 +1412,23 @@ public sealed class ExportParityTests
             bitmap.Save(sourcePath);
         }
 
-        CharacterProfileStore.Current.CreateProfile(profileName);
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
+        store.CreateProfile(profileName);
         try
         {
-            CharacterProfileStore.Current.SetImage(0x82, sourcePath);
-            Assert.True(CharacterProfileStore.Current.TryGetImagePath(0x82, out string? storedPath));
+            store.SetImage(0x82, sourcePath);
+            Assert.True(store.TryGetImagePath(0x82, out string? storedPath));
             Assert.NotNull(storedPath);
             File.Delete(storedPath);
 
-            Assert.True(CharacterProfileStore.Current.TryGetImagePath(0x82, out string? restoredPath));
+            Assert.True(store.TryGetImagePath(0x82, out string? restoredPath));
             Assert.True(File.Exists(restoredPath));
         }
         finally
         {
-            CharacterProfileStore.Current.ResetImage(0x82);
-            CharacterProfileStore.Current.DeleteSelectedProfile();
+            store.ResetImage(0x82);
+            store.DeleteSelectedProfile();
             if (File.Exists(sourcePath))
             {
                 File.Delete(sourcePath);
@@ -1432,8 +1439,10 @@ public sealed class ExportParityTests
     [Fact]
     public void GlyphRemapperReplacesUnderlyingBytesInTextTokensOnly()
     {
-        CharacterProfileStore.Current.CreateProfile("Swedish Remapper");
-        CharacterProfileStore.Current.SetDisplayChar(0x82, 'Å');
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
+        store.CreateProfile("Swedish Remapper");
+        store.SetDisplayChar(0x82, 'Å');
         try
         {
             var entries = new List<MessageEntry>
@@ -1444,7 +1453,7 @@ public sealed class ExportParityTests
                 },
             };
             MessageEncodingProfile encodingProfile = MessageEncodingProfile.Default
-                .WithCharacterProfileSnapshot(CharacterProfileStore.Current.CreateSnapshot());
+                .WithCharacterProfileSnapshot(store.CreateSnapshot());
 
             Assert.Equal(1, MessageGlyphRemapper.CountOccurrences(entries, 0x82, encodingProfile));
             Assert.Equal(1, MessageGlyphRemapper.CountOccurrences(entries, 0x7d, encodingProfile));
@@ -1457,8 +1466,8 @@ public sealed class ExportParityTests
         }
         finally
         {
-            CharacterProfileStore.Current.ResetDisplayChar(0x82);
-            CharacterProfileStore.Current.DeleteSelectedProfile();
+            store.ResetDisplayChar(0x82);
+            store.DeleteSelectedProfile();
         }
     }
 

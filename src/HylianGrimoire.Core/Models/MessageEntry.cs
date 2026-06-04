@@ -79,4 +79,24 @@ public class MessageEntry
         return OriginalEncodedBytes is not null
             && string.Equals(Text, OriginalText, StringComparison.Ordinal);
     }
+
+    public MessageEntry CreateSnapshot()
+    {
+        return new MessageEntry(Id, Type, Position, Bank, Offset)
+        {
+            TableEndMarkerId = TableEndMarkerId,
+            TableHasFinalEndMarker = TableHasFinalEndMarker,
+            PreserveOffsetWithoutMessageData = PreserveOffsetWithoutMessageData,
+            Text = Text,
+            OriginalText = OriginalText,
+            OriginalEncodedBytes = OriginalEncodedBytes?.ToArray(),
+            EncodedBytesOverride = EncodedBytesOverride?.ToArray(),
+            OriginalTrailingMessageData = OriginalTrailingMessageData?.ToArray(),
+            OriginalMessageDataSize = OriginalMessageDataSize,
+            OriginalFinalTableEndMarkerBank = OriginalFinalTableEndMarkerBank,
+            OriginalFinalTableEndMarkerOffset = OriginalFinalTableEndMarkerOffset,
+            OriginalCodecMetadata = OriginalCodecMetadata,
+            CodecMetadata = CodecMetadata,
+        };
+    }
 }

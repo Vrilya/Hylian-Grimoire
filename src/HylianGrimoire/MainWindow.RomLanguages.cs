@@ -70,7 +70,7 @@ public sealed partial class MainWindow
 
             if (currentBankWasDirty || alreadyHadRomBankChanges)
             {
-                MarkRomBankDirty();
+                ApplyRomMutation();
             }
 
             RefreshDocumentShell();
@@ -81,7 +81,11 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            await ShowErrorAsync("Failed to switch language", ex.Message);
+            await ShowOperationExceptionAsync(
+                "Failed to switch language",
+                ex,
+                "The current ROM language is still active.",
+                "Language switch failed. Current language is still active.");
         }
     }
 
@@ -127,7 +131,7 @@ public sealed partial class MainWindow
 
             if (currentSectionWasDirty || alreadyHadRomBankChanges)
             {
-                MarkRomBankDirty();
+                ApplyRomMutation();
             }
 
             RefreshDocumentShell();
@@ -140,7 +144,11 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            await ShowErrorAsync("Failed to switch ROM section", ex.Message);
+            await ShowOperationExceptionAsync(
+                "Failed to switch ROM section",
+                ex,
+                "The current ROM section is still active.",
+                "ROM section switch failed. Current section is still active.");
             UpdateLanguageMenuState();
         }
     }

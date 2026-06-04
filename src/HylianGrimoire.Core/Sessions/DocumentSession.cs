@@ -21,6 +21,7 @@ public sealed class DocumentSession
     public GameProfile? DocumentGameProfile { get; private set; }
     public string SearchText { get; set; } = string.Empty;
     private string CleanDocumentFingerprint { get; set; } = string.Empty;
+    public int ChangeRevision { get; private set; }
     public bool HasUnsavedChanges { get; private set; }
     public bool HasUnsavedRomBankChanges { get; private set; }
     public bool HasUnsavedHeaderLanguageChanges { get; private set; }
@@ -124,6 +125,7 @@ public sealed class DocumentSession
 
     public void MarkDirty()
     {
+        MarkChanged();
         HasUnsavedChanges = IsCurrentViewDirty()
             || HasUnsavedRomBankChanges
             || HasUnsavedHeaderLanguageChanges;
@@ -145,19 +147,30 @@ public sealed class DocumentSession
 
     public void MarkRomBankDirty()
     {
+        MarkChanged();
         HasUnsavedRomBankChanges = true;
         HasUnsavedChanges = true;
     }
 
     public void MarkHeaderLanguageDirty()
     {
+        MarkChanged();
         HasUnsavedHeaderLanguageChanges = true;
         HasUnsavedChanges = true;
     }
 
     public void ForceDirty()
     {
+        MarkChanged();
         HasUnsavedChanges = true;
+    }
+
+    private void MarkChanged()
+    {
+        unchecked
+        {
+            ChangeRevision++;
+        }
     }
 
     private void UseEntries(List<MessageEntry> entries, DocumentKind kind, GameProfile gameProfile)
@@ -236,16 +249,8 @@ public sealed class DocumentSession
             case null:
                 fingerprint.Append("metadata:null|");
                 break;
-            case MajorasMaskMessageMetadata metadata:
-                fingerprint
-                    .Append("mm:")
-                    .Append(metadata.TableTypePosition).Append(',')
-                    .Append(metadata.TextBoxProperties).Append(',')
-                    .Append(metadata.IconId).Append(',')
-                    .Append(metadata.NextTextId).Append(',')
-                    .Append(metadata.FirstChoicePrice).Append(',')
-                    .Append(metadata.SecondChoicePrice).Append(',')
-                    .Append(metadata.Unknown).Append('|');
+            case IMessageEntryMetadataFingerprint metadata:
+                metadata.AppendFingerprint(fingerprint);
                 break;
             default:
                 fingerprint.Append("metadata:").Append(value.GetType().FullName).Append('|');

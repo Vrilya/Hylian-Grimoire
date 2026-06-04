@@ -4,7 +4,7 @@ namespace HylianGrimoire.Glyphs;
 
 public sealed partial class CharacterProfileStore
 {
-    public string ProfileAssetRoot => CharacterProfileAssets.ProfileAssetRoot;
+    public string ProfileAssetRoot => _storage.AssetRoot;
 
     public bool TryGetImagePath(byte value, out string? path)
     {
@@ -18,12 +18,12 @@ public sealed partial class CharacterProfileStore
         }
 
         string key = ToKey(value);
-        string candidate = CharacterProfileAssets.GetProfileAssetPath(profile, relativePath);
+        string candidate = CharacterProfileAssets.GetProfileAssetPath(ProfileAssetRoot, profile, relativePath);
         if (!File.Exists(candidate)
             && profile.ImageData.TryGetValue(key, out string? encodedImage)
-            && CharacterProfileAssets.TryRestoreProfileImage(profile, relativePath, encodedImage))
+            && CharacterProfileAssets.TryRestoreProfileImage(ProfileAssetRoot, profile, relativePath, encodedImage))
         {
-            candidate = CharacterProfileAssets.GetProfileAssetPath(profile, relativePath);
+            candidate = CharacterProfileAssets.GetProfileAssetPath(ProfileAssetRoot, profile, relativePath);
         }
 
         if (!File.Exists(candidate))
@@ -45,7 +45,7 @@ public sealed partial class CharacterProfileStore
         CharacterProfile profile = GetOrCreateSelectedEditableProfile();
         string key = ToKey(value);
         string relativePath = GameGlyphCatalog.GetGlyphRelativePath(_activeGameKind, value);
-        CharacterProfileAssets.CopyProfileImage(profile, relativePath, sourcePath);
+        CharacterProfileAssets.CopyProfileImage(ProfileAssetRoot, profile, relativePath, sourcePath);
 
         profile.Images[key] = relativePath;
         profile.ImageData[key] = Convert.ToBase64String(File.ReadAllBytes(sourcePath));
@@ -101,11 +101,11 @@ public sealed partial class CharacterProfileStore
         var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach ((string key, string relativePath) in source.Images)
         {
-            string sourcePath = CharacterProfileAssets.GetProfileAssetPath(source, relativePath);
+            string sourcePath = CharacterProfileAssets.GetProfileAssetPath(ProfileAssetRoot, source, relativePath);
             if (!File.Exists(sourcePath)
                 && source.ImageData.TryGetValue(key, out string? encodedImage))
             {
-                CharacterProfileAssets.TryRestoreProfileImage(source, relativePath, encodedImage);
+                CharacterProfileAssets.TryRestoreProfileImage(ProfileAssetRoot, source, relativePath, encodedImage);
             }
 
             if (!File.Exists(sourcePath))
@@ -113,7 +113,7 @@ public sealed partial class CharacterProfileStore
                 continue;
             }
 
-            CharacterProfileAssets.CopyProfileImage(destinationProfile, relativePath, sourcePath);
+            CharacterProfileAssets.CopyProfileImage(ProfileAssetRoot, destinationProfile, relativePath, sourcePath);
             result[key] = relativePath;
         }
 
@@ -137,7 +137,7 @@ public sealed partial class CharacterProfileStore
                 continue;
             }
 
-            string sourcePath = CharacterProfileAssets.GetProfileAssetPath(source, relativePath);
+            string sourcePath = CharacterProfileAssets.GetProfileAssetPath(ProfileAssetRoot, source, relativePath);
             if (File.Exists(sourcePath))
             {
                 result[key] = Convert.ToBase64String(File.ReadAllBytes(sourcePath));
@@ -147,13 +147,13 @@ public sealed partial class CharacterProfileStore
         return result;
     }
 
-    private static string GetProfileImagePath(CharacterProfile profile, string key, string relativePath)
+    private string GetProfileImagePath(CharacterProfile profile, string key, string relativePath)
     {
-        string path = CharacterProfileAssets.GetProfileAssetPath(profile, relativePath);
+        string path = CharacterProfileAssets.GetProfileAssetPath(ProfileAssetRoot, profile, relativePath);
         if (!File.Exists(path)
             && profile.ImageData.TryGetValue(key, out string? encodedImage))
         {
-            CharacterProfileAssets.TryRestoreProfileImage(profile, relativePath, encodedImage);
+            CharacterProfileAssets.TryRestoreProfileImage(ProfileAssetRoot, profile, relativePath, encodedImage);
         }
 
         return path;
@@ -162,29 +162,28 @@ public sealed partial class CharacterProfileStore
 
 internal static class CharacterProfileAssets
 {
-    public static string ProfileAssetRoot { get; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "HylianGrimoire",
-        "CharacterProfiles");
-
-    public static string GetProfileAssetPath(CharacterProfile profile, string relativePath)
+    public static string GetProfileAssetPath(string assetRoot, CharacterProfile profile, string relativePath)
     {
-        return Path.Combine(ProfileAssetRoot, profile.GameKind.ToString(), GetProfileAssetFolder(profile.Name), relativePath);
+        return Path.Combine(assetRoot, profile.GameKind.ToString(), GetProfileAssetFolder(profile.Name), relativePath);
     }
 
-    public static void CopyProfileImage(CharacterProfile profile, string relativePath, string sourcePath)
+    public static void CopyProfileImage(string assetRoot, CharacterProfile profile, string relativePath, string sourcePath)
     {
-        string destination = GetProfileAssetPath(profile, relativePath);
+        string destination = GetProfileAssetPath(assetRoot, profile, relativePath);
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         AtomicFileWriter.WriteAllBytes(destination, File.ReadAllBytes(sourcePath));
     }
 
-    public static bool TryRestoreProfileImage(CharacterProfile profile, string relativePath, string encodedImage)
+    public static bool TryRestoreProfileImage(
+        string assetRoot,
+        CharacterProfile profile,
+        string relativePath,
+        string encodedImage)
     {
         try
         {
             byte[] bytes = Convert.FromBase64String(encodedImage);
-            string destination = GetProfileAssetPath(profile, relativePath);
+            string destination = GetProfileAssetPath(assetRoot, profile, relativePath);
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
             AtomicFileWriter.WriteAllBytes(destination, bytes);
             return true;
@@ -203,9 +202,9 @@ internal static class CharacterProfileAssets
         }
     }
 
-    public static void DeleteProfileAssets(CharacterProfile profile)
+    public static void DeleteProfileAssets(string assetRoot, CharacterProfile profile)
     {
-        string folder = Path.Combine(ProfileAssetRoot, profile.GameKind.ToString(), GetProfileAssetFolder(profile.Name));
+        string folder = Path.Combine(assetRoot, profile.GameKind.ToString(), GetProfileAssetFolder(profile.Name));
         try
         {
             if (Directory.Exists(folder))

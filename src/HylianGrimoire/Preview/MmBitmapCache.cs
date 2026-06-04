@@ -14,7 +14,7 @@ public static class MmBitmapCache
     private static readonly string AssetRoot = Path.Combine(
         AppContext.BaseDirectory,
         GameProfiles.Get(GameKind.MajorasMask).Assets.PreviewRoot);
-    private static readonly string CacheRoot = Path.Combine(Path.GetTempPath(), "HylianGrimoirePreviewCache");
+    private static readonly string CacheRoot = Path.Combine(Path.GetTempPath(), "HylianGrimoirePreviewCache", "mm");
 
     private const float TextScale = 0.75f;
     private const float OutputScale = 1.75f;
@@ -32,17 +32,59 @@ public static class MmBitmapCache
         IGlyphSource? glyphSource = null)
     {
         glyphSource ??= MmGlyphSources.Assets;
-        string tokenKey = string.Join('-', tokens.Select(token => $"{(int)token.Kind:x}{token.Value:x2}"));
-        string guideKey = showAlignmentGuides ? "guides-on" : "guides-off";
-        string optionKey = $"icon-{options.IconId:x2}-center-{options.Centered}";
-        string output = GetCachePath($"mm-preview-v27-{glyphSource.CacheKey}-{style}-{lastBox}-{guideKey}-{optionKey}-{tokenKey}");
+        string output = GetRenderPreviewCachePath(style, tokens, lastBox, options, showAlignmentGuides, glyphSource);
+        if (!File.Exists(output))
+        {
+            RenderPreviewBitmap(style, tokens, lastBox, options, showAlignmentGuides, glyphSource).Dispose();
+        }
+
+        return new Uri(output);
+    }
+
+    public static Bitmap RenderPreviewBitmap(
+        MmPreviewStyle style,
+        IReadOnlyList<OotPreviewToken> tokens,
+        bool lastBox,
+        MmPreviewRenderOptions options,
+        bool showAlignmentGuides,
+        IGlyphSource? glyphSource = null)
+    {
+        glyphSource ??= MmGlyphSources.Assets;
+        string output = GetRenderPreviewCachePath(style, tokens, lastBox, options, showAlignmentGuides, glyphSource);
         if (File.Exists(output))
         {
-            return new Uri(output);
+            return new Bitmap(output);
         }
 
         Directory.CreateDirectory(CacheRoot);
 
+        Bitmap scaled = RenderPreviewUncached(style, tokens, lastBox, options, showAlignmentGuides, glyphSource);
+        scaled.Save(output, ImageFormat.Png);
+        return scaled;
+    }
+
+    private static string GetRenderPreviewCachePath(
+        MmPreviewStyle style,
+        IReadOnlyList<OotPreviewToken> tokens,
+        bool lastBox,
+        MmPreviewRenderOptions options,
+        bool showAlignmentGuides,
+        IGlyphSource glyphSource)
+    {
+        string tokenKey = string.Join('-', tokens.Select(token => $"{(int)token.Kind:x}{token.Value:x2}"));
+        string guideKey = showAlignmentGuides ? "guides-on" : "guides-off";
+        string optionKey = $"icon-{options.IconId:x2}-center-{options.Centered}";
+        return GetCachePath($"mm-preview-v27-{glyphSource.CacheKey}-{style}-{lastBox}-{guideKey}-{optionKey}-{tokenKey}");
+    }
+
+    private static Bitmap RenderPreviewUncached(
+        MmPreviewStyle style,
+        IReadOnlyList<OotPreviewToken> tokens,
+        bool lastBox,
+        MmPreviewRenderOptions options,
+        bool showAlignmentGuides,
+        IGlyphSource glyphSource)
+    {
         int canvasWidth = style == MmPreviewStyle.StaffCredits ? 320 : 256;
         int canvasHeight = style == MmPreviewStyle.StaffCredits ? 240 : 72;
         using var canvas = new Bitmap(canvasWidth, canvasHeight, PixelFormat.Format32bppArgb);
@@ -70,7 +112,7 @@ public static class MmBitmapCache
             }
         }
 
-        using var scaled = new Bitmap((int)(canvas.Width * OutputScale), (int)(canvas.Height * OutputScale), PixelFormat.Format32bppArgb);
+        var scaled = new Bitmap((int)(canvas.Width * OutputScale), (int)(canvas.Height * OutputScale), PixelFormat.Format32bppArgb);
         using (var graphics = Graphics.FromImage(scaled))
         {
             graphics.Clear(Color.Transparent);
@@ -78,8 +120,7 @@ public static class MmBitmapCache
             graphics.DrawImage(canvas, 0, 0, scaled.Width, scaled.Height);
         }
 
-        scaled.Save(output, ImageFormat.Png);
-        return new Uri(output);
+        return scaled;
     }
 
     private static void DrawBox(Graphics graphics, MmPreviewStyle style)

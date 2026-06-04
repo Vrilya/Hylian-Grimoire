@@ -1,7 +1,6 @@
 using HylianGrimoire.Codecs;
 using HylianGrimoire.Interop;
 using HylianGrimoire.Models;
-using HylianGrimoire.O2r;
 using HylianGrimoire.Rom;
 using HylianGrimoire.Textures;
 using Microsoft.UI.Xaml;

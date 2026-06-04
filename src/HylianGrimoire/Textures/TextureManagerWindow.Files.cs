@@ -21,10 +21,18 @@ public sealed partial class TextureManagerWindow
             return;
         }
 
-        using var bitmap = TextureRomService.Decode(_romData.DecompressedRom, item.Texture);
-        bitmap.Save(path, ImageFormat.Png);
-        SetLocalStatus("Exported texture successfully.");
-        _onChanged($"Exported {item.Texture.Name}.");
+        try
+        {
+            using var bitmap = TextureRomService.Decode(_romData.DecompressedRom, item.Texture);
+            bitmap.Save(path, ImageFormat.Png);
+            SetLocalStatus("Exported texture successfully.");
+            _onChanged(new TextureManagerChange($"Exported {item.Texture.Name}.", MutatedRom: false));
+        }
+        catch (Exception ex)
+        {
+            SetLocalStatus("Texture export failed.");
+            await ShowErrorAsync("Failed to export texture", ex.Message);
+        }
     }
 
     private async void OnReplaceTexture(object sender, RoutedEventArgs e)
@@ -45,7 +53,7 @@ public sealed partial class TextureManagerWindow
             TextureRomService.EncodeAndWrite(_romData.DecompressedRom, item.Texture, path);
             RefreshSelectedTexture();
             SetLocalStatus("Replaced texture successfully.");
-            _onChanged($"Replaced {item.Texture.Name}.");
+            _onChanged(new TextureManagerChange($"Replaced {item.Texture.Name}.", MutatedRom: true));
         }
         catch (Exception ex)
         {
@@ -71,11 +79,11 @@ public sealed partial class TextureManagerWindow
         {
             var progress = new Progress<int>(UpdateProgress);
             using IDisposable busy = ShowProgress("Exporting textures");
-            byte[] rom = _romData.DecompressedRom;
+            byte[] rom = _romData.DecompressedRom.ToArray();
             int exported = await Task.Run(() => ExportTexturesToFolder(rom, textures, folder, progress));
 
             SetLocalStatus($"Exported folder successfully. {exported} textures exported.");
-            _onChanged($"Exported {exported} textures.");
+            _onChanged(new TextureManagerChange($"Exported {exported} textures.", MutatedRom: false));
         }
         catch (Exception ex)
         {
@@ -101,19 +109,30 @@ public sealed partial class TextureManagerWindow
         {
             var progress = new Progress<int>(UpdateProgress);
             using IDisposable busy = ShowProgress("Replacing textures");
-            byte[] rom = _romData.DecompressedRom;
-            int replaced = await Task.Run(() => ReplaceTexturesFromFolder(rom, textures, folder, progress));
+            byte[] originalRom = _romData.DecompressedRom.ToArray();
+            byte[] updatedRom = originalRom.ToArray();
+            int replaced = await Task.Run(() => ReplaceTexturesFromFolder(updatedRom, textures, folder, progress));
+
+            if (replaced > 0)
+            {
+                if (!originalRom.AsSpan().SequenceEqual(_romData.DecompressedRom))
+                {
+                    throw new InvalidOperationException("The loaded ROM changed while replacing textures. Try the folder replacement again.");
+                }
+
+                updatedRom.CopyTo(_romData.DecompressedRom, 0);
+            }
 
             RefreshSelectedTexture();
             if (replaced > 0)
             {
                 SetLocalStatus($"Replaced folder successfully. {replaced} textures replaced.");
-                _onChanged($"Replaced {replaced} textures.");
+                _onChanged(new TextureManagerChange($"Replaced {replaced} textures.", MutatedRom: true));
             }
             else
             {
                 SetLocalStatus("No matching texture PNGs were found.");
-                _onChanged("No matching texture PNGs found.");
+                _onChanged(new TextureManagerChange("No matching texture PNGs found.", MutatedRom: false));
             }
         }
         catch (Exception ex)

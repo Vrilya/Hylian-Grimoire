@@ -99,7 +99,7 @@ public sealed class TextureCatalogTests
         Assert.Equal(256, texture.EffectiveTlutColorCount);
     }
 
-    [Theory]
+    [RetailDecompressedRomFixtureTheory]
     [InlineData("Retail NTSC 1.0", "oot_retail_ntsc_1.0_decompressed.z64")]
     [InlineData("Retail NTSC 1.1", "oot_retail_ntsc_1.1_decompressed.z64")]
     [InlineData("Retail NTSC 1.2", "oot_retail_ntsc_1.2_decompressed.z64")]
@@ -111,10 +111,7 @@ public sealed class TextureCatalogTests
     [InlineData("Retail PAL GameCube", "oot_retail_pal_gc_decompressed.z64")]
     public void Color_indexed_texture_palettes_cover_used_indices(string profileName, string romFileName)
     {
-        if (!LocalRomFixtures.TryGetRetailDecompressedPath(romFileName, out string romPath))
-        {
-            return;
-        }
+        string romPath = LocalRomFixtures.GetRequiredRetailDecompressedPath(romFileName);
 
         byte[] rom = File.ReadAllBytes(romPath);
         RomVersionProfile profile = GetProfile(profileName);
@@ -142,13 +139,10 @@ public sealed class TextureCatalogTests
         Assert.Equal(256, texture.EffectiveTlutColorCount);
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_us_n64_decompressed.z64")]
     public void MajorasMask_color_indexed_texture_palettes_cover_used_indices()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_decompressed.z64", out string romPath))
-        {
-            return;
-        }
+        string romPath = LocalRomFixtures.GetRequiredMajorasMaskPath("mm_us_n64_decompressed.z64");
 
         byte[] rom = File.ReadAllBytes(romPath);
         RomVersionProfile profile = GetProfile("Majora's Mask NTSC-U");

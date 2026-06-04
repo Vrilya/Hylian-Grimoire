@@ -8,11 +8,11 @@ namespace HylianGrimoire.Textures;
 public sealed partial class TextureManagerWindow : Window
 {
     private const int PreviewPadding = 32;
-    private readonly Action<string> _onChanged;
+    private readonly Action<TextureManagerChange> _onChanged;
     private RomMessageData? _romData;
     private int _previewCounter;
 
-    public TextureManagerWindow(RomMessageData? romData, Action<string> onChanged)
+    public TextureManagerWindow(RomMessageData? romData, Action<TextureManagerChange> onChanged)
     {
         InitializeComponent();
         _onChanged = onChanged;

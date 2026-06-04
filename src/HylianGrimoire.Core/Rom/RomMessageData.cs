@@ -9,4 +9,14 @@ public sealed record RomMessageData(
     byte[] DecompressedRom,
     RomFontResources FontResources,
     int ActiveMessageBankIndex,
-    RomMessageSection ActiveSection);
+    RomMessageSection ActiveSection)
+{
+    public RomMessageData CreateSnapshot()
+    {
+        return this with
+        {
+            Entries = Entries.Select(entry => entry.CreateSnapshot()).ToList(),
+            DecompressedRom = DecompressedRom.ToArray(),
+        };
+    }
+}

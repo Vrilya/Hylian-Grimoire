@@ -70,7 +70,7 @@ public static class CHeaderImporter
         }
 
         if (entries.Count == 0)
-            throw new InvalidDataException("No DEFINE_MESSAGE entries were found.");
+            throw new HeaderMessageEntriesNotFoundException("No DEFINE_MESSAGE entries were found.");
 
         return entries;
     }

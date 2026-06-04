@@ -111,14 +111,11 @@ public sealed class RomCompressionTests
         Assert.Equal(100, progressReports.Last().Percent);
     }
 
-    [Fact]
+#if HYLIAN_GRIMOIRE_LEGACY_OOT_FIXTURE_TESTS
+    [LegacyOotRomFixtureFact]
     public void LocalRomFixturesDecompressByteForByteWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         AssertDecompressesToFixture(
             FixturePath(root, "compressed", "Tidens_okarina-NTSC10.z64"),
@@ -140,14 +137,10 @@ public sealed class RomCompressionTests
             FixturePath(root, "decompressed", "Tidens_okarina-IQUENTSC.z64"));
     }
 
-    [Fact]
+    [LegacyOotRomFixtureFact]
     public void LocalRetailRomFixturesDecompressByteForByteWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         AssertRetailDecompressesToFixture(root, "ntsc10_orig.z64");
         AssertRetailDecompressesToFixture(root, "ntsc11_orig.z64");
@@ -159,18 +152,14 @@ public sealed class RomCompressionTests
         AssertRetailDecompressesToFixture(root, "palgc_orig.z64");
         AssertRetailDecompressesToFixture(root, "palmq_orig.z64");
     }
+#endif
 
-    [Fact]
+    [MajorasMaskRomFixturePairFact("mm_us_n64_compressed.z64", "mm_us_n64_decompressed.z64")]
     public void LocalMajorasMaskFixtureDecompressesByteForByteWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+        var (compressedPath, decompressedPath) = LocalRomFixtures.GetRequiredMajorasMaskPair(
             "mm_us_n64_compressed.z64",
-            "mm_us_n64_decompressed.z64",
-            out string compressedPath,
-            out string decompressedPath))
-        {
-            return;
-        }
+            "mm_us_n64_decompressed.z64");
 
         RomCompressionResult decompressed = RomCompressionService.DecompressRom(File.ReadAllBytes(compressedPath));
 
@@ -179,17 +168,12 @@ public sealed class RomCompressionTests
         Assert.Equal(File.ReadAllBytes(decompressedPath), decompressed.Data);
     }
 
-    [Fact]
+    [MajorasMaskRomFixturePairFact("mm_us_gc_compressed.z64", "mm_us_gc_decompressed.z64")]
     public void LocalMajorasMaskUsGameCubeFixtureDecompressesByteForByteWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+        var (compressedPath, decompressedPath) = LocalRomFixtures.GetRequiredMajorasMaskPair(
             "mm_us_gc_compressed.z64",
-            "mm_us_gc_decompressed.z64",
-            out string compressedPath,
-            out string decompressedPath))
-        {
-            return;
-        }
+            "mm_us_gc_decompressed.z64");
 
         RomCompressionResult decompressed = RomCompressionService.DecompressRom(File.ReadAllBytes(compressedPath));
 
@@ -198,17 +182,12 @@ public sealed class RomCompressionTests
         Assert.Equal(File.ReadAllBytes(decompressedPath), decompressed.Data);
     }
 
-    [Fact]
+    [MajorasMaskRomFixturePairFact("mm_eu_1.0_n64_compressed.z64", "mm_eu_1.0_n64_decompressed.z64")]
     public void LocalMajorasMaskEuFixtureDecompressesByteForByteWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+        var (compressedPath, decompressedPath) = LocalRomFixtures.GetRequiredMajorasMaskPair(
             "mm_eu_1.0_n64_compressed.z64",
-            "mm_eu_1.0_n64_decompressed.z64",
-            out string compressedPath,
-            out string decompressedPath))
-        {
-            return;
-        }
+            "mm_eu_1.0_n64_decompressed.z64");
 
         RomCompressionResult decompressed = RomCompressionService.DecompressRom(File.ReadAllBytes(compressedPath));
 
@@ -219,17 +198,12 @@ public sealed class RomCompressionTests
         Assert.Equal(File.ReadAllBytes(decompressedPath), decompressed.Data);
     }
 
-    [Fact]
+    [MajorasMaskRomFixturePairFact("mm_eu_1.1_n64_compressed.z64", "mm_eu_1.1_n64_decompressed.z64")]
     public void LocalMajorasMaskEu11FixtureDecompressesByteForByteWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+        var (compressedPath, decompressedPath) = LocalRomFixtures.GetRequiredMajorasMaskPair(
             "mm_eu_1.1_n64_compressed.z64",
-            "mm_eu_1.1_n64_decompressed.z64",
-            out string compressedPath,
-            out string decompressedPath))
-        {
-            return;
-        }
+            "mm_eu_1.1_n64_decompressed.z64");
 
         RomCompressionResult decompressed = RomCompressionService.DecompressRom(File.ReadAllBytes(compressedPath));
 
@@ -240,17 +214,12 @@ public sealed class RomCompressionTests
         Assert.Equal(File.ReadAllBytes(decompressedPath), decompressed.Data);
     }
 
-    [Fact]
+    [MajorasMaskRomFixturePairFact("mm_eu_gc_compressed.z64", "mm_eu_gc_decompressed.z64")]
     public void LocalMajorasMaskEuGameCubeFixtureDecompressesByteForByteWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+        var (compressedPath, decompressedPath) = LocalRomFixtures.GetRequiredMajorasMaskPair(
             "mm_eu_gc_compressed.z64",
-            "mm_eu_gc_decompressed.z64",
-            out string compressedPath,
-            out string decompressedPath))
-        {
-            return;
-        }
+            "mm_eu_gc_decompressed.z64");
 
         RomCompressionResult decompressed = RomCompressionService.DecompressRom(File.ReadAllBytes(compressedPath));
 
@@ -261,17 +230,12 @@ public sealed class RomCompressionTests
         Assert.Equal(File.ReadAllBytes(decompressedPath), decompressed.Data);
     }
 
-    [Fact]
+    [MajorasMaskRomFixturePairFact("mm_us_n64_compressed.z64", "mm_us_n64_decompressed.z64")]
     public void LocalMajorasMaskProjectFixtureLoadsRomMessagesWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+        var (compressedPath, decompressedPath) = LocalRomFixtures.GetRequiredMajorasMaskPair(
             "mm_us_n64_compressed.z64",
-            "mm_us_n64_decompressed.z64",
-            out string compressedPath,
-            out string decompressedPath))
-        {
-            return;
-        }
+            "mm_us_n64_decompressed.z64");
 
         AssertLoadsMajorasMaskMessagesFromRom(compressedPath, wasCompressed: true);
         AssertLoadsMajorasMaskMessagesFromRom(decompressedPath, wasCompressed: false);
@@ -279,17 +243,12 @@ public sealed class RomCompressionTests
         AssertLoadsMajorasMaskCreditsFromRom(decompressedPath, wasCompressed: false);
     }
 
-    [Fact]
+    [MajorasMaskRomFixturePairFact("mm_us_gc_compressed.z64", "mm_us_gc_decompressed.z64")]
     public void LocalMajorasMaskUsGameCubeProjectFixtureLoadsRomMessagesWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+        var (compressedPath, decompressedPath) = LocalRomFixtures.GetRequiredMajorasMaskPair(
             "mm_us_gc_compressed.z64",
-            "mm_us_gc_decompressed.z64",
-            out string compressedPath,
-            out string decompressedPath))
-        {
-            return;
-        }
+            "mm_us_gc_decompressed.z64");
 
         AssertLoadsMajorasMaskMessagesFromRom(
             compressedPath,
@@ -315,17 +274,12 @@ public sealed class RomCompressionTests
             expectedProfileName: "Majora's Mask NTSC-U GameCube");
     }
 
-    [Fact]
+    [MajorasMaskRomFixturePairFact("mm_eu_1.0_n64_compressed.z64", "mm_eu_1.0_n64_decompressed.z64")]
     public void LocalMajorasMaskEuProjectFixtureLoadsRomMessagesWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+        var (compressedPath, decompressedPath) = LocalRomFixtures.GetRequiredMajorasMaskPair(
             "mm_eu_1.0_n64_compressed.z64",
-            "mm_eu_1.0_n64_decompressed.z64",
-            out string compressedPath,
-            out string decompressedPath))
-        {
-            return;
-        }
+            "mm_eu_1.0_n64_decompressed.z64");
 
         AssertLoadsMajorasMaskEuMessagesFromRom(compressedPath, wasCompressed: true);
         AssertLoadsMajorasMaskEuMessagesFromRom(decompressedPath, wasCompressed: false);
@@ -333,17 +287,12 @@ public sealed class RomCompressionTests
         AssertLoadsMajorasMaskEuCreditsFromRom(decompressedPath, wasCompressed: false);
     }
 
-    [Fact]
+    [MajorasMaskRomFixturePairFact("mm_eu_1.1_n64_compressed.z64", "mm_eu_1.1_n64_decompressed.z64")]
     public void LocalMajorasMaskEu11ProjectFixtureLoadsRomMessagesWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+        var (compressedPath, decompressedPath) = LocalRomFixtures.GetRequiredMajorasMaskPair(
             "mm_eu_1.1_n64_compressed.z64",
-            "mm_eu_1.1_n64_decompressed.z64",
-            out string compressedPath,
-            out string decompressedPath))
-        {
-            return;
-        }
+            "mm_eu_1.1_n64_decompressed.z64");
 
         AssertLoadsMajorasMaskEuMessagesFromRom(
             compressedPath,
@@ -365,17 +314,12 @@ public sealed class RomCompressionTests
             expectedProfileName: "Majora's Mask EU 1.1");
     }
 
-    [Fact]
+    [MajorasMaskRomFixturePairFact("mm_eu_gc_compressed.z64", "mm_eu_gc_decompressed.z64")]
     public void LocalMajorasMaskEuGameCubeProjectFixtureLoadsRomMessagesWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+        var (compressedPath, decompressedPath) = LocalRomFixtures.GetRequiredMajorasMaskPair(
             "mm_eu_gc_compressed.z64",
-            "mm_eu_gc_decompressed.z64",
-            out string compressedPath,
-            out string decompressedPath))
-        {
-            return;
-        }
+            "mm_eu_gc_decompressed.z64");
 
         AssertLoadsMajorasMaskEuMessagesFromRom(
             compressedPath,
@@ -399,13 +343,10 @@ public sealed class RomCompressionTests
             expectedProfileName: "Majora's Mask EU GameCube");
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_us_n64_decompressed.z64")]
     public void LocalMajorasMaskProjectFixtureSavesDecompressedMessagesByteForByteWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_decompressed.z64", out string decompressedPath))
-        {
-            return;
-        }
+        string decompressedPath = LocalRomFixtures.GetRequiredMajorasMaskPath("mm_us_n64_decompressed.z64");
 
         string tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.z64");
         try
@@ -421,13 +362,10 @@ public sealed class RomCompressionTests
         }
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_eu_1.0_n64_decompressed.z64")]
     public void LocalMajorasMaskEuProjectFixtureSavesDecompressedMessagesByteForByteWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_eu_1.0_n64_decompressed.z64", out string decompressedPath))
-        {
-            return;
-        }
+        string decompressedPath = LocalRomFixtures.GetRequiredMajorasMaskPath("mm_eu_1.0_n64_decompressed.z64");
 
         for (int bankIndex = 0; bankIndex < 4; bankIndex++)
         {
@@ -437,13 +375,10 @@ public sealed class RomCompressionTests
         AssertSavesMajorasMaskSectionByteForByte(decompressedPath, messageBankIndex: 0, RomMessageSection.Credits);
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_eu_1.1_n64_decompressed.z64")]
     public void LocalMajorasMaskEu11ProjectFixtureSavesDecompressedMessagesByteForByteWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_eu_1.1_n64_decompressed.z64", out string decompressedPath))
-        {
-            return;
-        }
+        string decompressedPath = LocalRomFixtures.GetRequiredMajorasMaskPath("mm_eu_1.1_n64_decompressed.z64");
 
         for (int bankIndex = 0; bankIndex < 4; bankIndex++)
         {
@@ -453,13 +388,10 @@ public sealed class RomCompressionTests
         AssertSavesMajorasMaskSectionByteForByte(decompressedPath, messageBankIndex: 0, RomMessageSection.Credits);
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_eu_gc_decompressed.z64")]
     public void LocalMajorasMaskEuGameCubeProjectFixtureSavesDecompressedMessagesByteForByteWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_eu_gc_decompressed.z64", out string decompressedPath))
-        {
-            return;
-        }
+        string decompressedPath = LocalRomFixtures.GetRequiredMajorasMaskPath("mm_eu_gc_decompressed.z64");
 
         for (int bankIndex = 0; bankIndex < 4; bankIndex++)
         {
@@ -469,25 +401,19 @@ public sealed class RomCompressionTests
         AssertSavesMajorasMaskSectionByteForByte(decompressedPath, messageBankIndex: 0, RomMessageSection.Credits);
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_us_gc_decompressed.z64")]
     public void LocalMajorasMaskUsGameCubeProjectFixtureSavesDecompressedMessagesByteForByteWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_gc_decompressed.z64", out string decompressedPath))
-        {
-            return;
-        }
+        string decompressedPath = LocalRomFixtures.GetRequiredMajorasMaskPath("mm_us_gc_decompressed.z64");
 
         AssertSavesMajorasMaskSectionByteForByte(decompressedPath, messageBankIndex: 0, RomMessageSection.Messages);
         AssertSavesMajorasMaskSectionByteForByte(decompressedPath, messageBankIndex: 0, RomMessageSection.Credits);
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_us_n64_decompressed.z64")]
     public void LocalMajorasMaskProjectFixtureReloadsChangedRomFontWidthWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_decompressed.z64", out string decompressedPath))
-        {
-            return;
-        }
+        string decompressedPath = LocalRomFixtures.GetRequiredMajorasMaskPath("mm_us_n64_decompressed.z64");
 
         string tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.z64");
         try
@@ -506,13 +432,10 @@ public sealed class RomCompressionTests
         }
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_us_n64_compressed.z64")]
     public void LocalMajorasMaskProjectFixtureSavesCompressedTextAndGlyphChangesWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_compressed.z64", out string compressedPath))
-        {
-            return;
-        }
+        string compressedPath = LocalRomFixtures.GetRequiredMajorasMaskPath("mm_us_n64_compressed.z64");
 
         string tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.z64");
         try
@@ -542,13 +465,10 @@ public sealed class RomCompressionTests
         }
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_us_n64_decompressed.z64")]
     public void LocalMajorasMaskProjectFixtureExportsDataFilesByteForByteWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_decompressed.z64", out string decompressedPath))
-        {
-            return;
-        }
+        string decompressedPath = LocalRomFixtures.GetRequiredMajorasMaskPath("mm_us_n64_decompressed.z64");
 
         string tempDir = Path.Combine(Path.GetTempPath(), "HylianGrimoireTests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDir);
@@ -576,13 +496,10 @@ public sealed class RomCompressionTests
         }
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_us_n64_decompressed.z64")]
     public void LocalMajorasMaskFixtureCompressesToLoadableRomWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_us_n64_decompressed.z64", out string decompressedPath))
-        {
-            return;
-        }
+        string decompressedPath = LocalRomFixtures.GetRequiredMajorasMaskPath("mm_us_n64_decompressed.z64");
 
         RomCompressionResult compressed = RomCompressionService.CompressRom(File.ReadAllBytes(decompressedPath));
         RomCompressionResult decompressed = RomCompressionService.DecompressRom(compressed.Data);
@@ -592,17 +509,12 @@ public sealed class RomCompressionTests
         AssertRomEqualExceptChecksum(File.ReadAllBytes(decompressedPath), decompressed.Data);
     }
 
-    [Fact]
+    [MajorasMaskRomFixturePairFact("mm_us_n64_compressed.z64", "mm_us_n64_decompressed.z64")]
     public void LocalMajorasMaskFixtureCompressesByteForByteWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+        var (compressedPath, decompressedPath) = LocalRomFixtures.GetRequiredMajorasMaskPair(
             "mm_us_n64_compressed.z64",
-            "mm_us_n64_decompressed.z64",
-            out string compressedPath,
-            out string decompressedPath))
-        {
-            return;
-        }
+            "mm_us_n64_decompressed.z64");
 
         RomCompressionResult compressed = RomCompressionService.CompressRom(File.ReadAllBytes(decompressedPath));
 
@@ -610,17 +522,12 @@ public sealed class RomCompressionTests
         Assert.Equal(File.ReadAllBytes(compressedPath), compressed.Data);
     }
 
-    [Fact]
+    [MajorasMaskRomFixturePairFact("mm_us_gc_compressed.z64", "mm_us_gc_decompressed.z64")]
     public void LocalMajorasMaskUsGameCubeFixtureCompressesByteForByteWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+        var (compressedPath, decompressedPath) = LocalRomFixtures.GetRequiredMajorasMaskPair(
             "mm_us_gc_compressed.z64",
-            "mm_us_gc_decompressed.z64",
-            out string compressedPath,
-            out string decompressedPath))
-        {
-            return;
-        }
+            "mm_us_gc_decompressed.z64");
 
         RomCompressionResult compressed = RomCompressionService.CompressRom(File.ReadAllBytes(decompressedPath));
 
@@ -628,17 +535,12 @@ public sealed class RomCompressionTests
         Assert.Equal(File.ReadAllBytes(compressedPath), compressed.Data);
     }
 
-    [Fact]
+    [MajorasMaskRomFixturePairFact("mm_eu_1.0_n64_compressed.z64", "mm_eu_1.0_n64_decompressed.z64")]
     public void LocalMajorasMaskEuFixtureCompressesByteForByteWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+        var (compressedPath, decompressedPath) = LocalRomFixtures.GetRequiredMajorasMaskPair(
             "mm_eu_1.0_n64_compressed.z64",
-            "mm_eu_1.0_n64_decompressed.z64",
-            out string compressedPath,
-            out string decompressedPath))
-        {
-            return;
-        }
+            "mm_eu_1.0_n64_decompressed.z64");
 
         RomCompressionResult compressed = RomCompressionService.CompressRom(File.ReadAllBytes(decompressedPath));
 
@@ -646,17 +548,12 @@ public sealed class RomCompressionTests
         Assert.Equal(File.ReadAllBytes(compressedPath), compressed.Data);
     }
 
-    [Fact]
+    [MajorasMaskRomFixturePairFact("mm_eu_1.1_n64_compressed.z64", "mm_eu_1.1_n64_decompressed.z64")]
     public void LocalMajorasMaskEu11FixtureCompressesByteForByteWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+        var (compressedPath, decompressedPath) = LocalRomFixtures.GetRequiredMajorasMaskPair(
             "mm_eu_1.1_n64_compressed.z64",
-            "mm_eu_1.1_n64_decompressed.z64",
-            out string compressedPath,
-            out string decompressedPath))
-        {
-            return;
-        }
+            "mm_eu_1.1_n64_decompressed.z64");
 
         RomCompressionResult compressed = RomCompressionService.CompressRom(File.ReadAllBytes(decompressedPath));
 
@@ -664,17 +561,12 @@ public sealed class RomCompressionTests
         Assert.Equal(File.ReadAllBytes(compressedPath), compressed.Data);
     }
 
-    [Fact]
+    [MajorasMaskRomFixturePairFact("mm_eu_gc_compressed.z64", "mm_eu_gc_decompressed.z64")]
     public void LocalMajorasMaskEuGameCubeFixtureCompressesByteForByteWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPair(
+        var (compressedPath, decompressedPath) = LocalRomFixtures.GetRequiredMajorasMaskPair(
             "mm_eu_gc_compressed.z64",
-            "mm_eu_gc_decompressed.z64",
-            out string compressedPath,
-            out string decompressedPath))
-        {
-            return;
-        }
+            "mm_eu_gc_decompressed.z64");
 
         RomCompressionResult compressed = RomCompressionService.CompressRom(File.ReadAllBytes(decompressedPath));
 
@@ -682,14 +574,11 @@ public sealed class RomCompressionTests
         Assert.Equal(File.ReadAllBytes(compressedPath), compressed.Data);
     }
 
-    [Fact]
+#if HYLIAN_GRIMOIRE_LEGACY_OOT_FIXTURE_TESTS
+    [LegacyOotRomFixtureFact]
     public void LocalRomFixturesLoadNormalMessagesWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         AssertLoadsMessagesFromFixture(
             FixturePath(root, "compressed", "Tidens_okarina-NTSC10.z64"),
@@ -711,14 +600,10 @@ public sealed class RomCompressionTests
             "NTSC iQue");
     }
 
-    [Fact]
+    [LegacyOotRomFixtureFact]
     public void LocalRomFixturesLocateRomFontResourcesWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         AssertLocatesRomFontResources(FixturePath(root, "compressed", "Tidens_okarina-NTSC10.z64"));
         AssertLocatesRomFontResources(FixturePath(root, "compressed", "Tidens_okarina-NTSC11.z64"));
@@ -730,14 +615,10 @@ public sealed class RomCompressionTests
         AssertLocatesRomFontResources(FixturePath(root, "compressed", "Tidens_okarina-IQUENTSC.z64"));
     }
 
-    [Fact]
+    [LegacyOotRomFixtureFact]
     public void LocalRetailRomFixturesLoadNormalMessagesWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         AssertLoadsMessagesFromFixture(FixturePath(root, "retailcompressed", "ntsc10_orig.z64"), "Retail NTSC 1.0", 2114);
         AssertLoadsMessagesFromFixture(FixturePath(root, "retailcompressed", "ntsc11_orig.z64"), "Retail NTSC 1.1", 2114);
@@ -747,14 +628,10 @@ public sealed class RomCompressionTests
         AssertRetailNtscGameCubeReadsFromCorrectMessageBank(FixturePath(root, "retailcompressed", "ntscgc_orig.z64"));
     }
 
-    [Fact]
+    [LegacyOotRomFixtureFact]
     public void LocalPalRomFixturesLoadLanguageBanksWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         AssertLoadsPalLanguageBanks(FixturePath(root, "compressed", "Tidens_okarina-PAL10.z64"), "PAL 1.0");
         AssertLoadsPalLanguageBanks(FixturePath(root, "compressed", "Tidens_okarina-PAL11.z64"), "PAL 1.1");
@@ -762,14 +639,10 @@ public sealed class RomCompressionTests
         AssertLoadsPalLanguageBanks(FixturePath(root, "compressed", "Tidens_okarina-PALMQ.z64"), "PAL Master Quest");
     }
 
-    [Fact]
+    [LegacyOotRomFixtureFact]
     public void LocalRetailPalRomFixturesLoadLanguageBanksWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         AssertLoadsPalLanguageBanks(FixturePath(root, "retailcompressed", "pal10_orig.z64"), "Retail PAL 1.0", 2115);
         AssertLoadsPalLanguageBanks(FixturePath(root, "retailcompressed", "pal11_orig.z64"), "Retail PAL 1.1", 2115);
@@ -777,14 +650,10 @@ public sealed class RomCompressionTests
         AssertLoadsPalLanguageBanks(FixturePath(root, "retailcompressed", "palmq_orig.z64"), "Retail PAL Master Quest", 2115);
     }
 
-    [Fact]
+    [LegacyOotRomFixtureFact]
     public void LocalRetailPalRomFixturesPreserveFontMessageWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         AssertLoadsFontMessage(FixturePath(root, "retailcompressed", "pal10_orig.z64"));
         AssertLoadsFontMessage(FixturePath(root, "retailcompressed", "pal11_orig.z64"));
@@ -792,20 +661,13 @@ public sealed class RomCompressionTests
         AssertLoadsFontMessage(FixturePath(root, "retailcompressed", "palmq_orig.z64"));
     }
 
-    [Fact]
+    [LegacyOotRomFixtureFact]
     public void LocalRetailPalRomFixtureReadsCompleteFontOrderBytesWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         string romPath = FixturePath(root, "retailcompressed", "pal10_orig.z64");
-        if (!File.Exists(romPath))
-        {
-            return;
-        }
+        LocalRomFixtures.RequirePath(romPath);
 
         RomMessageData data = RomMessageService.LoadMessages(romPath);
         Assert.True(RomMessageService.TryReadActiveFontOrderBytes(data, out byte[] raw));
@@ -822,20 +684,13 @@ public sealed class RomCompressionTests
         Assert.Equal(raw, FontOrderCodec.FromEditorText(FontOrderCodec.ToEditorText(raw)));
     }
 
-    [Fact]
+    [LegacyOotRomFixtureFact]
     public void LocalRetailPalRomFixtureModernHeaderExportImportPreservesBytesWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         string romPath = FixturePath(root, "retaildecompressed", "pal10_orig.z64");
-        if (!File.Exists(romPath))
-        {
-            return;
-        }
+        LocalRomFixtures.RequirePath(romPath);
 
         string headerPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.h");
         string tempRomPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.z64");
@@ -858,6 +713,7 @@ public sealed class RomCompressionTests
             File.Delete(tempRomPath);
         }
     }
+#endif
 
     [Fact]
     public void LocalModernJapaneseAndEnglishHeaderOffersOnlyWesternSlotsWhenAvailable()
@@ -887,14 +743,11 @@ public sealed class RomCompressionTests
         }
     }
 
-    [Fact]
+#if HYLIAN_GRIMOIRE_LEGACY_OOT_FIXTURE_TESTS
+    [LegacyOotRomFixtureFact]
     public void LocalRetailPalRomFixturesReadSharedTableLanguageMessagesWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         AssertReadsSharedTableLanguageMessages(FixturePath(root, "retailcompressed", "pal10_orig.z64"));
         AssertReadsSharedTableLanguageMessages(FixturePath(root, "retailcompressed", "pal11_orig.z64"));
@@ -902,18 +755,15 @@ public sealed class RomCompressionTests
         AssertReadsSharedTableLanguageMessages(FixturePath(root, "retailcompressed", "palmq_orig.z64"));
     }
 
-    [Fact]
+    [LegacyOotRomFixtureFact]
     public void LocalRomFixturesLoadJapaneseModernExportBankWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         AssertLoadsJapaneseModernExportBank(FixturePath(root, "retailcompressed", "ntsc12_orig.z64"));
         AssertLoadsJapaneseModernExportBank(FixturePath(root, "compressed", "Tidens_okarina-IQUENTSC.z64"));
     }
+#endif
 
     [Fact]
     public void PalRomProfilesUseExpectedFontBaselines()
@@ -948,14 +798,11 @@ public sealed class RomCompressionTests
         Assert.Equal(MmGlyphMetrics.GetDefaultAdvance(0x9e), RomFontBaselineMetrics.GetDefaultAdvance(RomFontBaseline.MajorasMaskEu, 0x9e));
     }
 
-    [Fact]
+#if HYLIAN_GRIMOIRE_LEGACY_OOT_FIXTURE_TESTS
+    [LegacyOotRomFixtureFact]
     public void LocalRomFixturesLoadCreditsWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         AssertLoadsCreditsFromFixture(FixturePath(root, "compressed", "Tidens_okarina-NTSC12.z64"));
         AssertLoadsCreditsFromFixture(FixturePath(root, "compressed", "Tidens_okarina-NTSCGC.z64"));
@@ -965,14 +812,10 @@ public sealed class RomCompressionTests
         AssertLoadsCreditsFromFixture(FixturePath(root, "compressed", "Tidens_okarina-PALGC.z64"));
     }
 
-    [Fact]
+    [LegacyOotRomFixtureFact]
     public void LocalRetailRomFixturesLoadCreditsWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         AssertLoadsCreditsFromFixture(FixturePath(root, "retailcompressed", "ntsc10_orig.z64"));
         AssertLoadsCreditsFromFixture(FixturePath(root, "retailcompressed", "ntscgc_orig.z64"));
@@ -980,14 +823,10 @@ public sealed class RomCompressionTests
         AssertLoadsCreditsFromFixture(FixturePath(root, "retailcompressed", "palgc_orig.z64"));
     }
 
-    [Fact]
+    [LegacyOotRomFixtureFact]
     public void LocalRomFixturesSaveMessagesRoundtripWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         AssertSavesMessagesRoundtrip(
             FixturePath(root, "compressed", "Tidens_okarina-NTSC12.z64"),
@@ -997,34 +836,23 @@ public sealed class RomCompressionTests
             FixturePath(root, "decompressed", "Tidens_okarina-IQUENTSC.z64"));
     }
 
-    [Fact]
+    [LegacyOotRomFixtureFact]
     public void LocalRomFixturesSaveCreditsRoundtripWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         AssertSavesCreditsRoundtrip(
             FixturePath(root, "compressed", "Tidens_okarina-NTSC12.z64"),
             FixturePath(root, "decompressed", "Tidens_okarina-NTSC12.z64"));
     }
 
-    [Fact]
+    [LegacyOotRomFixtureFact]
     public void LocalPalRomFixtureSaveUpdatesFontMessagePointerWhenAvailable()
     {
-        string? root = Environment.GetEnvironmentVariable("HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT");
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            return;
-        }
+        string root = LocalRomFixtures.GetRequiredRoot();
 
         string romPath = FixturePath(root, "compressed", "Tidens_okarina-PAL10.z64");
-        if (!File.Exists(romPath))
-        {
-            return;
-        }
+        LocalRomFixtures.RequirePath(romPath);
 
         string tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.z64");
         try
@@ -1045,6 +873,7 @@ public sealed class RomCompressionTests
             File.Delete(tempPath);
         }
     }
+#endif
 
 
     private static byte[] CreateSyntheticNtsc12Rom(byte[] secondFilePayload, bool compressedSecondEntry)
@@ -1067,10 +896,8 @@ public sealed class RomCompressionTests
 
     private static void AssertDecompressesToFixture(string compressedPath, string decompressedPath)
     {
-        if (!File.Exists(compressedPath) || !File.Exists(decompressedPath))
-        {
-            return;
-        }
+        LocalRomFixtures.RequirePath(compressedPath);
+        LocalRomFixtures.RequirePath(decompressedPath);
 
         byte[] compressed = File.ReadAllBytes(compressedPath);
         byte[] expected = File.ReadAllBytes(decompressedPath);
@@ -1087,10 +914,7 @@ public sealed class RomCompressionTests
 
     private static void AssertLoadsMessagesFromFixture(string romPath, string expectedProfileName, int expectedCount = 2105)
     {
-        if (!File.Exists(romPath))
-        {
-            return;
-        }
+        LocalRomFixtures.RequirePath(romPath);
 
         RomMessageData data = RomMessageService.LoadMessages(romPath);
 
@@ -1101,10 +925,7 @@ public sealed class RomCompressionTests
 
     private static void AssertRetailNtscGameCubeReadsFromCorrectMessageBank(string romPath)
     {
-        if (!File.Exists(romPath))
-        {
-            return;
-        }
+        LocalRomFixtures.RequirePath(romPath);
 
         RomMessageData data = RomMessageService.LoadMessages(romPath);
         MessageEntry pocketEgg = Assert.Single(data.Entries, entry => entry.Id == 0x0001);
@@ -1117,10 +938,7 @@ public sealed class RomCompressionTests
 
     private static void AssertLocatesRomFontResources(string romPath)
     {
-        if (!File.Exists(romPath))
-        {
-            return;
-        }
+        LocalRomFixtures.RequirePath(romPath);
 
         RomCompressionResult decompressed = RomCompressionService.DecompressRom(File.ReadAllBytes(romPath));
         RomFontResources resources = RomFontService.Locate(decompressed.Data, decompressed.Profile);
@@ -1139,10 +957,7 @@ public sealed class RomCompressionTests
 
     private static void AssertLoadsPalLanguageBanks(string romPath, string expectedProfileName, int expectedCount = 2105)
     {
-        if (!File.Exists(romPath))
-        {
-            return;
-        }
+        LocalRomFixtures.RequirePath(romPath);
 
         RomMessageData language1 = RomMessageService.LoadMessages(romPath, 0);
         RomMessageData language2 = RomMessageService.LoadMessages(romPath, 1);
@@ -1168,10 +983,7 @@ public sealed class RomCompressionTests
 
     private static void AssertLoadsFontMessage(string romPath)
     {
-        if (!File.Exists(romPath))
-        {
-            return;
-        }
+        LocalRomFixtures.RequirePath(romPath);
 
         RomMessageData data = RomMessageService.LoadMessages(romPath);
         MessageEntry fontMessage = Assert.Single(data.Entries, entry => entry.Id == 0xfffc);
@@ -1185,10 +997,7 @@ public sealed class RomCompressionTests
 
     private static void AssertReadsSharedTableLanguageMessages(string romPath)
     {
-        if (!File.Exists(romPath))
-        {
-            return;
-        }
+        LocalRomFixtures.RequirePath(romPath);
 
         RomMessageData german = RomMessageService.LoadMessages(romPath, 1);
         RomMessageData french = RomMessageService.LoadMessages(romPath, 2);
@@ -1212,10 +1021,7 @@ public sealed class RomCompressionTests
 
     private static void AssertLoadsJapaneseModernExportBank(string romPath)
     {
-        if (!File.Exists(romPath))
-        {
-            return;
-        }
+        LocalRomFixtures.RequirePath(romPath);
 
         RomMessageData data = RomMessageService.LoadMessages(romPath);
         Assert.NotNull(data.Profile.JapaneseMessageBank);
@@ -1250,10 +1056,7 @@ public sealed class RomCompressionTests
 
     private static void AssertLoadsCreditsFromFixture(string romPath)
     {
-        if (!File.Exists(romPath))
-        {
-            return;
-        }
+        LocalRomFixtures.RequirePath(romPath);
 
         RomMessageData credits = RomMessageService.LoadMessages(
             romPath,
@@ -1431,10 +1234,8 @@ public sealed class RomCompressionTests
         string expectedDecompressedPath,
         RomMessageSection section)
     {
-        if (!File.Exists(romPath) || !File.Exists(expectedDecompressedPath))
-        {
-            return;
-        }
+        LocalRomFixtures.RequirePath(romPath);
+        LocalRomFixtures.RequirePath(expectedDecompressedPath);
 
         string tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.z64");
         try
@@ -1462,7 +1263,7 @@ public sealed class RomCompressionTests
     }
 
     private static string FixturePath(string root, string kind, string fileName) =>
-        Path.Combine(root, kind, fileName);
+        LocalRomFixtures.GetRequiredPath(Path.Combine(root, kind, fileName));
 
     private static void AssertEntriesEqual(IReadOnlyList<MessageEntry> expected, IReadOnlyList<MessageEntry> actual)
     {

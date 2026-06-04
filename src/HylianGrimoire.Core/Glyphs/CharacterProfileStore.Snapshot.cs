@@ -63,7 +63,7 @@ public sealed partial class CharacterProfileStore
             .ToDictionary(pair => ParseKey(pair.Key), pair => pair.Value);
     }
 
-    private static Dictionary<byte, string> CopyImagePaths(CharacterProfile? profile)
+    private Dictionary<byte, string> CopyImagePaths(CharacterProfile? profile)
     {
         if (profile is null)
         {

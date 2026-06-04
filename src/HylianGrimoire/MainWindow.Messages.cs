@@ -11,6 +11,7 @@ public sealed partial class MainWindow
         {
             var entry = _session.Entries[idx];
             _session.CurrentIndex = idx;
+            UpdateDiagnosticsContext();
 
             TypeCombo.SelectedItem = CurrentGameProfile.MessageTypes.Items.FirstOrDefault(item => item.Value == entry.Type);
             PositionCombo.SelectedItem = CurrentGameProfile.MessagePositions.Items.FirstOrDefault(item => item.Value == entry.Position);

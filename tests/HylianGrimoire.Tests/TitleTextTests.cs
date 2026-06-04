@@ -123,13 +123,10 @@ public sealed class TitleTextTests
         Assert.Equal("PULSA START", TitleTextService.Read(rom, profile, languageIndex: 3).PressStart.Text);
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_eu_1.1_n64_decompressed.z64")]
     public void LocalMajorasMaskEu11TitleTextReadsLocalizedDefaultsWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_eu_1.1_n64_decompressed.z64", out string path))
-        {
-            return;
-        }
+        string path = LocalRomFixtures.GetRequiredMajorasMaskPath("mm_eu_1.1_n64_decompressed.z64");
 
         RomVersionProfile romProfile = GetProfile("Majora's Mask EU 1.1");
         Assert.True(TitleTextService.TryGetProfile(romProfile, out TitleTextPatchProfile? profile));
@@ -141,13 +138,10 @@ public sealed class TitleTextTests
         Assert.Equal("PULSA START", TitleTextService.Read(rom, profile, languageIndex: 3).PressStart.Text);
     }
 
-    [Fact]
+    [MajorasMaskRomFixtureFact("mm_eu_gc_decompressed.z64")]
     public void LocalMajorasMaskEuGameCubeTitleTextReadsLocalizedDefaultsWhenAvailable()
     {
-        if (!LocalRomFixtures.TryGetMajorasMaskPath("mm_eu_gc_decompressed.z64", out string path))
-        {
-            return;
-        }
+        string path = LocalRomFixtures.GetRequiredMajorasMaskPath("mm_eu_gc_decompressed.z64");
 
         RomVersionProfile romProfile = GetProfile("Majora's Mask EU GameCube");
         Assert.True(TitleTextService.TryGetProfile(romProfile, out TitleTextPatchProfile? profile));

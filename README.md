@@ -139,29 +139,16 @@ Requirements:
 - Windows 10 1809 or newer, Windows 11 recommended
 - .NET 8 SDK
 
-Build from the repository root:
+From the repository root:
 
 ```powershell
 dotnet build .\HylianGrimoire.slnx -c Release
-```
-
-Run from source:
-
-```powershell
 dotnet run --project .\src\HylianGrimoire\HylianGrimoire.csproj -c Release
-```
-
-Run tests:
-
-```powershell
-dotnet test .\HylianGrimoire.slnx -c Release
-```
-
-Run the full local verification pass:
-
-```powershell
 .\tools\verify.cmd
+.\tools\build-release.cmd
 ```
+
+`verify.cmd` runs formatting, build, and tests. `build-release.cmd` creates the local release folder and zip under `artifacts\release\`.
 
 ## Local ROM Test Fixtures
 
@@ -186,6 +173,12 @@ The test helper looks for `.local/rom-fixtures` first. You can still override fi
 - `HYLIAN_GRIMOIRE_ROM_FIXTURE_ROOT`: root containing `oot` and/or `mm`; legacy roots with `compressed`, `decompressed`, `retailcompressed`, `retaildecompressed`, and `majorasmask` are still supported
 - `HYLIAN_GRIMOIRE_MAJORAS_MASK_FIXTURE_ROOT`: optional override for Majora's Mask fixtures
 - `HYLIAN_GRIMOIRE_RETAIL_DECOMPRESSED_ROOT`: optional override for retail decompressed Ocarina of Time fixtures
+
+Legacy OoT fixture tests for the old `compressed`, `decompressed`, `retailcompressed`, and `retaildecompressed` layout are opt-in and are not part of `tools\verify.cmd` by default. To run them explicitly, use:
+
+```powershell
+dotnet test HylianGrimoire.slnx -c Release /p:EnableLegacyOotFixtureTests=true
+```
 
 For compatibility, the tests can still fall back to discovering an older fixture root by walking up from the test output directory.
 

@@ -36,13 +36,16 @@ public static partial class RomMessageService
         MessageEncodingProfile? encodingProfile = null)
     {
         encodingProfile ??= source.Profile.GameProfile.EncodingProfile;
+        byte[] decompressed = patchCurrentBank
+            ? source.DecompressedRom.ToArray()
+            : source.DecompressedRom;
         if (patchCurrentBank)
         {
-            PatchActiveSection(source.DecompressedRom, source.Profile, source.ActiveMessageBankIndex, source.ActiveSection, currentEntries, encodingProfile);
+            PatchActiveSection(decompressed, source.Profile, source.ActiveMessageBankIndex, source.ActiveSection, currentEntries, encodingProfile);
         }
 
         List<Models.MessageEntry> entries = LoadSectionEntries(
-            source.DecompressedRom,
+            decompressed,
             source.Profile,
             messageBankIndex,
             RomMessageSection.Messages,
@@ -50,6 +53,7 @@ public static partial class RomMessageService
         return source with
         {
             Entries = entries,
+            DecompressedRom = decompressed,
             ActiveMessageBankIndex = messageBankIndex,
             ActiveSection = RomMessageSection.Messages,
         };
@@ -63,13 +67,16 @@ public static partial class RomMessageService
         MessageEncodingProfile? encodingProfile = null)
     {
         encodingProfile ??= source.Profile.GameProfile.EncodingProfile;
+        byte[] decompressed = patchCurrentSection
+            ? source.DecompressedRom.ToArray()
+            : source.DecompressedRom;
         if (patchCurrentSection)
         {
-            PatchActiveSection(source.DecompressedRom, source.Profile, source.ActiveMessageBankIndex, source.ActiveSection, currentEntries, encodingProfile);
+            PatchActiveSection(decompressed, source.Profile, source.ActiveMessageBankIndex, source.ActiveSection, currentEntries, encodingProfile);
         }
 
         List<Models.MessageEntry> entries = LoadSectionEntries(
-            source.DecompressedRom,
+            decompressed,
             source.Profile,
             source.ActiveMessageBankIndex,
             section,
@@ -77,6 +84,7 @@ public static partial class RomMessageService
         return source with
         {
             Entries = entries,
+            DecompressedRom = decompressed,
             ActiveSection = section,
         };
     }

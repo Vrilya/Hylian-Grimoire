@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Xunit;
 
 namespace HylianGrimoire.Tests;
@@ -44,6 +45,14 @@ internal static class LocalRomFixtures
     public static string? GetRoot()
         => Normalize(Environment.GetEnvironmentVariable(RootEnvironmentVariable)) ?? DiscoveredRoot.Value;
 
+    public static string GetRequiredRoot()
+    {
+        string? root = GetRoot();
+        return IsValidFixtureRoot(root)
+            ? root!
+            : Missing<string>(GetRootSkipReason()!);
+    }
+
     public static string? GetMajorasMaskRoot()
         => Normalize(Environment.GetEnvironmentVariable(MajorasMaskEnvironmentVariable))
             ?? GetGameFixtureRoot(MajorasMaskFixtureDirectory, LegacyMajorasMaskFixtureDirectory);
@@ -71,21 +80,38 @@ internal static class LocalRomFixtures
 
     public static string GetRequiredMajorasMaskPath(string fileName)
     {
-        string? root = GetMajorasMaskRoot();
-        string path = Combine(root, fileName) ?? fileName;
-        Assert.True(
-            File.Exists(path),
-            $"Missing local ROM fixture: {path}. Set {MajorasMaskEnvironmentVariable} or {RootEnvironmentVariable}.");
-        return path;
+        return TryGetMajorasMaskPath(fileName, out string path)
+            ? path
+            : Missing<string>(GetMajorasMaskPathSkipReason(fileName)!);
     }
 
     public static string GetRequiredRetailDecompressedPath(string fileName)
     {
-        string? root = GetRetailDecompressedRoot();
-        string path = Combine(root, fileName) ?? fileName;
-        Assert.True(
-            File.Exists(path),
-            $"Missing local ROM fixture: {path}. Set {RetailDecompressedEnvironmentVariable} or {RootEnvironmentVariable}.");
+        return TryGetRetailDecompressedPath(fileName, out string path)
+            ? path
+            : Missing<string>(GetRetailDecompressedPathSkipReason(fileName)!);
+    }
+
+    public static (string CompressedPath, string DecompressedPath) GetRequiredMajorasMaskPair(
+        string compressedFileName,
+        string decompressedFileName)
+    {
+        return TryGetMajorasMaskPair(compressedFileName, decompressedFileName, out string compressedPath, out string decompressedPath)
+            ? (compressedPath, decompressedPath)
+            : Missing<(string, string)>(GetMajorasMaskPairSkipReason(compressedFileName, decompressedFileName)!);
+    }
+
+    public static void RequirePath(string path)
+    {
+        if (!File.Exists(path))
+        {
+            Missing($"Missing local ROM fixture: {path}. Set {RootEnvironmentVariable} or create .local/rom-fixtures.");
+        }
+    }
+
+    public static string GetRequiredPath(string path)
+    {
+        RequirePath(path);
         return path;
     }
 
@@ -145,6 +171,67 @@ internal static class LocalRomFixtures
     private static string? Normalize(string? path)
         => string.IsNullOrWhiteSpace(path) ? null : path;
 
+    public static string? GetRootSkipReason()
+    {
+        string? root = GetRoot();
+        if (root is null)
+        {
+            return $"Missing local ROM fixture root. Set {RootEnvironmentVariable} or create .local/rom-fixtures.";
+        }
+
+        return IsValidFixtureRoot(root)
+            ? null
+            : $"Local ROM fixture root does not contain recognized fixtures: {root}. Check {RootEnvironmentVariable} or .local/rom-fixtures.";
+    }
+
+    public static string? GetLegacyRootSkipReason()
+    {
+        string? rootReason = GetRootSkipReason();
+        if (rootReason is not null)
+        {
+            return rootReason;
+        }
+
+        string root = GetRoot()!;
+        return Directory.Exists(Path.Combine(root, "compressed"))
+            || Directory.Exists(Path.Combine(root, "decompressed"))
+            || Directory.Exists(Path.Combine(root, "retailcompressed"))
+            || Directory.Exists(Path.Combine(root, LegacyRetailDecompressedFixtureDirectory))
+                ? null
+                : $"Missing legacy OoT ROM fixture directories under {root}.";
+    }
+
+    public static string? GetMajorasMaskPathSkipReason(string fileName)
+        => TryGetMajorasMaskPath(fileName, out string _)
+            ? null
+            : $"Missing local ROM fixture: {Combine(GetMajorasMaskRoot(), fileName) ?? fileName}. Set {MajorasMaskEnvironmentVariable} or {RootEnvironmentVariable}.";
+
+    public static string? GetMajorasMaskPairSkipReason(string compressedFileName, string decompressedFileName)
+        => TryGetMajorasMaskPair(compressedFileName, decompressedFileName, out string _, out string _)
+            ? null
+            : $"Missing local ROM fixture pair: {Combine(GetMajorasMaskRoot(), compressedFileName) ?? compressedFileName}, {Combine(GetMajorasMaskRoot(), decompressedFileName) ?? decompressedFileName}. Set {MajorasMaskEnvironmentVariable} or {RootEnvironmentVariable}.";
+
+    public static string? GetRetailDecompressedRootSkipReason()
+    {
+        string? root = GetRetailDecompressedRoot();
+        return root is not null && Directory.Exists(root)
+            ? null
+            : $"Missing local retail decompressed ROM fixture root. Set {RetailDecompressedEnvironmentVariable} or {RootEnvironmentVariable}.";
+    }
+
+    public static string? GetRetailDecompressedPathSkipReason(string fileName)
+        => TryGetRetailDecompressedPath(fileName, out string _)
+            ? null
+            : $"Missing local ROM fixture: {Combine(GetRetailDecompressedRoot(), fileName) ?? fileName}. Set {RetailDecompressedEnvironmentVariable} or {RootEnvironmentVariable}.";
+
+    [DoesNotReturn]
+    private static T Missing<T>(string reason)
+        => throw new InvalidOperationException(reason);
+
+    [DoesNotReturn]
+    private static void Missing(string reason)
+        => throw new InvalidOperationException(reason);
+
     private static string? FindFixtureRoot()
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -183,4 +270,61 @@ internal static class LocalRomFixtures
             || Directory.Exists(Path.Combine(path, MajorasMaskFixtureDirectory))
             || Directory.Exists(Path.Combine(path, LegacyMajorasMaskFixtureDirectory))
             || Directory.Exists(Path.Combine(path, LegacyRetailDecompressedFixtureDirectory));
+
+    private static bool IsValidFixtureRoot([NotNullWhen(true)] string? path)
+        => path is not null && LooksLikeFixtureRoot(path);
+}
+
+[AttributeUsage(AttributeTargets.Method)]
+internal sealed class LegacyOotRomFixtureFactAttribute : FactAttribute
+{
+    public LegacyOotRomFixtureFactAttribute()
+    {
+        Skip = LocalRomFixtures.GetLegacyRootSkipReason();
+    }
+}
+
+[AttributeUsage(AttributeTargets.Method)]
+internal sealed class RetailDecompressedRomFixtureFactAttribute : FactAttribute
+{
+    public RetailDecompressedRomFixtureFactAttribute(string fileName)
+    {
+        Skip = LocalRomFixtures.GetRetailDecompressedPathSkipReason(fileName);
+    }
+}
+
+[AttributeUsage(AttributeTargets.Method)]
+internal sealed class RetailDecompressedRomFixtureTheoryAttribute : TheoryAttribute
+{
+    public RetailDecompressedRomFixtureTheoryAttribute()
+    {
+        Skip = LocalRomFixtures.GetRetailDecompressedRootSkipReason();
+    }
+}
+
+[AttributeUsage(AttributeTargets.Method)]
+internal sealed class MajorasMaskRomFixtureFactAttribute : FactAttribute
+{
+    public MajorasMaskRomFixtureFactAttribute(string fileName)
+    {
+        Skip = LocalRomFixtures.GetMajorasMaskPathSkipReason(fileName);
+    }
+}
+
+[AttributeUsage(AttributeTargets.Method)]
+internal sealed class MajorasMaskRomFixtureTheoryAttribute : TheoryAttribute
+{
+    public MajorasMaskRomFixtureTheoryAttribute(string fileName)
+    {
+        Skip = LocalRomFixtures.GetMajorasMaskPathSkipReason(fileName);
+    }
+}
+
+[AttributeUsage(AttributeTargets.Method)]
+internal sealed class MajorasMaskRomFixturePairFactAttribute : FactAttribute
+{
+    public MajorasMaskRomFixturePairFactAttribute(string compressedFileName, string decompressedFileName)
+    {
+        Skip = LocalRomFixtures.GetMajorasMaskPairSkipReason(compressedFileName, decompressedFileName);
+    }
 }

@@ -11,7 +11,8 @@ public sealed class CharacterProfileRuntimeTests
     [Fact]
     public void CreateEncodingProfileUsesStableSnapshot()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         CharacterProfileRuntime runtime = new(store);
         store.SetGameKind(GameKind.OcarinaOfTime);
         string profileName = $"Runtime encoding {Guid.NewGuid():N}";
@@ -42,7 +43,8 @@ public sealed class CharacterProfileRuntimeTests
     [Fact]
     public void CreateGlyphSourceUsesStableSnapshot()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         CharacterProfileRuntime runtime = new(store);
         store.SetGameKind(GameKind.OcarinaOfTime);
         string profileName = $"Runtime glyph source {Guid.NewGuid():N}";
@@ -72,7 +74,8 @@ public sealed class CharacterProfileRuntimeTests
     [Fact]
     public void RemapEditorTextUsesSelectionChangeProfiles()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         CharacterProfileRuntime runtime = new(store);
         store.SetGameKind(GameKind.OcarinaOfTime);
         string targetProfileName = $"Runtime remap {Guid.NewGuid():N}";
@@ -108,7 +111,8 @@ public sealed class CharacterProfileRuntimeTests
     [Fact]
     public void ProfileEditingApiUpdatesSelectedProfileSnapshot()
     {
-        CharacterProfileStore store = CharacterProfileStore.Current;
+        using CharacterProfileStoreTestScope scope = CharacterProfileStoreTestScope.Create();
+        CharacterProfileStore store = scope.Store;
         CharacterProfileRuntime runtime = new(store);
         runtime.SetActiveGame(GameKind.OcarinaOfTime);
         string profileName = $"Runtime edit {Guid.NewGuid():N}";
