@@ -10,6 +10,8 @@ namespace HylianGrimoire.Services;
 
 public static class ToolAvailabilityService
 {
+    private const string MajorasMaskTweaksProfileName = "Majora's Mask NTSC-U";
+
     public static ToolAvailability Build(
         GameProfile? activeGameProfile,
         DocumentKind documentKind,
@@ -50,6 +52,22 @@ public static class ToolAvailabilityService
                 && PromptEditorProfileCatalog.TryGetProfile(romData.Profile, out _),
             CanUseTextureManager: canUseTextureManager,
             CanUseO2rModMaker: canUseO2rModMaker,
-            CanUseTweaks: romData?.Profile.IsRetail == true && capabilities.SupportsRomTweaks);
+            CanUseTweaks: CanUseTweaks(capabilities, romData));
+    }
+
+    private static bool CanUseTweaks(GameCapabilities capabilities, RomMessageData? romData)
+    {
+        if (romData is null || !capabilities.SupportsRomTweaks)
+        {
+            return false;
+        }
+
+        RomVersionProfile profile = romData.Profile;
+        return profile.Game switch
+        {
+            GameKind.OcarinaOfTime => profile.IsRetail,
+            GameKind.MajorasMask => string.Equals(profile.Name, MajorasMaskTweaksProfileName, StringComparison.Ordinal),
+            _ => false,
+        };
     }
 }

@@ -79,6 +79,32 @@ public sealed class ToolAvailabilityServiceTests
     }
 
     [Fact]
+    public void OcarinaNonRetailRomsEnableTextureManagerAndO2rModMakerButDisableTweaks()
+    {
+        List<RomVersionProfile> profiles = RomVersionDatabase.Profiles
+            .Where(profile => profile.Game == GameKind.OcarinaOfTime && !profile.IsRetail)
+            .ToList();
+
+        Assert.NotEmpty(profiles);
+
+        foreach (RomVersionProfile profile in profiles)
+        {
+            List<MessageEntry> entries = [CreateEntry(0x0001)];
+            RomMessageData romData = CreateRomData(profile, entries);
+
+            ToolAvailability availability = ToolAvailabilityService.Build(
+                profile.GameProfile,
+                DocumentKind.Rom,
+                entries,
+                romData);
+
+            Assert.True(availability.CanUseTextureManager);
+            Assert.True(availability.CanUseO2rModMaker);
+            Assert.False(availability.CanUseTweaks);
+        }
+    }
+
+    [Fact]
     public void MajorasMaskUsRomEnables2S2hO2rModMaker()
     {
         RomVersionProfile profile = GetProfile("Majora's Mask NTSC-U");
@@ -106,8 +132,29 @@ public sealed class ToolAvailabilityServiceTests
         Assert.False(availability.CanUseFontOrder);
     }
 
+    [Theory]
+    [InlineData("Majora's Mask NTSC-U GameCube")]
+    [InlineData("Majora's Mask EU 1.0")]
+    [InlineData("Majora's Mask EU 1.1")]
+    [InlineData("Majora's Mask EU GameCube")]
+    public void MajorasMaskNonNtscUN64RomsDisableTweaksAndO2rModMaker(string profileName)
+    {
+        RomVersionProfile profile = GetProfile(profileName);
+        List<MessageEntry> entries = [CreateEntry(0x0001)];
+        RomMessageData romData = CreateRomData(profile, entries);
+
+        ToolAvailability availability = ToolAvailabilityService.Build(
+            profile.GameProfile,
+            DocumentKind.Rom,
+            entries,
+            romData);
+
+        Assert.False(availability.CanUseTweaks);
+        Assert.False(availability.CanUseO2rModMaker);
+    }
+
     [Fact]
-    public void MajorasMaskUsGameCubeRomEnablesTextOnly2S2hO2rModMaker()
+    public void MajorasMaskUsGameCubeRomDisablesO2rModMaker()
     {
         RomVersionProfile profile = GetProfile("Majora's Mask NTSC-U GameCube");
         List<MessageEntry> entries = [CreateEntry(0x0001)];
@@ -119,7 +166,7 @@ public sealed class ToolAvailabilityServiceTests
             entries,
             romData);
 
-        Assert.True(availability.CanUseO2rModMaker);
+        Assert.False(availability.CanUseO2rModMaker);
         Assert.False(availability.CanUseTextureManager);
     }
 

@@ -16,6 +16,19 @@ public sealed class TextureCatalogTests
     [InlineData("Retail PAL 1.1", 8866)]
     [InlineData("Retail PAL Master Quest", 8861)]
     [InlineData("Retail PAL GameCube", 8852)]
+    [InlineData("NTSC 1.0", 467)]
+    [InlineData("NTSC 1.1", 467)]
+    [InlineData("NTSC 1.2", 467)]
+    [InlineData("NTSC Master Quest", 467)]
+    [InlineData("NTSC GameCube", 467)]
+    [InlineData("PAL 1.0", 489)]
+    [InlineData("PAL 1.1", 489)]
+    [InlineData("PAL Master Quest", 467)]
+    [InlineData("PAL GameCube", 467)]
+    [InlineData("NTSC iQue", 467)]
+    [InlineData("PAL iQue", 467)]
+    [InlineData("NTSC MQ iQue", 467)]
+    [InlineData("PAL MQ iQue", 467)]
     [InlineData("Majora's Mask NTSC-U", 8759)]
     public void Supported_profiles_have_expected_texture_count(string profileName, int expectedCount)
     {
@@ -53,6 +66,10 @@ public sealed class TextureCatalogTests
     [InlineData("Retail NTSC 1.2", "gTitleTheLegendOfTextTex", 0x17b3700, TextureFormat.I8, 72, 8)]
     [InlineData("Retail PAL 1.0", "gAttackDoActionENGTex", 0x8a6000, TextureFormat.IA4, 48, 16)]
     [InlineData("Retail PAL GameCube", "gFileSelSwitchENGTex", 0x1a73000, TextureFormat.IA8, 48, 16)]
+    [InlineData("NTSC 1.2", "gTitleTheLegendOfTextTex", 0x17b4700, TextureFormat.IA8, 72, 8)]
+    [InlineData("PAL 1.0", "gAttackDoActionENGTex", 0x8a6000, TextureFormat.IA4, 48, 16)]
+    [InlineData("NTSC iQue", "gFileSelSwitchENGTex", 0x1a2da80, TextureFormat.IA8, 48, 16)]
+    [InlineData("PAL MQ iQue", "gFileSelSwitchENGTex", 0x1a31a80, TextureFormat.IA8, 48, 16)]
     [InlineData("Majora's Mask NTSC-U", "gQuestIconHeartContainerTex", 0x900, TextureFormat.Rgba32, 24, 24)]
     [InlineData("Majora's Mask NTSC-U", "gLinkHumanEyesOpenTex", 0x115b000, TextureFormat.CI8, 64, 32)]
     public void Known_textures_are_mapped_to_expected_definition(
@@ -158,11 +175,15 @@ public sealed class TextureCatalogTests
     }
 
     [Fact]
-    public void Non_retail_profiles_are_not_exposed_in_texture_catalog()
+    public void Swedish_ique_profiles_share_texture_catalogs_by_variant()
     {
-        RomVersionProfile profile = GetProfile("NTSC 1.2");
+        IReadOnlyList<TextureDefinition> ntscIqueTextures = TextureCatalog.GetTextures(GetProfile("NTSC iQue"));
+        IReadOnlyList<TextureDefinition> palIqueTextures = TextureCatalog.GetTextures(GetProfile("PAL iQue"));
+        IReadOnlyList<TextureDefinition> ntscMqIqueTextures = TextureCatalog.GetTextures(GetProfile("NTSC MQ iQue"));
+        IReadOnlyList<TextureDefinition> palMqIqueTextures = TextureCatalog.GetTextures(GetProfile("PAL MQ iQue"));
 
-        Assert.False(TextureCatalog.TryGetTextures(profile, out _));
+        Assert.Equal(ntscIqueTextures, palIqueTextures);
+        Assert.Equal(ntscMqIqueTextures, palMqIqueTextures);
     }
 
     private static RomVersionProfile GetProfile(string name)

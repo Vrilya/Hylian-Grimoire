@@ -64,7 +64,7 @@ public static class O2rModPortProfileCatalog
                 O2rModPortKind.ShipOfHarkinian,
                 GameProfiles.Get(GameKind.OcarinaOfTime),
                 "Ship of Harkinian",
-                "SoH Mod Maker",
+                "O2R Mod Maker",
                 "HylianGrimoireMod",
                 "SoH O2R mod")
         {
@@ -73,7 +73,7 @@ public static class O2rModPortProfileCatalog
         public override bool SupportsCurrentDocumentTextResources => true;
 
         public override bool SupportsRomProfile(RomVersionProfile profile)
-            => profile.Game == GameKind.OcarinaOfTime;
+            => profile.Game == GameKind.OcarinaOfTime && TextureCatalog.TryGetTextures(profile, out _);
 
         public override IReadOnlyList<O2rTextResourceDefinition> GetRomTextResources(RomMessageData romData)
         {
@@ -137,7 +137,6 @@ public static class O2rModPortProfileCatalog
         private static readonly HashSet<string> SupportedProfileNames = new(StringComparer.Ordinal)
         {
             "Majora's Mask NTSC-U",
-            "Majora's Mask NTSC-U GameCube",
         };
 
         public TwoShipTwoHarkinianO2rProfile()
@@ -145,7 +144,7 @@ public static class O2rModPortProfileCatalog
                 O2rModPortKind.TwoShipTwoHarkinian,
                 GameProfiles.Get(GameKind.MajorasMask),
                 "2 Ship 2 Harkinian",
-                "2S2H Mod Maker",
+                "O2R Mod Maker",
                 "HylianGrimoireMmMod",
                 "2S2H O2R mod")
         {

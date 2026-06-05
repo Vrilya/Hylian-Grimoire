@@ -9,6 +9,62 @@ namespace HylianGrimoire.Tests;
 public sealed class O2rModPortProfileCatalogTests
 {
     [Fact]
+    public void PortProfilesUseGenericO2rToolTitle()
+    {
+        RomVersionProfile ocarinaRomProfile = RomVersionDatabase.Profiles.Single(profile => profile.Name == "Retail NTSC 1.0");
+        RomVersionProfile majorasMaskRomProfile = RomVersionDatabase.Profiles.Single(profile => profile.Name == "Majora's Mask NTSC-U");
+
+        Assert.True(O2rModPortProfileCatalog.TryGetProfile(
+            GameProfiles.Get(GameKind.OcarinaOfTime),
+            ocarinaRomProfile,
+            out O2rModPortProfile ocarinaProfile));
+        Assert.True(O2rModPortProfileCatalog.TryGetProfile(
+            GameProfiles.Get(GameKind.MajorasMask),
+            majorasMaskRomProfile,
+            out O2rModPortProfile majorasMaskProfile));
+
+        Assert.Equal("O2R Mod Maker", ocarinaProfile.ToolTitle);
+        Assert.Equal("O2R Mod Maker", majorasMaskProfile.ToolTitle);
+    }
+
+    [Fact]
+    public void RomProfilesRestrictO2rModMakerToOcarinaTextureCatalogsAndMajorasMaskUs()
+    {
+        RomVersionProfile ocarinaRetailRomProfile = RomVersionDatabase.Profiles.Single(profile => profile.Name == "Retail NTSC 1.0");
+        RomVersionProfile ocarinaSwedishRomProfile = RomVersionDatabase.Profiles.Single(profile => profile.Name == "NTSC 1.2");
+        RomVersionProfile majorasMaskUsRomProfile = RomVersionDatabase.Profiles.Single(profile => profile.Name == "Majora's Mask NTSC-U");
+
+        Assert.True(O2rModPortProfileCatalog.TryGetProfile(
+            GameProfiles.Get(GameKind.OcarinaOfTime),
+            ocarinaRetailRomProfile,
+            out _));
+        Assert.True(O2rModPortProfileCatalog.TryGetProfile(
+            GameProfiles.Get(GameKind.OcarinaOfTime),
+            ocarinaSwedishRomProfile,
+            out _));
+        Assert.True(O2rModPortProfileCatalog.TryGetProfile(
+            GameProfiles.Get(GameKind.MajorasMask),
+            majorasMaskUsRomProfile,
+            out _));
+
+        List<RomVersionProfile> unsupportedMajorasMaskProfiles = RomVersionDatabase.Profiles
+            .Where(profile => profile.Game == GameKind.MajorasMask && profile.Name != "Majora's Mask NTSC-U")
+            .ToList();
+
+        Assert.NotEmpty(unsupportedMajorasMaskProfiles);
+
+        foreach (RomVersionProfile profile in RomVersionDatabase.Profiles.Where(profile => profile.Game == GameKind.OcarinaOfTime))
+        {
+            Assert.True(O2rModPortProfileCatalog.TryGetProfile(profile.GameProfile, profile, out _));
+        }
+
+        foreach (RomVersionProfile profile in unsupportedMajorasMaskProfiles)
+        {
+            Assert.False(O2rModPortProfileCatalog.TryGetProfile(profile.GameProfile, profile, out _));
+        }
+    }
+
+    [Fact]
     public void TwoShipTwoHarkinianProfileUses2s2hTextureResourcePaths()
     {
         RomVersionProfile romProfile = RomVersionDatabase.Profiles.Single(profile => profile.Name == "Majora's Mask NTSC-U");
