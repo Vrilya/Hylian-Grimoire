@@ -1,20 +1,16 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using HylianGrimoire.Games;
 using HylianGrimoire.Games.MajorasMask;
 using HylianGrimoire.Glyphs;
 
 namespace HylianGrimoire.Preview;
 
-public static class MmBitmapCache
+public static class MmMessagePreviewRenderer
 {
-    private static readonly string AssetRoot = Path.Combine(
-        AppContext.BaseDirectory,
-        GameProfiles.Get(GameKind.MajorasMask).Assets.PreviewRoot);
-    private static readonly string CacheRoot = Path.Combine(Path.GetTempPath(), "HylianGrimoirePreviewCache", "mm");
+    private static readonly PreviewAssetResolver Assets = new(GameKind.MajorasMask);
+    private static readonly PreviewBitmapCache Cache = new("mm");
 
     private const float TextScale = 0.75f;
     private const float OutputScale = 1.75f;
@@ -56,7 +52,7 @@ public static class MmBitmapCache
             return new Bitmap(output);
         }
 
-        Directory.CreateDirectory(CacheRoot);
+        Cache.EnsureDirectory();
 
         Bitmap scaled = RenderPreviewUncached(style, tokens, lastBox, options, showAlignmentGuides, glyphSource);
         scaled.Save(output, ImageFormat.Png);
@@ -74,7 +70,7 @@ public static class MmBitmapCache
         string tokenKey = string.Join('-', tokens.Select(token => $"{(int)token.Kind:x}{token.Value:x2}"));
         string guideKey = showAlignmentGuides ? "guides-on" : "guides-off";
         string optionKey = $"icon-{options.IconId:x2}-center-{options.Centered}";
-        return GetCachePath($"mm-preview-v27-{glyphSource.CacheKey}-{style}-{lastBox}-{guideKey}-{optionKey}-{tokenKey}");
+        return Cache.GetPath($"mm-preview-v27-{glyphSource.CacheKey}-{style}-{lastBox}-{guideKey}-{optionKey}-{tokenKey}");
     }
 
     private static Bitmap RenderPreviewUncached(
@@ -112,15 +108,7 @@ public static class MmBitmapCache
             }
         }
 
-        var scaled = new Bitmap((int)(canvas.Width * OutputScale), (int)(canvas.Height * OutputScale), PixelFormat.Format32bppArgb);
-        using (var graphics = Graphics.FromImage(scaled))
-        {
-            graphics.Clear(Color.Transparent);
-            graphics.InterpolationMode = InterpolationMode.High;
-            graphics.DrawImage(canvas, 0, 0, scaled.Width, scaled.Height);
-        }
-
-        return scaled;
+        return PreviewBitmapTransforms.Scale(canvas, OutputScale);
     }
 
     private static void DrawBox(Graphics graphics, MmPreviewStyle style)
@@ -142,11 +130,11 @@ public static class MmBitmapCache
 
         using Bitmap styledBox = style switch
         {
-            MmPreviewStyle.Wooden => ColorizeMultiply(box, Color.FromArgb(230, 70, 50, 30)),
-            MmPreviewStyle.Ocarina => ColorizeMultiply(box, Color.FromArgb(180, 255, 0, 0)),
-            MmPreviewStyle.Blue or MmPreviewStyle.BlueDefault => ColorizeAlpha(box, Color.FromArgb(170, 0, 10, 50)),
-            MmPreviewStyle.Notebook => ColorizeAlpha(box, Color.FromArgb(220, 255, 255, 195)),
-            _ => ColorizeAlpha(box, Color.FromArgb(170, 0, 0, 0)),
+            MmPreviewStyle.Wooden => PreviewBitmapTransforms.ColorizeMultiply(box, Color.FromArgb(230, 70, 50, 30)),
+            MmPreviewStyle.Ocarina => PreviewBitmapTransforms.ColorizeMultiply(box, Color.FromArgb(180, 255, 0, 0)),
+            MmPreviewStyle.Blue or MmPreviewStyle.BlueDefault => PreviewBitmapTransforms.ColorizeAlpha(box, Color.FromArgb(170, 0, 10, 50)),
+            MmPreviewStyle.Notebook => PreviewBitmapTransforms.ColorizeAlpha(box, Color.FromArgb(220, 255, 255, 195)),
+            _ => PreviewBitmapTransforms.ColorizeAlpha(box, Color.FromArgb(170, 0, 0, 0)),
         };
 
         graphics.DrawImage(styledBox, 0, 0, 256, 64);
@@ -222,7 +210,7 @@ public static class MmBitmapCache
             return;
         }
 
-        string marker = FromAssetRoot(lastBox
+        string marker = Assets.Resolve(lastBox
             ? @"message_static\gMessageEndSquareTex.png"
             : @"message_static\gMessageContinueTriangleTex.png");
         DrawMaskImage(graphics, marker, Color.FromArgb(255, 0, 110, 255), 124, 60, (int)(16 * TextScale), (int)(16 * TextScale), brighten: false);
@@ -320,7 +308,7 @@ public static class MmBitmapCache
         }
 
         int size = (int)(16 * TextScale);
-        string arrow = FromAssetRoot(@"message_static\gMessageArrowTex.png");
+        string arrow = Assets.Resolve(@"message_static\gMessageArrowTex.png");
 
         for (int i = 0; i < choiceCount; i++)
         {
@@ -331,7 +319,7 @@ public static class MmBitmapCache
 
     private static void DrawOcarinaTrebleClef(Graphics graphics)
     {
-        string clef = FromAssetRoot(@"parameter_static\gOcarinaTrebleClefTex.png");
+        string clef = Assets.Resolve(@"parameter_static\gOcarinaTrebleClefTex.png");
         if (!File.Exists(clef))
         {
             return;
@@ -343,8 +331,8 @@ public static class MmBitmapCache
 
     private static void DrawOcarinaBackgroundX(Graphics graphics)
     {
-        string left = FromAssetRoot(@"message_texture_static\gMessageXLeftTex.png");
-        string right = FromAssetRoot(@"message_texture_static\gMessageXRightTex.png");
+        string left = Assets.Resolve(@"message_texture_static\gMessageXLeftTex.png");
+        string right = Assets.Resolve(@"message_texture_static\gMessageXRightTex.png");
         if (!File.Exists(left) || !File.Exists(right))
         {
             return;
@@ -426,7 +414,7 @@ public static class MmBitmapCache
 
         int size = (int)(16 * scale);
         DrawMaskImage(graphics, path, Color.Black, (int)x + 1, (int)y + 1, size, size, brighten: false);
-        DrawMaskImage(graphics, path, color, (int)x, (int)y, size, size, brighten: true);
+        DrawMaskImage(graphics, path, color, (int)x, (int)y, size, size, brighten: false);
     }
 
     private static bool DrawMessageIcon(Graphics graphics, byte iconId)
@@ -449,7 +437,7 @@ public static class MmBitmapCache
 
     private static bool DrawImageIcon(Graphics graphics, string relativePath)
     {
-        string path = FromAssetRoot(relativePath);
+        string path = Assets.Resolve(relativePath);
         if (!File.Exists(path))
         {
             return false;
@@ -464,7 +452,7 @@ public static class MmBitmapCache
 
     private static bool DrawSmallMaskIcon(Graphics graphics, string relativePath, Color color)
     {
-        string path = FromAssetRoot(relativePath);
+        string path = Assets.Resolve(relativePath);
         if (!File.Exists(path))
         {
             return false;
@@ -476,13 +464,13 @@ public static class MmBitmapCache
 
     private static bool DrawStrayFairyIcon(Graphics graphics, string relativePath)
     {
-        string fairyPath = FromAssetRoot(relativePath);
+        string fairyPath = Assets.Resolve(relativePath);
         if (!File.Exists(fairyPath))
         {
             return false;
         }
 
-        string glowPath = FromAssetRoot(@"parameter_static\gStrayFairyGlowingCircleIconTex.png");
+        string glowPath = Assets.Resolve(@"parameter_static\gStrayFairyGlowingCircleIconTex.png");
         if (File.Exists(glowPath))
         {
             DrawMaskImage(graphics, glowPath, Color.FromArgb(255, 110, 160), 12, 16, 32, 24, brighten: false);
@@ -592,104 +580,13 @@ public static class MmBitmapCache
             _ => @"message_static\gMessageDefaultBackgroundTex.png",
         };
 
-        return FromAssetRoot(relativePath);
+        return Assets.Resolve(relativePath);
     }
 
     private static void DrawMaskImage(Graphics graphics, string source, Color color, int x, int y, int width, int height, bool brighten)
     {
         using var mask = new Bitmap(source);
-        using var tinted = CreateTintedMask(mask, color, brighten: brighten);
+        using var tinted = PreviewBitmapTransforms.CreateTintedMask(mask, color, brighten);
         graphics.DrawImage(tinted, x, y, width, height);
     }
-
-    private static Bitmap ColorizeAlpha(Bitmap source, Color color)
-    {
-        return TransformPixels(source, (a, r, g, b) =>
-            ((byte)(r * color.A / 255), color.R, color.G, color.B));
-    }
-
-    private static Bitmap ColorizeMultiply(Bitmap source, Color color)
-    {
-        return TransformPixels(source, (a, r, g, b) =>
-            ((byte)(a * color.A / 255), (byte)(r * color.R / 255), (byte)(g * color.G / 255), (byte)(b * color.B / 255)));
-    }
-
-    private static Bitmap CreateTintedMask(Bitmap source, Color color, bool brighten)
-    {
-        return TransformPixels(source, (a, r, g, b) =>
-            (r, color.R, color.G, color.B));
-    }
-
-    private static Bitmap TransformPixels(Bitmap source, Func<byte, byte, byte, byte, (byte A, byte R, byte G, byte B)> transform)
-    {
-        using Bitmap input = source.PixelFormat == PixelFormat.Format32bppArgb
-            ? (Bitmap)source.Clone()
-            : CloneAsArgb(source);
-
-        var output = new Bitmap(input.Width, input.Height, PixelFormat.Format32bppArgb);
-        Rectangle bounds = new(0, 0, input.Width, input.Height);
-        BitmapData inputData = input.LockBits(bounds, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-        BitmapData outputData = output.LockBits(bounds, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-
-        try
-        {
-            int inputStride = Math.Abs(inputData.Stride);
-            int outputStride = Math.Abs(outputData.Stride);
-            byte[] inputBytes = new byte[inputStride * input.Height];
-            byte[] outputBytes = new byte[outputStride * output.Height];
-
-            Marshal.Copy(inputData.Scan0, inputBytes, 0, inputBytes.Length);
-
-            for (int y = 0; y < input.Height; y++)
-            {
-                int inputRow = GetRowOffset(inputData.Stride, inputStride, input.Height, y);
-                int outputRow = GetRowOffset(outputData.Stride, outputStride, output.Height, y);
-                for (int x = 0; x < input.Width; x++)
-                {
-                    int inputOffset = inputRow + x * 4;
-                    byte b = inputBytes[inputOffset];
-                    byte g = inputBytes[inputOffset + 1];
-                    byte r = inputBytes[inputOffset + 2];
-                    byte a = inputBytes[inputOffset + 3];
-                    var pixel = transform(a, r, g, b);
-
-                    int outputOffset = outputRow + x * 4;
-                    outputBytes[outputOffset] = pixel.B;
-                    outputBytes[outputOffset + 1] = pixel.G;
-                    outputBytes[outputOffset + 2] = pixel.R;
-                    outputBytes[outputOffset + 3] = pixel.A;
-                }
-            }
-
-            Marshal.Copy(outputBytes, 0, outputData.Scan0, outputBytes.Length);
-        }
-        finally
-        {
-            input.UnlockBits(inputData);
-            output.UnlockBits(outputData);
-        }
-
-        return output;
-    }
-
-    private static int GetRowOffset(int stride, int absoluteStride, int height, int y)
-        => stride < 0 ? (height - 1 - y) * absoluteStride : y * absoluteStride;
-
-    private static Bitmap CloneAsArgb(Bitmap source)
-    {
-        var clone = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppArgb);
-        using var graphics = Graphics.FromImage(clone);
-        graphics.DrawImage(source, 0, 0, source.Width, source.Height);
-        return clone;
-    }
-
-    private static string GetCachePath(string key)
-    {
-        byte[] hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(key));
-        string name = Convert.ToHexString(hash)[..16].ToLowerInvariant();
-        return Path.Combine(CacheRoot, $"{name}.png");
-    }
-
-    private static string FromAssetRoot(string relativePath)
-        => Path.Combine(AssetRoot, relativePath.Replace('\\', Path.DirectorySeparatorChar));
 }

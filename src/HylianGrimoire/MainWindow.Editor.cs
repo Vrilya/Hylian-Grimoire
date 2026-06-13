@@ -39,6 +39,7 @@ public sealed partial class MainWindow
 
         RefreshListItem(_session.CurrentIndex);
         UpdatePreview();
+        RefreshMessageByteInspector();
     }
 
     private void OnTypeChange(object sender, SelectionChangedEventArgs e)

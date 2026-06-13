@@ -1,0 +1,76 @@
+using System.Drawing;
+using System.Drawing.Imaging;
+
+namespace HylianGrimoire.TextTextures;
+
+public static partial class BossTitleCardTextureRenderer
+{
+    private static readonly int[] Ia4Steps = [0, 17, 34, 51, 68, 85, 102, 119, 136, 153, 170, 187, 204, 221, 238, 255];
+
+    private static Bitmap Compose(BossTitleCardComponents components, BossTitleCardTextureRenderSettings settings)
+    {
+        Bitmap output = new(BossTitleCardTextureCatalog.Width, BossTitleCardTextureCatalog.Height, PixelFormat.Format32bppArgb);
+        for (int y = 0; y < BossTitleCardTextureCatalog.Height; y++)
+        {
+            for (int x = 0; x < BossTitleCardTextureCatalog.Width; x++)
+            {
+                int bottomFillValue = components.BottomFill.GetPixel(x, y).A;
+                int bottomStrokeValue = components.BottomStroke.GetPixel(x, y).A;
+                int topFillValue = components.TopFill.GetPixel(x, y).A;
+                int topStrokeValue = components.TopStroke.GetPixel(x, y).A;
+
+                if (bottomFillValue > 0)
+                {
+                    int gray = bottomFillValue >= settings.BottomWhiteThreshold
+                        ? 255
+                        : NearestIa4Step(Math.Min(255, (int)Math.Round(bottomFillValue * settings.BottomFillBoost / 100d)));
+                    output.SetPixel(x, y, Color.FromArgb(255, gray, gray, gray));
+                }
+                else if (bottomStrokeValue > 0)
+                {
+                    int alpha = NearestIa4Step(bottomStrokeValue);
+                    if (alpha > 0)
+                    {
+                        output.SetPixel(x, y, Color.FromArgb(alpha, 0, 0, 0));
+                    }
+                }
+                else if (topFillValue >= settings.TopFillMin)
+                {
+                    int gray = topFillValue >= settings.TopWhiteThreshold
+                        ? 255
+                        : NearestIa4Step(Math.Min(255, (int)Math.Round(topFillValue * settings.TopFillBoost / 100d)));
+                    output.SetPixel(x, y, Color.FromArgb(255, gray, gray, gray));
+                }
+                else if (topStrokeValue > 0)
+                {
+                    int alpha = NearestIa4Step(topStrokeValue);
+                    if (alpha > 0)
+                    {
+                        output.SetPixel(x, y, Color.FromArgb(alpha, 0, 0, 0));
+                    }
+                }
+            }
+        }
+
+        return output;
+    }
+
+    private static int NearestIa4Step(int value)
+    {
+        int nearest = Ia4Steps[0];
+        int nearestDistance = Math.Abs(value - nearest);
+        for (int i = 1; i < Ia4Steps.Length; i++)
+        {
+            int distance = Math.Abs(value - Ia4Steps[i]);
+            if (distance < nearestDistance)
+            {
+                nearest = Ia4Steps[i];
+                nearestDistance = distance;
+            }
+        }
+
+        return nearest;
+    }
+
+    private sealed record BossTitleCardComponents(Bitmap TopFill, Bitmap TopStroke, Bitmap BottomFill, Bitmap BottomStroke);
+}

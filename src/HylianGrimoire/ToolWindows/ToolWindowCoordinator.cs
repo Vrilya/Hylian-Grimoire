@@ -221,7 +221,7 @@ internal sealed class ToolWindowCoordinator
         catch (Exception ex)
         {
             _o2rModMakerWindow = null;
-            _onO2rModMakerOpenFailed(ex.Message);
+            _onO2rModMakerOpenFailed(UiOperationExceptionHandler.GetDisplayMessage("Failed to open O2R Mod Maker", ex));
         }
     }
 

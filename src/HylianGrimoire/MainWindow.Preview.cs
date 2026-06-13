@@ -74,7 +74,7 @@ public sealed partial class MainWindow
         }
         catch (InvalidDataException ex)
         {
-            SetStatus($"Preview not updated: {ex.Message}");
+            SetStatus($"Preview not updated: {UiOperationExceptionHandler.GetDisplayMessage("Message preview failed", ex)}");
         }
     }
 }

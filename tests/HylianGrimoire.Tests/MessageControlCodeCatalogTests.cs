@@ -48,6 +48,20 @@ public sealed class MessageControlCodeCatalogTests
     }
 
     [Fact]
+    public void Message_control_code_catalog_uses_precise_flow_descriptions()
+    {
+        IReadOnlyList<MessageControlCodeEntry> ootEntries = Flatten(GameKind.OcarinaOfTime);
+        IReadOnlyList<MessageControlCodeEntry> mmEntries = Flatten(GameKind.MajorasMask);
+
+        Assert.Contains(ootEntries, entry => entry.InsertText == "[textid:0000]" && entry.Label == "Next Text ID");
+        Assert.Contains(ootEntries, entry => entry.InsertText == "[event]" && entry.Description.Contains("event-controlled textbox state", StringComparison.Ordinal));
+        Assert.Contains(mmEntries, entry => entry.InsertText == "[textspeed]" && entry.Description.Contains("no explicit argument", StringComparison.Ordinal));
+        Assert.Contains(mmEntries, entry => entry.InsertText == "[continue]" && entry.Description.Contains("continue icon", StringComparison.Ordinal));
+        Assert.Contains(mmEntries, entry => entry.InsertText == "[inputbank]" && entry.Description.Contains("bank rupee input behavior", StringComparison.Ordinal));
+        Assert.DoesNotContain(mmEntries, entry => entry.Description.Contains("next configured message", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void Ocarina_control_code_menu_entries_encode_as_control_tokens()
     {
         foreach (MessageControlCodeEntry entry in Flatten(GameKind.OcarinaOfTime))

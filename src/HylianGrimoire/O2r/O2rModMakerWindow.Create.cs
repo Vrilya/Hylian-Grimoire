@@ -143,7 +143,7 @@ public sealed partial class O2rModMakerWindow
         }
         catch (Exception ex)
         {
-            await ShowErrorAsync("Failed to create .o2r", ex.Message);
+            await ShowOperationExceptionAsync("Failed to create .o2r", ex);
         }
     }
 

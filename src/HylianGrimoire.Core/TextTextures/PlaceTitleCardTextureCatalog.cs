@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
 using HylianGrimoire.Rom;
-
 using HylianGrimoire.Textures;
 
 namespace HylianGrimoire.TextTextures;

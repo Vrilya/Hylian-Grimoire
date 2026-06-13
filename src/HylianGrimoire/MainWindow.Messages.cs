@@ -18,6 +18,7 @@ public sealed partial class MainWindow
             UpdateMajorasMaskMetadataPanel(entry);
             TextEditor.Text = CurrentGameProfile.EditorTextSyntax.ToDisplay(entry.Text);
             UpdatePreview();
+            RefreshMessageByteInspector();
 
             SetStatus($"Editing message 0x{entry.Id:x4}  ({GetVisibleMessageOrdinal(idx) + 1} / {CountVisibleMessageEntries()})");
         }

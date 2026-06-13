@@ -53,7 +53,7 @@ public sealed partial class MmMessagePreviewView : UserControl
         {
             PreviewImageSlot slot = _previewSlots[i];
             slot.Tag = style;
-            slot.SetSource(MmBitmapCache.RenderPreview(style, pages[i], i == pages.Count - 1, options, showAlignmentGuides, glyphSource));
+            slot.SetSource(MmMessagePreviewRenderer.RenderPreview(style, pages[i], i == pages.Count - 1, options, showAlignmentGuides, glyphSource));
             ApplyImageSize(slot);
         }
 

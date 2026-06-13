@@ -1,6 +1,5 @@
 using HylianGrimoire.Games;
 using HylianGrimoire.Rom;
-
 using HylianGrimoire.Textures;
 
 namespace HylianGrimoire.TextTextures;

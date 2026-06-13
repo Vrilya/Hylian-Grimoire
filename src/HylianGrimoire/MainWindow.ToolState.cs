@@ -29,6 +29,7 @@ public sealed partial class MainWindow
 
         _characterProfileWindow?.SetRomSession(CreateRomGlyphSession());
         UpdateRomToolState(availability);
+        RefreshMessageByteInspector();
 
         if (!availability.CanUseMessagePreview)
         {
@@ -63,6 +64,7 @@ public sealed partial class MainWindow
                 ? menuO2rProfile.ToolTitle
                 : "O2R Mod Maker";
         TweaksToolItem.IsEnabled = availability.CanUseTweaks;
+        MessageByteInspectorToolItem.IsEnabled = CanUseMessageByteInspectorTool();
     }
 
     private ToolAvailability GetToolAvailability() =>

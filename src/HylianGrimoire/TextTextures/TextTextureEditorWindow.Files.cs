@@ -32,7 +32,7 @@ public sealed partial class TextTextureEditorWindow
         catch (Exception ex)
         {
             SetStatus("PNG save failed.");
-            await ShowErrorAsync("Failed to save PNG", ex.Message);
+            await ShowOperationExceptionAsync("Failed to save PNG", ex);
         }
     }
 
@@ -69,7 +69,7 @@ public sealed partial class TextTextureEditorWindow
         catch (Exception ex)
         {
             SetStatus("ROM replacement failed.");
-            await ShowErrorAsync("Failed to apply texture", ex.Message);
+            await ShowOperationExceptionAsync("Failed to apply texture", ex);
         }
     }
 
@@ -113,6 +113,11 @@ public sealed partial class TextTextureEditorWindow
         };
 
         await dialog.ShowAsync();
+    }
+
+    private async Task ShowOperationExceptionAsync(string title, Exception exception, string? recoveryMessage = null)
+    {
+        await UiOperationExceptionHandler.ShowAsync(title, exception, ShowErrorAsync, recoveryMessage);
     }
 
     private void SetStatus(string message)

@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
 using HylianGrimoire.Rom;
-
 using HylianGrimoire.Textures;
 
 namespace HylianGrimoire.TextTextures;
@@ -61,6 +60,7 @@ public static partial class ItemNameTextureCatalog
 
     public static bool IsItemNameTexture(TextureDefinition texture)
         => string.Equals(texture.Group, ItemNameGroup, StringComparison.Ordinal)
+            && !IsJapaneseTexture(texture)
             && texture.Width == Width
             && texture.Height == Height
             && texture.Format == TextureFormat.IA4;
@@ -109,6 +109,9 @@ public static partial class ItemNameTextureCatalog
 
     [GeneratedRegex("^g")]
     private static partial Regex LeadingGRegex();
+
+    private static bool IsJapaneseTexture(TextureDefinition texture)
+        => texture.Name.EndsWith("JPNTex", StringComparison.Ordinal);
 
     [GeneratedRegex("ItemName(?:[0-9]+)?[A-Z]*Tex$")]
     private static partial Regex ItemNameSuffixRegex();

@@ -86,6 +86,7 @@
                             <MenuFlyoutItem x:Name="O2rModMakerToolItem" Text="O2R Mod Maker" Click="OnOpenO2rModMaker" />
                             <MenuFlyoutItem x:Name="TweaksToolItem" Text="Tweaks" Click="OnOpenTweaks" />
                             <MenuFlyoutSeparator />
+                            <MenuFlyoutItem x:Name="MessageByteInspectorToolItem" Text="Message Byte Inspector" Click="OnOpenMessageByteInspector" />
                             <MenuFlyoutItem x:Name="FontOrderToolItem" Text="Font order (0xFFFC)" Click="OnOpenFontOrder" />
                             <MenuFlyoutSeparator />
                             <MenuFlyoutItem Text="Open logs folder" Click="OnOpenLogsFolder" />

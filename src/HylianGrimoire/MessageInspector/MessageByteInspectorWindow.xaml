@@ -1,0 +1,93 @@
+<Window
+    x:Class="HylianGrimoire.MessageInspector.MessageByteInspectorWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Hylian Grimoire - Message Byte Inspector">
+
+    <Grid Padding="14" RowSpacing="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Spacing="2">
+                <TextBlock
+                    x:Name="TitleText"
+                    Text="Message Byte Inspector"
+                    Style="{ThemeResource SubtitleTextBlockStyle}" />
+                <TextBlock
+                    x:Name="SummaryText"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+
+            <ToggleButton
+                x:Name="HighlightButton"
+                Grid.Column="1"
+                HorizontalAlignment="Right"
+                MinWidth="118"
+                Height="34"
+                Content="Highlight"
+                Checked="OnHighlightChanged"
+                Unchecked="OnHighlightChanged"
+                ToolTipService.ToolTip="Highlight message byte structure" />
+        </Grid>
+
+        <StackPanel
+            x:Name="LegendPanel"
+            Grid.Row="1"
+            Orientation="Horizontal"
+            Spacing="8" />
+
+        <Border
+            Grid.Row="2"
+            BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="6">
+            <ScrollViewer
+                HorizontalScrollBarVisibility="Auto"
+                VerticalScrollBarVisibility="Auto">
+                <StackPanel Padding="10" Spacing="4">
+                    <Grid
+                        Margin="0,0,0,2"
+                        ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="72" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            Text="Offset(h)"
+                            FontFamily="Cascadia Mono"
+                            FontSize="13"
+                            Opacity="0.82"
+                            VerticalAlignment="Center" />
+                        <StackPanel
+                            x:Name="HexHeaderPanel"
+                            Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="0" />
+                        <TextBlock
+                            Grid.Column="2"
+                            Text="Decoded text"
+                            FontFamily="Cascadia Mono"
+                            FontSize="13"
+                            Opacity="0.82"
+                            VerticalAlignment="Center" />
+                    </Grid>
+
+                    <StackPanel
+                        x:Name="RowsPanel"
+                        Spacing="2" />
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</Window>

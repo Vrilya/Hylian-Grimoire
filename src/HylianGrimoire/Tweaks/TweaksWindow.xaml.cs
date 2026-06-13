@@ -142,7 +142,7 @@ public sealed partial class TweaksWindow : Window
         }
         catch (Exception ex)
         {
-            await ShowErrorAsync("Failed to apply tweak", ex.Message);
+            await UiOperationExceptionHandler.ShowAsync("Failed to apply tweak", ex, ShowErrorAsync);
         }
         finally
         {

@@ -78,7 +78,7 @@ public sealed partial class PromptEditorWindow : Window
         }
         catch (Exception ex)
         {
-            ProfileText.Text = ex.Message;
+            ProfileText.Text = UiOperationExceptionHandler.GetDisplayMessage("Prompt editor load failed", ex);
             SetControlsEnabled(false);
         }
         finally
@@ -206,7 +206,7 @@ public sealed partial class PromptEditorWindow : Window
         }
         catch (Exception ex)
         {
-            ProfileText.Text = ex.Message;
+            ProfileText.Text = UiOperationExceptionHandler.GetDisplayMessage("Prompt editor write failed", ex);
         }
     }
 
@@ -272,7 +272,7 @@ public sealed partial class PromptEditorWindow : Window
         }
         catch (Exception ex)
         {
-            ProfileText.Text = ex.Message;
+            ProfileText.Text = UiOperationExceptionHandler.GetDisplayMessage("Prompt editor preview failed", ex);
         }
     }
 

@@ -65,7 +65,7 @@ public sealed partial class TextTextureEditorWindow
         catch (Exception ex)
         {
             ClearPreviews();
-            SetStatus($"Preview failed. {ex.Message}");
+            SetStatus($"Preview failed. {UiOperationExceptionHandler.GetDisplayMessage("Text texture preview failed", ex)}");
         }
     }
 

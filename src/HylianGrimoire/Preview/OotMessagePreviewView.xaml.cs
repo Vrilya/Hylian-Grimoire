@@ -54,7 +54,7 @@ public sealed partial class OotMessagePreviewView : UserControl
         {
             PreviewImageSlot slot = _previewSlots[i];
             slot.Tag = style;
-            slot.SetSource(OotBitmapCache.RenderPreview(style, pages[i], darkText, i == pages.Count - 1, showAlignmentGuides, glyphSource));
+            slot.SetSource(OotMessagePreviewRenderer.RenderPreview(style, pages[i], darkText, i == pages.Count - 1, showAlignmentGuides, glyphSource));
             ApplyImageSize(slot);
         }
 

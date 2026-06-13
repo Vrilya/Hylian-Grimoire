@@ -75,7 +75,10 @@ public sealed partial class O2rModMakerWindow
         catch (Exception ex)
         {
             ClearPreview();
-            DetailsText.Text = $"{resource.ResourcePath}\n{resource.StatusText}\n{ex.Message}";
+            DetailsText.Text =
+                $"{resource.ResourcePath}\n" +
+                $"{resource.StatusText}\n" +
+                UiOperationExceptionHandler.GetDisplayMessage("O2R archive texture preview failed", ex);
         }
     }
 

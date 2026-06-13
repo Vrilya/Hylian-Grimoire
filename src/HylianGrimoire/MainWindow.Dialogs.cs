@@ -39,30 +39,14 @@ public sealed partial class MainWindow
         string? recoveryMessage = null,
         string? statusMessage = null)
     {
-        if (IsRecoverableOperationError(exception))
-        {
-            await ShowErrorAsync(title, BuildOperationErrorMessage(exception.Message, recoveryMessage));
-        }
-        else
-        {
-            await ShowExceptionAsync(title, exception);
-        }
-
-        if (!string.IsNullOrWhiteSpace(statusMessage))
-        {
-            SetStatus(statusMessage);
-        }
+        await UiOperationExceptionHandler.ShowAsync(
+            title,
+            exception,
+            ShowErrorAsync,
+            recoveryMessage,
+            SetStatus,
+            statusMessage);
     }
-
-    private static bool IsRecoverableOperationError(Exception exception)
-        => exception is InvalidDataException
-            or IOException
-            or UnauthorizedAccessException;
-
-    private static string BuildOperationErrorMessage(string message, string? recoveryMessage)
-        => string.IsNullOrWhiteSpace(recoveryMessage)
-            ? message
-            : $"{message}{Environment.NewLine}{Environment.NewLine}{recoveryMessage}";
 
     private async Task ShowInfoAsync(string title, string message) => await ShowDialogAsync(title, message);
 

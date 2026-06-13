@@ -31,7 +31,7 @@ public sealed partial class TextureManagerWindow
         catch (Exception ex)
         {
             SetLocalStatus("Texture export failed.");
-            await ShowErrorAsync("Failed to export texture", ex.Message);
+            await ShowOperationExceptionAsync("Failed to export texture", ex);
         }
     }
 
@@ -58,7 +58,7 @@ public sealed partial class TextureManagerWindow
         catch (Exception ex)
         {
             SetLocalStatus("Texture replacement failed.");
-            await ShowErrorAsync("Failed to replace texture", ex.Message);
+            await ShowOperationExceptionAsync("Failed to replace texture", ex);
         }
     }
 
@@ -88,7 +88,7 @@ public sealed partial class TextureManagerWindow
         catch (Exception ex)
         {
             SetLocalStatus("Folder export failed.");
-            await ShowErrorAsync("Failed to export textures", ex.Message);
+            await ShowOperationExceptionAsync("Failed to export textures", ex);
         }
     }
 
@@ -138,7 +138,7 @@ public sealed partial class TextureManagerWindow
         catch (Exception ex)
         {
             SetLocalStatus("Folder replacement failed.");
-            await ShowErrorAsync("Failed to replace textures", ex.Message);
+            await ShowOperationExceptionAsync("Failed to replace textures", ex);
         }
     }
 

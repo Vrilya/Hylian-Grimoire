@@ -43,6 +43,11 @@ public sealed partial class O2rModMakerWindow
         await dialog.ShowAsync();
     }
 
+    private async Task ShowOperationExceptionAsync(string title, Exception exception, string? recoveryMessage = null)
+    {
+        await UiOperationExceptionHandler.ShowAsync(title, exception, ShowErrorAsync, recoveryMessage);
+    }
+
     private async Task<bool?> AskOverwriteTextureOverridesAsync(IReadOnlyList<string> resourcePaths)
     {
         var dialog = new ContentDialog

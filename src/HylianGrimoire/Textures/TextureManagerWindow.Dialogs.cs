@@ -18,6 +18,11 @@ public sealed partial class TextureManagerWindow
         await dialog.ShowAsync();
     }
 
+    private async Task ShowOperationExceptionAsync(string title, Exception exception, string? recoveryMessage = null)
+    {
+        await UiOperationExceptionHandler.ShowAsync(title, exception, ShowErrorAsync, recoveryMessage);
+    }
+
     private void SetLocalStatus(string message) => StatusText.Text = message;
 
     private IDisposable ShowProgress(string title)

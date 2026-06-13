@@ -181,6 +181,7 @@ public sealed partial class MainWindow
         UpdateMajorasMaskMetadataPanel(null);
         TextEditor.Text = string.Empty;
         UpdatePreview();
+        RefreshMessageByteInspector();
     }
 
     private int CountVisibleMessageEntries()

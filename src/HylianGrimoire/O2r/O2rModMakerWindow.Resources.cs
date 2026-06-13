@@ -79,7 +79,7 @@ public sealed partial class O2rModMakerWindow
         catch (Exception ex)
         {
             ClearPreview();
-            DetailsText.Text = ex.Message;
+            DetailsText.Text = UiOperationExceptionHandler.GetDisplayMessage("O2R texture preview failed", ex);
         }
     }
 

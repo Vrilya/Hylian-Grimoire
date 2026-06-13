@@ -76,7 +76,7 @@ public sealed partial class TitleTextWindow : Window
         }
         catch (Exception ex)
         {
-            ProfileText.Text = ex.Message;
+            ProfileText.Text = UiOperationExceptionHandler.GetDisplayMessage("Title text load failed", ex);
             SetControlsEnabled(false);
         }
         finally
@@ -139,7 +139,7 @@ public sealed partial class TitleTextWindow : Window
         }
         catch (Exception ex)
         {
-            ProfileText.Text = ex.Message;
+            ProfileText.Text = UiOperationExceptionHandler.GetDisplayMessage("Title text write failed", ex);
         }
     }
 
@@ -174,7 +174,7 @@ public sealed partial class TitleTextWindow : Window
         }
         catch (Exception ex)
         {
-            ProfileText.Text = ex.Message;
+            ProfileText.Text = UiOperationExceptionHandler.GetDisplayMessage("Title text reset failed", ex);
         }
     }
 
@@ -199,7 +199,7 @@ public sealed partial class TitleTextWindow : Window
         }
         catch (Exception ex)
         {
-            ProfileText.Text = ex.Message;
+            ProfileText.Text = UiOperationExceptionHandler.GetDisplayMessage("Title text preview failed", ex);
         }
     }
 

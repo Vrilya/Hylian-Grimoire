@@ -100,6 +100,8 @@ public sealed partial class MainWindow : Window
         _characterProfileWindow = null;
         _glyphRemapWindow?.Close();
         _glyphRemapWindow = null;
+        _messageByteInspectorWindow?.Close();
+        _messageByteInspectorWindow = null;
         _toolWindows.CloseAll();
     }
 
@@ -167,6 +169,7 @@ public sealed partial class MainWindow : Window
             }
 
             UpdatePreview();
+            RefreshMessageByteInspector();
         });
     }
 
@@ -175,6 +178,7 @@ public sealed partial class MainWindow : Window
         DispatcherQueue.TryEnqueue(() =>
         {
             UpdatePreview();
+            RefreshMessageByteInspector();
         });
     }
 

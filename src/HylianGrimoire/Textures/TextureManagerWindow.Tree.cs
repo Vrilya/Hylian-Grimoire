@@ -100,7 +100,7 @@ public sealed partial class TextureManagerWindow
         catch (Exception ex)
         {
             ClearPreview();
-            DetailsText.Text = ex.Message;
+            DetailsText.Text = UiOperationExceptionHandler.GetDisplayMessage("Failed to preview texture", ex);
             ExportButton.IsEnabled = false;
             ReplaceButton.IsEnabled = false;
         }

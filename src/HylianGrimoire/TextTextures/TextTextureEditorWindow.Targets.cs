@@ -176,5 +176,4 @@ public sealed partial class TextTextureEditorWindow
 
     private string GetTextureKindLabel()
         => SelectedTextureKind.Label;
-
 }

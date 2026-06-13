@@ -189,8 +189,8 @@ public sealed class TextureCatalogTests
     }
 
     [Theory]
-    [InlineData("Retail NTSC 1.0", 246)]
-    [InlineData("Retail PAL 1.0", 369)]
+    [InlineData("Retail NTSC 1.0", 112)]
+    [InlineData("Retail PAL 1.0", 336)]
     [InlineData("NTSC 1.0", 112)]
     [InlineData("PAL 1.0", 112)]
     public void Ocarina_profiles_expose_item_name_texture_targets(string profileName, int expectedCount)
@@ -201,6 +201,7 @@ public sealed class TextureCatalogTests
 
         Assert.Equal(expectedCount, textures.Count);
         Assert.All(textures, texture => Assert.True(ItemNameTextureCatalog.IsItemNameTexture(texture)));
+        Assert.DoesNotContain(textures, texture => texture.Name.EndsWith("JPNTex", StringComparison.Ordinal));
     }
 
     [Theory]
@@ -209,8 +210,9 @@ public sealed class TextureCatalogTests
     [InlineData("gFaroresWindItemNameENGTex", "Farore's Wind (MP6)")]
     [InlineData("gMaskofTruthItemNameENGTex", "Mask of Truth")]
     [InlineData("gNayrusLoveItemNameENGTex", "Nayru's Love (MP12)")]
+    [InlineData("gBulletBag30ItemNameENGTex", "Bullet Bag (Holds 30)")]
+    [InlineData("gQuiver30ItemNameENGTex", "Quiver (Holds 30)")]
     [InlineData("gSOLDOUTItemNameENGTex", "SOLD OUT")]
-    [InlineData("gUnusedBossKeyItemName10JPNTex", "Unused Boss Key")]
     public void Item_name_texture_names_can_be_converted_to_display_text(string textureName, string expectedText)
     {
         string displayText = ItemNameTextureCatalog.GetDisplayText(textureName);
@@ -786,6 +788,27 @@ public sealed class TextureCatalogTests
 
         Assert.Equal(expectedTopText, displayText.TopText);
         Assert.Equal(expectedBossText, displayText.BossText);
+    }
+
+    [Fact]
+    public void Boss_titlecard_renderer_outputs_texture_when_fonts_available()
+    {
+        string fontPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "arial.ttf");
+        if (!File.Exists(fontPath))
+        {
+            return;
+        }
+
+        using Bitmap rendered = BossTitleCardTextureRenderer.Render(
+            "Great King of Evil",
+            "GANONDORF",
+            fontPath,
+            fontPath,
+            new BossTitleCardTextureRenderSettings());
+
+        Assert.Equal(BossTitleCardTextureCatalog.Width, rendered.Width);
+        Assert.Equal(BossTitleCardTextureCatalog.Height, rendered.Height);
+        Assert.False(GetAlphaBounds(rendered).IsEmpty);
     }
 
     [Theory]
