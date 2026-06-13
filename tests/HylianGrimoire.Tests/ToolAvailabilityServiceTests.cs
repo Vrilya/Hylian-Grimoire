@@ -23,6 +23,7 @@ public sealed class ToolAvailabilityServiceTests
         Assert.False(availability.CanUseCHeaders);
         Assert.False(availability.CanUseGlyphTools);
         Assert.False(availability.CanUseMessagePreview);
+        Assert.False(availability.CanUseTextTextureEditor);
         Assert.False(availability.CanUseTweaks);
     }
 
@@ -52,6 +53,7 @@ public sealed class ToolAvailabilityServiceTests
         Assert.False(availability.CanUseTitleText);
         Assert.False(availability.CanUsePromptEditor);
         Assert.False(availability.CanUseTextureManager);
+        Assert.False(availability.CanUseTextTextureEditor);
     }
 
     [Fact]
@@ -75,6 +77,7 @@ public sealed class ToolAvailabilityServiceTests
         Assert.True(availability.CanUseTitleText);
         Assert.True(availability.CanUsePromptEditor);
         Assert.True(availability.CanUseTextureManager);
+        Assert.True(availability.CanUseTextTextureEditor);
         Assert.True(availability.CanUseO2rModMaker);
     }
 
@@ -99,6 +102,7 @@ public sealed class ToolAvailabilityServiceTests
                 romData);
 
             Assert.True(availability.CanUseTextureManager);
+            Assert.True(availability.CanUseTextTextureEditor);
             Assert.True(availability.CanUseO2rModMaker);
             Assert.False(availability.CanUseTweaks);
         }
@@ -128,6 +132,7 @@ public sealed class ToolAvailabilityServiceTests
         Assert.True(availability.CanUseTitleText);
         Assert.True(availability.CanUsePromptEditor);
         Assert.True(availability.CanUseTextureManager);
+        Assert.False(availability.CanUseTextTextureEditor);
         Assert.True(availability.CanUseO2rModMaker);
         Assert.False(availability.CanUseFontOrder);
     }
@@ -168,6 +173,7 @@ public sealed class ToolAvailabilityServiceTests
 
         Assert.False(availability.CanUseO2rModMaker);
         Assert.False(availability.CanUseTextureManager);
+        Assert.False(availability.CanUseTextTextureEditor);
     }
 
     [Fact]

@@ -3,8 +3,8 @@
     <AppDisplayName>Hylian Grimoire</AppDisplayName>
     <AppAssemblyName>Hylian Grimoire</AppAssemblyName>
     <AppStorageName>HylianGrimoire</AppStorageName>
-    <AppVersion>3.1.1</AppVersion>
-    <AppAssemblyVersion>3.1.1.0</AppAssemblyVersion>
-    <AppFileVersion>3.1.1.0</AppFileVersion>
+    <AppVersion>3.2.0</AppVersion>
+    <AppAssemblyVersion>3.2.0.0</AppAssemblyVersion>
+    <AppFileVersion>3.2.0.0</AppFileVersion>
   </PropertyGroup>
 </Project>

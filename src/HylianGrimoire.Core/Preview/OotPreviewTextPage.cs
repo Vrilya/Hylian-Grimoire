@@ -106,9 +106,7 @@ public static partial class OotPreviewTextPage
         if (!MessageTokenMaps.CommandTags.TryGetValue(code, out string? tag))
             return;
 
-        if (tag.Equals("center", StringComparison.OrdinalIgnoreCase))
-            tokens.Add(new OotPreviewToken(OotPreviewTokenKind.Center, 0));
-        else if (tag.Equals("twochoice", StringComparison.OrdinalIgnoreCase))
+        if (tag.Equals("twochoice", StringComparison.OrdinalIgnoreCase))
             tokens.Add(new OotPreviewToken(OotPreviewTokenKind.Choice, 2));
         else if (tag.Equals("threechoice", StringComparison.OrdinalIgnoreCase))
             tokens.Add(new OotPreviewToken(OotPreviewTokenKind.Choice, 3));

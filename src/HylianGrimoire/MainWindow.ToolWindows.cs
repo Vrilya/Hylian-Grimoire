@@ -46,6 +46,16 @@ public sealed partial class MainWindow
         _toolWindows.OpenTextureManager(_session.RomData);
     }
 
+    private void OnOpenTextTextureEditor(object sender, RoutedEventArgs e)
+    {
+        if (!CanUseTextTextureEditor())
+        {
+            return;
+        }
+
+        _toolWindows.OpenTextTextureEditor(_session.RomData);
+    }
+
     private void OnOpenO2rModMaker(object sender, RoutedEventArgs e)
     {
         if (!CanUseO2rModMakerTool())

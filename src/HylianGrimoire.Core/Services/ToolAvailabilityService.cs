@@ -3,6 +3,7 @@ using HylianGrimoire.Models;
 using HylianGrimoire.O2r;
 using HylianGrimoire.PromptEditor;
 using HylianGrimoire.Rom;
+using HylianGrimoire.TextTextures;
 using HylianGrimoire.Textures;
 using HylianGrimoire.TitleText;
 
@@ -27,6 +28,13 @@ public static class ToolAvailabilityService
         bool canUseTextureManager = romData is not null
             && capabilities.SupportsTextureManager
             && TextureCatalog.TryGetTextures(romData.Profile, out _);
+        bool canUseTextTextureEditor = romData is not null
+            && canUseTextureManager
+            && (ItemNameTextureCatalog.TryGetTargets(romData.Profile, out _)
+                || PausePromptTextureCatalog.TryGetTargets(romData.Profile, out _)
+                || EndTitleTextureCatalog.TryGetTargets(romData.Profile, out _)
+                || PlaceTitleCardTextureCatalog.TryGetTargets(romData.Profile, out _)
+                || BossTitleCardTextureCatalog.TryGetTargets(romData.Profile, out _));
         bool canUseO2rModMaker = capabilities.SupportsO2rModMaker
             && O2rModPortProfileCatalog.TryGetProfile(activeGameProfile, romData?.Profile, out O2rModPortProfile o2rProfile)
             && ((hasEntries && (romData is not null || o2rProfile.SupportsCurrentDocumentTextResources))
@@ -51,6 +59,7 @@ public static class ToolAvailabilityService
                 && capabilities.SupportsPromptEditor
                 && PromptEditorProfileCatalog.TryGetProfile(romData.Profile, out _),
             CanUseTextureManager: canUseTextureManager,
+            CanUseTextTextureEditor: canUseTextTextureEditor,
             CanUseO2rModMaker: canUseO2rModMaker,
             CanUseTweaks: CanUseTweaks(capabilities, romData));
     }

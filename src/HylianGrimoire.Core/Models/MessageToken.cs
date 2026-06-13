@@ -25,7 +25,6 @@ public enum MessageCommand : byte
     ThreeChoice = 0x1c,
     FishInfo = 0x1d,
     Time = 0x1f,
-    Center = 0xfd,
 }
 
 public sealed record CommandToken(MessageCommand Command) : MessageToken

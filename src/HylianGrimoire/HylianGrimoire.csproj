@@ -35,9 +35,12 @@
   <ItemGroup>
     <Content Remove="Assets\AppIcon.ico" />
     <Content Remove="Assets\AppIcon.png" />
+    <None Remove="Assets\ProjectFont.ttc" />
     <None Update="Assets\AppIcon.ico" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
     <None Update="Assets\AppIcon.png" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
+    <Content Include="Assets\ProjectFont.ttc" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Assets\Games\**\*.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Misc\*.png" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Games\**\*.bin" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Games\**\*.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

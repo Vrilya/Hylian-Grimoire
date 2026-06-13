@@ -1145,10 +1145,17 @@ public sealed class ExportParityTests
         Assert.Equal("C\nD", staffEntries[1].Text);
         var staffFiles = MessageTableCodec.BuildFiles(staffEntries);
         Assert.Equal(staffTable, staffFiles.tableBytes);
+    }
 
-        var centered = DecodeEditorText([(byte)0xfd, (byte)'A', (byte)'B', 0x02]);
-        Assert.Equal("[center]AB", centered);
-        Assert.Equal([(byte)0xfd, (byte)'A', (byte)'B', 0x02], EncodeEditorText(centered));
+    [Fact]
+    public void CenterTagIsNotAnOcarinaControlCode()
+    {
+        List<MessageToken> tokens = MessageTextSyntax.FromEditorText("[center]");
+
+        TextToken text = Assert.IsType<TextToken>(Assert.Single(tokens));
+        Assert.Equal("[center]", text.Text);
+        Assert.Equal([(byte)'[', (byte)'c', (byte)'e', (byte)'n', (byte)'t', (byte)'e', (byte)'r', (byte)']', 0x02, 0x00, 0x00, 0x00],
+            MessageCodec.EncodeMessageTokens(tokens));
     }
 
     [Fact]

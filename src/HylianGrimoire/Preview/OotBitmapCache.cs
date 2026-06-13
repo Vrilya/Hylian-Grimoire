@@ -347,10 +347,6 @@ public static class OotBitmapCache
                     currentColor = GetTextColor(token.Value, darkText ? Color.Black : Color.White, style);
                     continue;
 
-                case OotPreviewTokenKind.Center:
-                    x = 128 - (GetLineWidth(tokens, tokenIndex, scale, glyphSource) / 2.0f);
-                    continue;
-
                 case OotPreviewTokenKind.Choice:
                     DrawChoiceArrows(graphics, token.Value, scale);
                     continue;
@@ -406,26 +402,6 @@ public static class OotBitmapCache
             DrawMaskImage(graphics, arrow, Color.FromArgb(255, 0, 110, 255), (int)x, (int)y, size, size, brighten: false);
             y += 12;
         }
-    }
-
-    private static float GetLineWidth(IReadOnlyList<OotPreviewToken> tokens, int centerIndex, float scale, IGlyphSource glyphSource)
-    {
-        float width = 0;
-        for (int i = centerIndex + 1; i < tokens.Count; i++)
-        {
-            OotPreviewToken token = tokens[i];
-            if (token.Kind is OotPreviewTokenKind.LineBreak or OotPreviewTokenKind.Center)
-            {
-                break;
-            }
-
-            if (token.Kind == OotPreviewTokenKind.Glyph)
-            {
-                width += GetGlyphAdvance(token.Value, scale, glyphSource);
-            }
-        }
-
-        return width;
     }
 
     private static void DrawAlignmentGuides(Graphics graphics, int width, int height)

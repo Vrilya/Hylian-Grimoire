@@ -5,6 +5,7 @@ using HylianGrimoire.O2r;
 using HylianGrimoire.PromptEditor;
 using HylianGrimoire.Rom;
 using HylianGrimoire.Services;
+using HylianGrimoire.TextTextures;
 using HylianGrimoire.Textures;
 using HylianGrimoire.TitleText;
 using HylianGrimoire.Tweaks;
@@ -28,6 +29,7 @@ internal sealed class ToolWindowCoordinator
     private TitleTextWindow? _titleTextWindow;
     private PromptEditorWindow? _promptEditorWindow;
     private TextureManagerWindow? _textureManagerWindow;
+    private TextTextureEditorWindow? _textTextureEditorWindow;
     private O2rModMakerWindow? _o2rModMakerWindow;
 
     public ToolWindowCoordinator(
@@ -93,6 +95,15 @@ internal sealed class ToolWindowCoordinator
         else
         {
             CloseTextureManagerWindow();
+        }
+
+        if (availability.CanUseTextTextureEditor)
+        {
+            _textTextureEditorWindow?.SetRomData(romData);
+        }
+        else
+        {
+            CloseTextTextureEditorWindow();
         }
 
         if (availability.CanUseO2rModMaker
@@ -167,6 +178,21 @@ internal sealed class ToolWindowCoordinator
         _textureManagerWindow.Activate();
     }
 
+    public void OpenTextTextureEditor(RomMessageData? romData)
+    {
+        if (_textTextureEditorWindow is null)
+        {
+            _textTextureEditorWindow = new TextTextureEditorWindow(romData, _onTextureManagerChanged);
+            _textTextureEditorWindow.Closed += (_, _) => _textTextureEditorWindow = null;
+        }
+        else
+        {
+            _textTextureEditorWindow.SetRomData(romData);
+        }
+
+        _textTextureEditorWindow.Activate();
+    }
+
     public void OpenO2rModMaker(GameProfile currentGameProfile, RomMessageData? romData)
     {
         try
@@ -205,6 +231,7 @@ internal sealed class ToolWindowCoordinator
         CloseTitleTextWindow();
         ClosePromptEditorWindow();
         CloseTextureManagerWindow();
+        CloseTextTextureEditorWindow();
         CloseO2rModMakerWindow();
     }
 
@@ -236,6 +263,12 @@ internal sealed class ToolWindowCoordinator
     {
         _textureManagerWindow?.Close();
         _textureManagerWindow = null;
+    }
+
+    private void CloseTextTextureEditorWindow()
+    {
+        _textTextureEditorWindow?.Close();
+        _textTextureEditorWindow = null;
     }
 
     private void CloseO2rModMakerWindow()

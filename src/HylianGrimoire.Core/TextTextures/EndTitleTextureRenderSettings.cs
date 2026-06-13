@@ -1,0 +1,42 @@
+namespace HylianGrimoire.TextTextures;
+
+public sealed record EndTitleTextureRenderSettings(
+    double TitleSize = 10,
+    double PrefixSize = 7,
+    double TmSize = 4,
+    double SuffixSize = 7,
+    double PrefixX = 14.5,
+    double PrefixY = 9.0,
+    double TitleX = 22.0,
+    double TitleY = 4.0,
+    double TitleWidthScale = 0.90,
+    double TmX = 89.0,
+    double TmY = 4.0,
+    double SuffixX = 92.4,
+    double SuffixY = 9.0,
+    double StrokeWidth = 2.35,
+    double StrokeStrength = 1.65,
+    double BlurRadius = 1.20,
+    double BlurStrength = 1.60,
+    double OcarinaAssetOutlineWidth = 1.1,
+    double OcarinaAssetOutlinePercent = 100,
+    double OcarinaAssetShadowPercent = 100,
+    double WhiteStrength = 2.0,
+    double WhiteSpread = 0.10,
+    double PrefixWhiteSpread = 0.40,
+    double SuffixWhiteSpread = 0.40,
+    int XNudge = 0,
+    int YOffset = 0,
+    int RenderScale = 8,
+    bool Center = true,
+    double LegendFontSize = 14.2,
+    double LegendTextBlack = 2.3,
+    double LegendRegisteredBlack = 1.3,
+    double LegendRegisteredXNudge = 0.0,
+    bool LegendShowRegistered = true,
+    bool PresentedByBold = false);
+
+public sealed record EndTitleTextureAssets(
+    string? LegendRegisteredPath = null,
+    string? OcarinaTmPath = null,
+    string? OcarinaOrnamentPath = null);

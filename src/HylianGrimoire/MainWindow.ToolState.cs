@@ -56,6 +56,7 @@ public sealed partial class MainWindow
         TitleTextToolItem.IsEnabled = availability.CanUseTitleText;
         PromptEditorToolItem.IsEnabled = availability.CanUsePromptEditor;
         TextureManagerToolItem.IsEnabled = availability.CanUseTextureManager;
+        TextTextureEditorToolItem.IsEnabled = availability.CanUseTextTextureEditor;
         O2rModMakerToolItem.IsEnabled = availability.CanUseO2rModMaker;
         O2rModMakerToolItem.Text = availability.CanUseO2rModMaker
             && O2rModPortProfileCatalog.TryGetProfile(ActiveGameProfile, _session.RomData?.Profile, out O2rModPortProfile menuO2rProfile)
@@ -78,6 +79,8 @@ public sealed partial class MainWindow
     private bool CanUsePromptEditorTool() => GetToolAvailability().CanUsePromptEditor;
 
     private bool CanUseTextureManagerTool() => GetToolAvailability().CanUseTextureManager;
+
+    private bool CanUseTextTextureEditor() => GetToolAvailability().CanUseTextTextureEditor;
 
     private bool CanUseO2rModMakerTool() => GetToolAvailability().CanUseO2rModMaker;
 }

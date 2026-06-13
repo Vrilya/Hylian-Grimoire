@@ -25,7 +25,7 @@ public static class MessageTokenMaps
         { 0x08, "quicktexton" }, { 0x09, "quicktextoff" }, { 0x10, "ocarina" },
         { 0x16, "marathontime" }, { 0x17, "racetime" }, { 0x18, "points" }, { 0x19, "skulltulas" },
         { 0x1a, "unskippable" }, { 0x1b, "twochoice" }, { 0x1c, "threechoice" },
-        { 0x1d, "fishinfo" }, { 0x1f, "time" }, { 0x04, "break" }, { 0xfd, "center" },
+        { 0x1d, "fishinfo" }, { 0x1f, "time" }, { 0x04, "break" },
     };
 
     public static readonly IReadOnlyDictionary<string, byte> CommandBytes = DictionaryMaps.Reverse(CommandTags, StringComparer.OrdinalIgnoreCase);

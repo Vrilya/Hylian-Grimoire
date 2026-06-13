@@ -82,6 +82,7 @@
                             <MenuFlyoutItem x:Name="TitleTextToolItem" Text="Title Text" Click="OnOpenTitleText" />
                             <MenuFlyoutItem x:Name="PromptEditorToolItem" Text="Prompt Editor" Click="OnOpenPromptEditor" />
                             <MenuFlyoutItem x:Name="TextureManagerToolItem" Text="Texture Manager" Click="OnOpenTextureManager" />
+                            <MenuFlyoutItem x:Name="TextTextureEditorToolItem" Text="Text Texture Editor" Click="OnOpenTextTextureEditor" />
                             <MenuFlyoutItem x:Name="O2rModMakerToolItem" Text="O2R Mod Maker" Click="OnOpenO2rModMaker" />
                             <MenuFlyoutItem x:Name="TweaksToolItem" Text="Tweaks" Click="OnOpenTweaks" />
                             <MenuFlyoutSeparator />
@@ -360,7 +361,11 @@
                     ScrollViewer.VerticalScrollBarVisibility="Auto"
                     TextChanged="OnTextChanged"
                     TextWrapping="NoWrap"
-                    VerticalAlignment="Stretch" />
+                    VerticalAlignment="Stretch">
+                    <TextBox.ContextFlyout>
+                        <MenuFlyout Opening="OnControlCodeFlyoutOpening" />
+                    </TextBox.ContextFlyout>
+                </TextBox>
 
             </Grid>
         </Grid>

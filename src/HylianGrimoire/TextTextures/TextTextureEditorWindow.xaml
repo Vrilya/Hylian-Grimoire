@@ -1,0 +1,583 @@
+<Window
+    x:Class="HylianGrimoire.TextTextures.TextTextureEditorWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Hylian Grimoire - Text Texture Editor">
+
+    <Grid
+        Padding="20"
+        RowSpacing="16"
+        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.Resources>
+            <Style
+                x:Key="TextTextureNumberBoxStyle"
+                TargetType="NumberBox">
+                <Setter Property="SpinButtonPlacementMode" Value="Compact" />
+            </Style>
+        </Grid.Resources>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel
+            Orientation="Horizontal"
+            Spacing="12"
+            VerticalAlignment="Center">
+            <TextBlock
+                Text="Text Texture Editor"
+                Style="{ThemeResource TitleTextBlockStyle}" />
+            <TextBlock
+                x:Name="ProfileText"
+                Text="Load an Ocarina of Time ROM."
+                Style="{ThemeResource CaptionTextBlockStyle}"
+                VerticalAlignment="Center" />
+        </StackPanel>
+
+        <Grid
+            Grid.Row="1"
+            ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="360" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border
+                Padding="16"
+                CornerRadius="8"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <Grid RowSpacing="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock
+                        Text="Source"
+                        Style="{ThemeResource SubtitleTextBlockStyle}" />
+
+                    <StackPanel
+                        Grid.Row="1"
+                        Spacing="10">
+                        <ComboBox
+                            x:Name="TextureKindCombo"
+                            Header="Texture type"
+                            DisplayMemberPath="Label"
+                            HorizontalAlignment="Stretch"
+                            SelectionChanged="OnTextureKindChanged" />
+
+                        <TextBox
+                            x:Name="PrimaryTextBox"
+                            Header="Text"
+                            TextChanged="OnTextChanged" />
+
+                        <StackPanel
+                            x:Name="BossTextPanel"
+                            Spacing="10"
+                            Visibility="Collapsed">
+                            <TextBox
+                                x:Name="BossTopTextBox"
+                                Header="Top"
+                                TextChanged="OnBossTextChanged" />
+
+                            <TextBox
+                                x:Name="BossBottomTextBox"
+                                Header="Boss"
+                                TextChanged="OnBossTextChanged" />
+                        </StackPanel>
+
+                        <ComboBox
+                            x:Name="TargetCombo"
+                            Header="Target texture"
+                            DisplayMemberPath="DisplayLabel"
+                            HorizontalAlignment="Stretch"
+                            SelectionChanged="OnTargetChanged" />
+                    </StackPanel>
+
+                    <Grid
+                        Grid.Row="2"
+                        ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Button
+                            x:Name="SavePngButton"
+                            Content="Save PNG"
+                            HorizontalAlignment="Stretch"
+                            Click="OnSavePng" />
+
+                        <Button
+                            x:Name="ApplyButton"
+                            Grid.Column="1"
+                            Content="Apply to ROM"
+                            HorizontalAlignment="Stretch"
+                            Click="OnApplyToRom" />
+                    </Grid>
+
+                    <ScrollViewer
+                        Grid.Row="3"
+                        VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox
+                                    x:Name="CenterCheck"
+                                    Content="Center"
+                                    Checked="OnRenderSettingChanged"
+                                    Unchecked="OnRenderSettingChanged" />
+
+                                <CheckBox
+                                    x:Name="LegendShowRegisteredCheck"
+                                    Content="Show registered mark"
+                                    Visibility="Collapsed"
+                                    Checked="OnRenderSettingChanged"
+                                    Unchecked="OnRenderSettingChanged" />
+
+                                <CheckBox
+                                    x:Name="EndTitleBoldCheck"
+                                    Grid.Column="1"
+                                    Content="Bold"
+                                    Visibility="Collapsed"
+                                    Checked="OnRenderSettingChanged"
+                                    Unchecked="OnRenderSettingChanged" />
+
+                                <CheckBox
+                                    x:Name="PauseOriginalColorsCheck"
+                                    Grid.Column="1"
+                                    Content="Original colors"
+                                    Visibility="Collapsed"
+                                    Checked="OnRenderSettingChanged"
+                                    Unchecked="OnRenderSettingChanged" />
+                            </Grid>
+
+                            <Grid
+                                x:Name="PositionSettingsGrid"
+                                ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <NumberBox
+                                    x:Name="XNudgeBox"
+                                    Header="X position"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="-128"
+                                    Maximum="128"
+                                    SmallChange="1"
+                                    ValueChanged="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="CompactTextYBox"
+                                    Grid.Column="1"
+                                    Header="Y position"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="-6"
+                                    Maximum="6"
+                                    SmallChange="1"
+                                    LargeChange="1"
+                                    Visibility="Collapsed"
+                                    ValueChanged="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="PlaceOutlineAlphaBox"
+                                    Grid.Column="1"
+                                    Header="Outline %"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="40"
+                                    Maximum="180"
+                                    SmallChange="1"
+                                    LargeChange="5"
+                                    Visibility="Collapsed"
+                                    ValueChanged="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="ItemWidthScaleBox"
+                                    Grid.Column="1"
+                                    Header="Width %"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="40"
+                                    Maximum="140"
+                                    SmallChange="1"
+                                    Visibility="Collapsed"
+                                    ValueChanged="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="PauseHighlightGrayBox"
+                                    Grid.Column="1"
+                                    Header="Highlight gray"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="0"
+                                    Maximum="255"
+                                    SmallChange="17"
+                                    LargeChange="17"
+                                    Visibility="Collapsed"
+                                    ValueChanged="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="LegendRegisteredXBox"
+                                    Grid.Column="1"
+                                    Header="Registered X"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="-32"
+                                    Maximum="32"
+                                    SmallChange="0.5"
+                                    Visibility="Collapsed"
+                                    ValueChanged="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="GameOverYBox"
+                                    Grid.Column="1"
+                                    Header="Y position"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="-4"
+                                    Maximum="12"
+                                    SmallChange="0.1"
+                                    LargeChange="1"
+                                    Visibility="Collapsed"
+                                    ValueChanged="OnRenderSettingChanged" />
+                            </Grid>
+
+                            <Grid
+                                x:Name="CompactTextSettingsGrid"
+                                ColumnSpacing="12"
+                                Visibility="Collapsed">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <NumberBox
+                                    x:Name="CompactTextFontSizeBox"
+                                    Header="Font size"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="8"
+                                    Maximum="18"
+                                    SmallChange="0.1"
+                                    LargeChange="1"
+                                    ValueChanged="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="CompactTextWidthScaleBox"
+                                    Grid.Column="1"
+                                    Header="Width %"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="65"
+                                    Maximum="120"
+                                    SmallChange="0.5"
+                                    LargeChange="5"
+                                    ValueChanged="OnRenderSettingChanged" />
+                            </Grid>
+
+                            <Grid
+                                x:Name="PlaceScaleSettingsGrid"
+                                ColumnSpacing="12"
+                                Visibility="Collapsed">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <NumberBox
+                                    x:Name="PlaceWidthScaleBox"
+                                    Header="Width %"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="50"
+                                    Maximum="140"
+                                    SmallChange="0.5"
+                                    LargeChange="5"
+                                    ValueChanged="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="PlaceHeightScaleBox"
+                                    Grid.Column="1"
+                                    Header="Height %"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="50"
+                                    Maximum="140"
+                                    SmallChange="0.5"
+                                    LargeChange="5"
+                                    ValueChanged="OnRenderSettingChanged" />
+                            </Grid>
+
+                            <Grid
+                                x:Name="GameOverTypographyGrid"
+                                ColumnSpacing="12"
+                                Visibility="Collapsed">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <NumberBox
+                                    x:Name="GameOverFontSizeBox"
+                                    Header="Font size"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="18"
+                                    Maximum="42"
+                                    SmallChange="0.1"
+                                    LargeChange="1"
+                                    ValueChanged="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="GameOverBlurStrengthBox"
+                                    Grid.Column="1"
+                                    Header="Blur %"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="0"
+                                    Maximum="180"
+                                    SmallChange="1"
+                                    LargeChange="5"
+                                    ValueChanged="OnRenderSettingChanged" />
+                            </Grid>
+
+                            <Grid
+                                x:Name="ContinueScaleSettingsGrid"
+                                ColumnSpacing="12"
+                                Visibility="Collapsed">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <NumberBox
+                                    x:Name="ContinueWidthScaleBox"
+                                    Header="Width %"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="65"
+                                    Maximum="120"
+                                    SmallChange="0.5"
+                                    LargeChange="5"
+                                    ValueChanged="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="ContinueHeightScaleBox"
+                                    Grid.Column="1"
+                                    Header="Height %"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="65"
+                                    Maximum="120"
+                                    SmallChange="0.5"
+                                    LargeChange="5"
+                                    ValueChanged="OnRenderSettingChanged" />
+                            </Grid>
+
+                            <Grid
+                                x:Name="PauseHighlightOffsetGrid"
+                                ColumnSpacing="12"
+                                Visibility="Collapsed">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <NumberBox
+                                    x:Name="PauseHighlightXBox"
+                                    Header="Highlight X"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="-8"
+                                    Maximum="8"
+                                    SmallChange="1"
+                                    ValueChanged="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="PauseHighlightYBox"
+                                    Grid.Column="1"
+                                    Header="Highlight Y"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="-8"
+                                    Maximum="8"
+                                    SmallChange="1"
+                                    ValueChanged="OnRenderSettingChanged" />
+                            </Grid>
+
+                            <Grid
+                                x:Name="BossPositionGrid"
+                                ColumnSpacing="12"
+                                RowSpacing="8"
+                                Visibility="Collapsed">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <CheckBox
+                                    x:Name="BossTopCenterCheck"
+                                    Content="Top center"
+                                    Checked="OnRenderSettingChanged"
+                                    Unchecked="OnRenderSettingChanged" />
+
+                                <CheckBox
+                                    x:Name="BossBottomCenterCheck"
+                                    Grid.Column="1"
+                                    Content="Boss center"
+                                    Checked="OnRenderSettingChanged"
+                                    Unchecked="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="BossTopXBox"
+                                    Grid.Row="1"
+                                    Header="Top X"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="-128"
+                                    Maximum="128"
+                                    SmallChange="1"
+                                    ValueChanged="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="BossBottomXBox"
+                                    Grid.Row="1"
+                                    Grid.Column="1"
+                                    Header="Boss X"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="-128"
+                                    Maximum="128"
+                                    SmallChange="1"
+                                    ValueChanged="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="BossSizeBox"
+                                    Grid.Row="2"
+                                    Header="Boss size"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="14"
+                                    Maximum="34"
+                                    SmallChange="0.1"
+                                    LargeChange="1"
+                                    ValueChanged="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="BossWidthScaleBox"
+                                    Grid.Row="2"
+                                    Grid.Column="1"
+                                    Header="Boss width %"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="50"
+                                    Maximum="160"
+                                    SmallChange="0.5"
+                                    LargeChange="5"
+                                    ValueChanged="OnRenderSettingChanged" />
+                            </Grid>
+
+                            <Grid
+                                x:Name="EndTitleComponentPositionGrid"
+                                ColumnSpacing="8"
+                                Visibility="Collapsed">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <NumberBox
+                                    x:Name="EndTitlePrefixXBox"
+                                    Header="Prefix X"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="-32"
+                                    Maximum="128"
+                                    SmallChange="0.5"
+                                    ValueChanged="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="EndTitleTmXBox"
+                                    Grid.Column="1"
+                                    Header="TM X"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="-32"
+                                    Maximum="128"
+                                    SmallChange="0.5"
+                                    ValueChanged="OnRenderSettingChanged" />
+
+                                <NumberBox
+                                    x:Name="EndTitleSuffixXBox"
+                                    Grid.Column="2"
+                                    Header="Suffix X"
+                                    Style="{StaticResource TextTextureNumberBoxStyle}"
+                                    Minimum="-32"
+                                    Maximum="128"
+                                    SmallChange="0.5"
+                                    ValueChanged="OnRenderSettingChanged" />
+                            </Grid>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <Border
+                Grid.Column="1"
+                Padding="16"
+                CornerRadius="8"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <Grid RowSpacing="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock
+                        Text="Preview"
+                        Style="{ThemeResource SubtitleTextBlockStyle}" />
+
+                    <TextBlock
+                        Grid.Row="1"
+                        Text="Generated"
+                        Style="{ThemeResource BodyStrongTextBlockStyle}" />
+
+                    <Border
+                        Grid.Row="2"
+                        Padding="8"
+                        HorizontalAlignment="Left"
+                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                        BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6">
+                        <Grid x:Name="GeneratedPreviewHost" />
+                    </Border>
+
+                    <TextBlock
+                        x:Name="ReferenceLabel"
+                        Grid.Row="3"
+                        Text="ROM"
+                        Style="{ThemeResource BodyStrongTextBlockStyle}" />
+
+                    <Border
+                        Grid.Row="4"
+                        Padding="8"
+                        HorizontalAlignment="Left"
+                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                        BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6">
+                        <Grid x:Name="RomPreviewHost" />
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <TextBlock
+            x:Name="StatusText"
+            Grid.Row="2"
+            Style="{ThemeResource CaptionTextBlockStyle}"
+            TextWrapping="Wrap"
+            Visibility="Collapsed" />
+    </Grid>
+</Window>
