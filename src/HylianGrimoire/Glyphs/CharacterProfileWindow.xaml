@@ -1,0 +1,226 @@
+<Window
+    x:Class="HylianGrimoire.Glyphs.CharacterProfileWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Hylian Grimoire - Glyph Manager">
+
+    <Grid Padding="20" ColumnSpacing="18">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="340" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid RowSpacing="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <TextBlock
+                x:Name="WindowHeadingText"
+                Text="Glyphs"
+                Style="{ThemeResource SubtitleTextBlockStyle}" />
+
+            <ListView
+                x:Name="GlyphList"
+                Grid.Row="1"
+                SelectionChanged="OnGlyphSelected">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnSpacing="10" Padding="4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="58" />
+                                <ColumnDefinition Width="38" />
+                                <ColumnDefinition Width="72" />
+                                <ColumnDefinition Width="42" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock
+                                Grid.Column="0"
+                                Text="{Binding Hex}"
+                                FontFamily="Cascadia Mono"
+                                VerticalAlignment="Center" />
+                            <TextBlock
+                                Grid.Column="1"
+                                Text="{Binding CurrentChar}"
+                                FontFamily="Cascadia Mono"
+                                FontSize="20"
+                                VerticalAlignment="Center" />
+                            <TextBlock
+                                Grid.Column="2"
+                                Text="{Binding DefaultChar}"
+                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                TextTrimming="CharacterEllipsis"
+                                TextWrapping="NoWrap"
+                                VerticalAlignment="Center" />
+                            <TextBlock
+                                Grid.Column="3"
+                                Text="{Binding CurrentWidth}"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center" />
+                            <TextBlock
+                                Grid.Column="4"
+                                Text="{Binding OverrideLabel}"
+                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                TextTrimming="CharacterEllipsis"
+                                TextWrapping="NoWrap"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Grid>
+
+        <Grid Grid.Column="1" RowSpacing="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="180" />
+                    <ColumnDefinition Width="38" />
+                    <ColumnDefinition Width="38" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock
+                    x:Name="DetailTitle"
+                    Text="Select a glyph"
+                    Style="{ThemeResource SubtitleTextBlockStyle}"
+                    VerticalAlignment="Center" />
+
+                <ComboBox
+                    x:Name="ProfileCombo"
+                    Grid.Column="1"
+                    Width="180"
+                    SelectionChanged="OnProfileSelectionChanged" />
+
+                <Button
+                    Grid.Column="2"
+                    Content="+"
+                    Click="OnAddProfile"
+                    ToolTipService.ToolTip="Add glyph profile" />
+
+                <Button
+                    x:Name="DeleteProfileButton"
+                    Grid.Column="3"
+                    Content="-"
+                    Click="OnDeleteProfile"
+                    ToolTipService.ToolTip="Delete selected glyph profile" />
+            </Grid>
+
+            <Border
+                Grid.Row="1"
+                Width="160"
+                Height="160"
+                HorizontalAlignment="Left"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="6">
+                <Button
+                    x:Name="GlyphImageButton"
+                    Click="OnReplaceImage"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    ToolTipService.ToolTip="Replace image">
+                    <Image
+                        x:Name="GlyphImage"
+                        Width="96"
+                        Height="96"
+                        Stretch="Uniform" />
+                </Button>
+            </Border>
+
+            <Grid Grid.Row="2" ColumnSpacing="18" RowSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="133" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="133" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Default" VerticalAlignment="Center" />
+                <TextBlock
+                    x:Name="DefaultCharText"
+                    Grid.Column="1"
+                    Margin="11,0,0,0"
+                    FontFamily="Cascadia Mono"
+                    FontSize="16"
+                    VerticalAlignment="Center" />
+
+                <TextBlock Grid.Row="1" Text="Current" VerticalAlignment="Center" />
+                <TextBox
+                    x:Name="CurrentCharBox"
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    FontFamily="Cascadia Mono"
+                    FontSize="16"
+                    MaxLength="1"
+                    TextChanged="OnCurrentCharChanged" />
+
+                <TextBlock Grid.Column="2" Text="Default width" VerticalAlignment="Center" />
+                <TextBlock
+                    x:Name="DefaultWidthText"
+                    Grid.Column="3"
+                    Margin="11,0,0,0"
+                    FontFamily="Cascadia Mono"
+                    FontSize="16"
+                    VerticalAlignment="Center" />
+
+                <TextBlock Grid.Row="1" Grid.Column="2" Text="Current width" VerticalAlignment="Center" />
+                <NumberBox
+                    x:Name="CurrentWidthBox"
+                    Grid.Row="1"
+                    Grid.Column="3"
+                    FontFamily="Cascadia Mono"
+                    FontSize="16"
+                    Minimum="1"
+                    Maximum="24"
+                    SmallChange="1"
+                    LargeChange="2"
+                    ValueChanged="OnCurrentWidthChanged" />
+
+                <TextBlock Grid.Row="2" Text="Image" VerticalAlignment="Center" />
+                <TextBlock
+                    x:Name="ImageStatusText"
+                    Grid.Row="2"
+                    Grid.Column="1"
+                    Grid.ColumnSpan="3"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    VerticalAlignment="Center" />
+            </Grid>
+
+            <StackPanel
+                Grid.Row="3"
+                Orientation="Horizontal"
+                Spacing="8">
+                <Button x:Name="ReplaceImageButton" Content="Replace image" Click="OnReplaceImage" />
+                <Button x:Name="ResetImageButton" Content="Reset image" Click="OnResetImage" />
+                <Button x:Name="ResetWidthButton" Content="Reset width" Click="OnResetWidth" />
+                <Button x:Name="ResetCharacterButton" Content="Reset character" Click="OnResetCharacter" />
+            </StackPanel>
+
+            <TextBlock
+                x:Name="HelpText"
+                Grid.Row="4"
+                Text="Glyph profiles keep editor characters, preview images, and preview widths together. The byte value stays the same."
+                TextWrapping="Wrap"
+                Style="{ThemeResource CaptionTextBlockStyle}" />
+        </Grid>
+    </Grid>
+</Window>

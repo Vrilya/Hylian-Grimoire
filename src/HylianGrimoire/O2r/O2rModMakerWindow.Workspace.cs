@@ -1,0 +1,69 @@
+using HylianGrimoire.Textures;
+using Microsoft.UI.Xaml;
+
+namespace HylianGrimoire.O2r;
+
+public sealed partial class O2rModMakerWindow
+{
+    private async void OnLoadExistingMod(object sender, RoutedEventArgs e)
+    {
+        string? path = await PickOpenO2rAsync();
+        if (path is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _existingEntries = O2rArchiveWriter.ReadEntries(path);
+            IReadOnlySet<string> resources = _existingEntries.Keys.ToHashSet(StringComparer.Ordinal);
+            _selectedResources.Clear();
+            _selectedTextResources.Clear();
+            _archiveTextureResources = BuildArchiveTextureResources(_existingEntries, _textures, _romData?.DecompressedRom);
+            foreach (O2rArchiveTextureResource resource in _archiveTextureResources)
+            {
+                _selectedResources.Add(resource.ResourcePath);
+            }
+
+            foreach (TextureDefinition texture in _textures)
+            {
+                string resourcePath = _portProfile.GetTextureResourcePath(texture);
+                if (resources.Contains(resourcePath))
+                {
+                    _selectedResources.Add(resourcePath);
+                }
+            }
+
+            foreach (O2rTextResourceDefinition textResource in _textResources)
+            {
+                if (resources.Contains(textResource.ResourcePath))
+                {
+                    _selectedTextResources.Add(textResource.ResourcePath);
+                }
+            }
+
+            _resourceViewMode = _textures.Count > 0 ? ResourceViewMode.Rom : ResourceViewMode.Mod;
+            SetIncludeChecks(hasText: _textResources.Count > 0, hasTextures: _selectedResources.Count > 0);
+            PopulateTextureTree();
+            RefreshTextCheckStates();
+            _existingModPath = path;
+            _hasWorkspaceChanges = false;
+            UpdateResourceViewButtons();
+            SetEnabled(true, hasTextureResources: GetTextureResourceCount() > 0);
+            UpdateWorkspaceSummary();
+            StatusText.Text = $"Loaded mod. {_selectedResources.Count} textures and {_selectedTextResources.Count} text resources selected.";
+        }
+        catch (Exception ex)
+        {
+            await ShowOperationExceptionAsync("Failed to load .o2r", ex);
+        }
+    }
+
+    private void SetIncludeChecks(bool hasText, bool hasTextures)
+    {
+        using IDisposable update = BeginIncludeCheckUpdate();
+
+        IncludeTextCheck.IsChecked = hasText;
+        IncludeTexturesCheck.IsChecked = hasTextures;
+    }
+}

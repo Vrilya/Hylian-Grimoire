@@ -1,0 +1,177 @@
+<Window
+    x:Class="HylianGrimoire.TitleText.TitleTextWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Hylian Grimoire - Title Text">
+
+    <Grid
+        Padding="20"
+        RowSpacing="16"
+        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid>
+            <StackPanel
+                Orientation="Horizontal"
+                Spacing="12"
+                VerticalAlignment="Center">
+                <TextBlock
+                    Text="Title Text"
+                    Style="{ThemeResource TitleTextBlockStyle}" />
+                <TextBlock
+                    x:Name="ProfileText"
+                    Text="Load a supported retail ROM."
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    VerticalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+
+        <Grid
+            Grid.Row="1"
+            ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Spacing="12">
+                <Border
+                    x:Name="NoControllerPanel"
+                    Padding="16"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid RowSpacing="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            Text="No controller"
+                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+
+                        <TextBox
+                            x:Name="NoControllerTextBox"
+                            Grid.Row="1"
+                            Header="Text"
+                            BeforeTextChanging="OnTitleTextBeforeTextChanging"
+                            TextChanged="OnPreviewInputChanged" />
+
+                        <TextBox
+                            x:Name="NoControllerXBox"
+                            Grid.Row="2"
+                            Header="X"
+                            TextChanged="OnPreviewInputChanged" />
+
+                        <Button
+                            Grid.Row="3"
+                            Content="Reset"
+                            HorizontalAlignment="Left"
+                            Click="OnResetNoController" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid RowSpacing="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            Text="Press start"
+                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+
+                        <TextBox
+                            x:Name="PressStartTextBox"
+                            Grid.Row="1"
+                            Header="Text"
+                            BeforeTextChanging="OnTitleTextBeforeTextChanging"
+                            TextChanged="OnPreviewInputChanged" />
+
+                        <TextBox
+                            x:Name="PressStartXBox"
+                            Grid.Row="2"
+                            Header="X"
+                            TextChanged="OnPreviewInputChanged" />
+
+                        <Button
+                            Grid.Row="3"
+                            Content="Reset"
+                            HorizontalAlignment="Left"
+                            Click="OnResetPressStart" />
+                    </Grid>
+                </Border>
+            </StackPanel>
+
+            <Border
+                Grid.Column="1"
+                Padding="16"
+                CornerRadius="8"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <Grid RowSpacing="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock
+                            Text="Preview"
+                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+
+                        <ToggleButton
+                            x:Name="GuidesButton"
+                            Grid.Column="1"
+                            Content="Guides"
+                            Checked="OnPreviewInputChanged"
+                            Unchecked="OnPreviewInputChanged" />
+                    </Grid>
+
+                    <Border
+                        Grid.Row="1"
+                        Background="Black"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                        <Image
+                            x:Name="PreviewImage"
+                            Width="700"
+                            Height="525"
+                            Stretch="Uniform" />
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <StackPanel
+            Grid.Row="2"
+            Spacing="4">
+            <TextBlock
+                x:Name="HelpText"
+                Style="{ThemeResource CaptionTextBlockStyle}"
+                TextWrapping="Wrap"
+                Text="Use one space to choose where the title-screen gap is drawn. The space is not written as a character." />
+            <TextBlock
+                x:Name="StatusText"
+                Style="{ThemeResource CaptionTextBlockStyle}"
+                TextWrapping="Wrap"
+                Visibility="Collapsed" />
+        </StackPanel>
+    </Grid>
+</Window>

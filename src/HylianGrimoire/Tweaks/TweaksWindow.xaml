@@ -1,0 +1,438 @@
+<Window
+    x:Class="HylianGrimoire.Tweaks.TweaksWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Hylian Grimoire - Tweaks">
+
+    <Grid
+        Padding="20"
+        RowSpacing="16"
+        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock
+            Text="Tweaks"
+            Style="{ThemeResource TitleTextBlockStyle}" />
+
+        <TextBlock
+            Grid.Row="1"
+            MaxWidth="560"
+            TextWrapping="Wrap"
+            Text="Small ROM patches for supported builds. Tweaks are applied to the loaded ROM and saved with it." />
+
+        <ScrollViewer
+            Grid.Row="2"
+            VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="8">
+                <Border
+                    x:Name="BootLogoCard"
+                    Padding="12"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="Nintendo boot logo"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Restores the original Nintendo 64 boot-logo call.&#x0a;&#x0a;ROMs: NTSC GC, NTSC MQ, PAL GC, PAL MQ" />
+                        </StackPanel>
+                        <TextBlock
+                            x:Name="BootLogoStatusText"
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
+
+                        <ToggleSwitch
+                            x:Name="BootLogoSwitch"
+                            Grid.Column="1"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnTweakToggled" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    x:Name="ColorCard"
+                    Padding="12"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="N64 interface colors"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Restores N64-style interface colors.&#x0a;&#x0a;ROMs: NTSC GC, NTSC MQ, PAL GC, PAL MQ" />
+                        </StackPanel>
+                        <TextBlock
+                            x:Name="ColorStatusText"
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
+
+                        <ToggleSwitch
+                            x:Name="ColorSwitch"
+                            Grid.Column="1"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnTweakToggled" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    x:Name="ViPalCard"
+                    Padding="12"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="N64 VI PAL timing"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Replaces embedded NTSC N64 VI timing values with PAL N64 timing values.&#x0a;&#x0a;ROMs: PAL GC, PAL MQ" />
+                        </StackPanel>
+                        <TextBlock
+                            x:Name="ViPalStatusText"
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
+
+                        <ToggleSwitch
+                            x:Name="ViPalSwitch"
+                            Grid.Column="1"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnTweakToggled" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    x:Name="MmFpalCard"
+                    Padding="12"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="N64 VI PAL timing"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Replaces embedded NTSC N64 VI timing values with PAL N64 timing values, uses PAL video scaling at startup, patches the dynamic PAL VI table used by Bombers' Notebook, marks the ROM as PAL, and allows PAL startup on MM US.&#x0a;&#x0a;ROMs: MM NTSC-U" />
+                        </StackPanel>
+                        <TextBlock
+                            x:Name="MmFpalStatusText"
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
+
+                        <ToggleSwitch
+                            x:Name="MmFpalSwitch"
+                            Grid.Column="1"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnTweakToggled" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    x:Name="MmViSelectorCard"
+                    Padding="12"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="FPAL/MPAL selector"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Replaces the boot-logo state with a startup selector for FPAL 50 Hz or MPAL 60 Hz output.&#x0a;&#x0a;ROMs: MM NTSC-U" />
+                        </StackPanel>
+                        <TextBlock
+                            x:Name="MmViSelectorStatusText"
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
+
+                        <ToggleSwitch
+                            x:Name="MmViSelectorSwitch"
+                            Grid.Column="1"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnTweakToggled" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    x:Name="ViSelectorCard"
+                    Padding="12"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="FPAL/MPAL selector"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Replaces the boot-logo state with a startup selector for FPAL 50 Hz or MPAL 60 Hz output.&#x0a;&#x0a;ROMs: PAL 1.0, PAL 1.1" />
+                        </StackPanel>
+                        <TextBlock
+                            x:Name="ViSelectorStatusText"
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
+
+                        <ToggleSwitch
+                            x:Name="ViSelectorSwitch"
+                            Grid.Column="1"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnTweakToggled" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    x:Name="NoControllerCard"
+                    Padding="12"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="No controller message"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Restores the N64-style no-controller prompt behavior.&#x0a;&#x0a;ROMs: NTSC GC, NTSC MQ, PAL GC, PAL MQ" />
+                        </StackPanel>
+                        <TextBlock
+                            x:Name="NoControllerStatusText"
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
+
+                        <ToggleSwitch
+                            x:Name="NoControllerSwitch"
+                            Grid.Column="1"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnTweakToggled" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    x:Name="CreditsCard"
+                    Padding="12"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="GC credits N64 crash fix"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Removes the GameCube credits FMV jump that crashes on real N64 hardware or N64 emulators.&#x0a;&#x0a;ROMs: NTSC GC, NTSC MQ, PAL GC, PAL MQ" />
+                        </StackPanel>
+                        <TextBlock
+                            x:Name="CreditsStatusText"
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
+
+                        <ToggleSwitch
+                            x:Name="CreditsSwitch"
+                            Grid.Column="1"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnTweakToggled" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    x:Name="AntiPiracyCard"
+                    Padding="12"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="Disable anti-piracy checks"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                VerticalAlignment="Center" />
+                            <Button
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                Content="?"
+                                ToolTipService.ToolTip="Disables the known CIC-related anti-piracy checks.&#x0a;&#x0a;ROMs: NTSC 1.0, NTSC 1.1, NTSC 1.2, PAL 1.0, PAL 1.1" />
+                        </StackPanel>
+                        <TextBlock
+                            x:Name="AntiPiracyStatusText"
+                            Grid.Row="0"
+                            Height="0"
+                            Margin="0"
+                            Visibility="Collapsed" />
+
+                        <ToggleSwitch
+                            x:Name="AntiPiracySwitch"
+                            Grid.Column="1"
+                            MinWidth="0"
+                            Width="52"
+                            OffContent=""
+                            OnContent=""
+                            VerticalAlignment="Center"
+                            Toggled="OnTweakToggled" />
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>

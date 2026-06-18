@@ -1,0 +1,14 @@
+# Repository policy:
+# Store text normalized in Git, check it out as CRLF to match .editorconfig and verify.ps1.
+* text=auto eol=crlf
+
+# Binary assets.
+*.png binary
+*.ico binary
+*.bin binary
+*.z64 binary
+*.n64 binary
+*.v64 binary
+*.rom binary
+*.o2r binary
+*.zip binary

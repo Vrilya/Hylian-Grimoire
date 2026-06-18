@@ -1,0 +1,497 @@
+<Window
+    x:Class="HylianGrimoire.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Hylian Grimoire">
+
+    <Grid RowSpacing="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid
+            Grid.Row="0"
+            MinHeight="52"
+            Padding="16,8,16,4">
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Spacing="8">
+                <DropDownButton ToolTipService.ToolTip="Project menu">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="OpenFile" />
+                        <TextBlock Text="Project" />
+                    </StackPanel>
+                    <DropDownButton.Flyout>
+                        <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                            <MenuFlyoutItem Text="New Project..." Click="OnNewProject">
+                                <MenuFlyoutItem.Icon>
+                                    <SymbolIcon Symbol="Add" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem Text="Open..." Click="OnLoadDocument">
+                                <MenuFlyoutItem.Icon>
+                                    <SymbolIcon Symbol="OpenFile" />
+                                </MenuFlyoutItem.Icon>
+                                <MenuFlyoutItem.KeyboardAccelerators>
+                                    <KeyboardAccelerator Key="O" Modifiers="Control" />
+                                </MenuFlyoutItem.KeyboardAccelerators>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem x:Name="ImportHeaderIntoRomItem" Text="Import .h into ROM" Click="OnImportHeaderIntoRom" />
+                            <MenuFlyoutSeparator />
+                            <MenuFlyoutItem x:Name="CloseProjectItem" Text="Close Project" Click="OnCloseProject" />
+                        </MenuFlyout>
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+
+                <DropDownButton x:Name="SaveMenu" ToolTipService.ToolTip="Save menu">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="Save" />
+                        <TextBlock Text="Save" />
+                    </StackPanel>
+                    <DropDownButton.Flyout>
+                        <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                            <MenuFlyoutItem Text="Save" Click="OnSaveFiles">
+                                <MenuFlyoutItem.KeyboardAccelerators>
+                                    <KeyboardAccelerator Key="S" Modifiers="Control" />
+                                </MenuFlyoutItem.KeyboardAccelerators>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem Text="Save as data files" Click="OnSaveAsFiles" />
+                            <MenuFlyoutItem x:Name="SaveAsRomItem" Text="Save as ROM" Click="OnSaveAsRom" />
+                            <MenuFlyoutItem x:Name="ExportHeaderItem" Text="Export to .h" Click="OnExportAsHeader" />
+                        </MenuFlyout>
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+
+                <DropDownButton ToolTipService.ToolTip="Tools menu">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="Setting" />
+                        <TextBlock Text="Tools" />
+                    </StackPanel>
+                    <DropDownButton.Flyout>
+                        <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                            <MenuFlyoutSubItem x:Name="GlyphProfileMenu" Text="Glyph profile" />
+                            <MenuFlyoutSeparator />
+                            <MenuFlyoutItem x:Name="RemapGlyphBytesItem" Text="Remap glyph bytes" Click="OnOpenGlyphRemap" />
+                            <MenuFlyoutItem x:Name="TitleTextToolItem" Text="Title Text" Click="OnOpenTitleText" />
+                            <MenuFlyoutItem x:Name="PromptEditorToolItem" Text="Prompt Editor" Click="OnOpenPromptEditor" />
+                            <MenuFlyoutItem x:Name="TextureManagerToolItem" Text="Texture Manager" Click="OnOpenTextureManager" />
+                            <MenuFlyoutItem x:Name="TextTextureEditorToolItem" Text="Text Texture Editor" Click="OnOpenTextTextureEditor" />
+                            <MenuFlyoutItem x:Name="O2rModMakerToolItem" Text="O2R Mod Maker" Click="OnOpenO2rModMaker" />
+                            <MenuFlyoutItem x:Name="TweaksToolItem" Text="Tweaks" Click="OnOpenTweaks" />
+                            <MenuFlyoutSeparator />
+                            <MenuFlyoutItem x:Name="MessageByteInspectorToolItem" Text="Message Byte Inspector" Click="OnOpenMessageByteInspector" />
+                            <MenuFlyoutItem x:Name="FontOrderToolItem" Text="Font order (0xFFFC)" Click="OnOpenFontOrder" />
+                            <MenuFlyoutSeparator />
+                            <MenuFlyoutItem Text="Open logs folder" Click="OnOpenLogsFolder" />
+                        </MenuFlyout>
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+
+                <Rectangle
+                    Width="1"
+                    Height="28"
+                    Margin="4,0"
+                    Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                <DropDownButton
+                    x:Name="LanguageMenu"
+                    IsEnabled="False"
+                    MinWidth="44"
+                    AutomationProperties.Name="ROM Language"
+                    ToolTipService.ToolTip="ROM Language">
+                    <SymbolIcon Symbol="Globe" />
+                    <DropDownButton.Flyout>
+                        <MenuFlyout x:Name="LanguageMenuFlyout" Placement="BottomEdgeAlignedLeft" />
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+
+                <ToggleButton
+                    x:Name="CreditsModeItem"
+                    Click="OnToggleCreditsMode"
+                    IsEnabled="False"
+                    MinWidth="44"
+                    AutomationProperties.Name="Credits"
+                    ToolTipService.ToolTip="Credits">
+                    <SymbolIcon Symbol="Contact" />
+                </ToggleButton>
+
+                <ToggleButton
+                    x:Name="PreviewToggle"
+                    Click="OnTogglePreview"
+                    MinWidth="44"
+                    AutomationProperties.Name="Preview"
+                    ToolTipService.ToolTip="Preview">
+                    <SymbolIcon Symbol="View" />
+                </ToggleButton>
+            </StackPanel>
+        </Grid>
+
+        <Grid x:Name="EditorSurface" Grid.Row="1" Padding="16,4,16,0" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="190" MinWidth="170" />
+                <ColumnDefinition Width="*" MinWidth="420" />
+            </Grid.ColumnDefinitions>
+
+            <Grid Grid.Column="0" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock
+                    Text="Message IDs"
+                    Style="{ThemeResource SubtitleTextBlockStyle}" />
+                <TextBox
+                    x:Name="SearchBox"
+                    Grid.Row="1"
+                    PlaceholderText="Search message text or ID"
+                    TextChanged="OnSearchTextChanged" />
+                <TextBlock
+                    x:Name="SearchStatusText"
+                    Grid.Row="2"
+                    Style="{ThemeResource CaptionTextBlockStyle}" />
+                <ListView
+                    x:Name="MessageList"
+                    Grid.Row="3"
+                    SelectionChanged="OnListSelect"
+                    SingleSelectionFollowsFocus="True">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock
+                                Text="{Binding Label}"
+                                FontFamily="Cascadia Mono"
+                                TextTrimming="CharacterEllipsis"
+                                RightTapped="OnMessageItemRightTapped" />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+                <Grid
+                    Grid.Row="4"
+                    ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button
+                        Grid.Column="0"
+                        HorizontalAlignment="Stretch"
+                        Height="30"
+                        Padding="0"
+                        Click="OnAddMessageId"
+                        ToolTipService.ToolTip="Add message ID">
+                        <SymbolIcon Symbol="Add" />
+                    </Button>
+                    <Button
+                        Grid.Column="1"
+                        HorizontalAlignment="Stretch"
+                        Height="30"
+                        Padding="0"
+                        Click="OnChangeMessageId"
+                        ToolTipService.ToolTip="Change message ID">
+                        <SymbolIcon Symbol="Edit" />
+                    </Button>
+                    <Button
+                        Grid.Column="2"
+                        HorizontalAlignment="Stretch"
+                        Height="30"
+                        Padding="0"
+                        Click="OnDeleteMessageId"
+                        ToolTipService.ToolTip="Delete message ID">
+                        <FontIcon
+                            FontFamily="Segoe MDL2 Assets"
+                            Glyph="&#xE738;"
+                            FontSize="14" />
+                    </Button>
+                </Grid>
+            </Grid>
+
+            <Grid Grid.Column="1" RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <TextBlock
+                    Text="Editor"
+                    Style="{ThemeResource SubtitleTextBlockStyle}" />
+
+                <Grid Grid.Row="1" ColumnSpacing="12" RowSpacing="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <ComboBox
+                        x:Name="TypeCombo"
+                        Grid.Column="0"
+                        Width="100"
+                        MinWidth="100"
+                        MaxWidth="100"
+                        SelectionChanged="OnTypeChange" />
+                    <TextBlock
+                        Grid.Column="1"
+                        Text="Type"
+                        VerticalAlignment="Center" />
+
+                    <ComboBox
+                        x:Name="PositionCombo"
+                        Grid.Column="2"
+                        Width="100"
+                        MinWidth="100"
+                        MaxWidth="100"
+                        SelectionChanged="OnPosChange" />
+                    <TextBlock
+                        Grid.Column="3"
+                        Text="Position"
+                        VerticalAlignment="Center" />
+
+                    <ComboBox
+                        x:Name="MmIconCombo"
+                        Grid.Column="4"
+                        Width="100"
+                        MinWidth="100"
+                        MaxWidth="100"
+                        SelectionChanged="OnMmIconChanged"
+                        Visibility="Collapsed" />
+                    <TextBlock
+                        x:Name="MmIconLabel"
+                        Grid.Column="5"
+                        Text="Icon"
+                        VerticalAlignment="Center"
+                        Visibility="Collapsed" />
+
+                    <CheckBox
+                        x:Name="MmUnskippableCheck"
+                        Grid.Column="6"
+                        Content="Unskippable"
+                        Click="OnMmUnskippableChanged"
+                        Visibility="Collapsed" />
+                    <CheckBox
+                        x:Name="MmInstantTextCheck"
+                        Grid.Column="7"
+                        Content="Instant text"
+                        Click="OnMmInstantTextChanged"
+                        Visibility="Collapsed" />
+
+                    <TextBox
+                        x:Name="MmNextMessageBox"
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        TextChanged="OnMmNextMessageChanged"
+                        Visibility="Collapsed" />
+                    <TextBlock
+                        x:Name="MmNextMessageLabel"
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Text="Next ID"
+                        VerticalAlignment="Center"
+                        Visibility="Collapsed" />
+
+                    <TextBox
+                        x:Name="MmFirstPriceBox"
+                        Grid.Row="1"
+                        Grid.Column="2"
+                        TextChanged="OnMmFirstPriceChanged"
+                        Visibility="Collapsed" />
+                    <TextBlock
+                        x:Name="MmFirstPriceLabel"
+                        Grid.Row="1"
+                        Grid.Column="3"
+                        Text="1st price"
+                        VerticalAlignment="Center"
+                        Visibility="Collapsed" />
+
+                    <TextBox
+                        x:Name="MmSecondPriceBox"
+                        Grid.Row="1"
+                        Grid.Column="4"
+                        TextChanged="OnMmSecondPriceChanged"
+                        Visibility="Collapsed" />
+                    <TextBlock
+                        x:Name="MmSecondPriceLabel"
+                        Grid.Row="1"
+                        Grid.Column="5"
+                        Text="2nd price"
+                        VerticalAlignment="Center"
+                        Visibility="Collapsed" />
+
+                    <CheckBox
+                        x:Name="MmCenteredCheck"
+                        Grid.Row="1"
+                        Grid.Column="6"
+                        Content="Centered"
+                        Click="OnMmCenteredChanged"
+                        Visibility="Collapsed" />
+                </Grid>
+
+                <TextBlock
+                    x:Name="MessageTextLabel"
+                    Grid.Row="2"
+                    Text="Message text:" />
+
+                <TextBox
+                    x:Name="TextEditor"
+                    Grid.Row="3"
+                    AcceptsReturn="True"
+                    FontSize="16"
+                    FontFamily="Cascadia Mono"
+                    ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                    TextChanged="OnTextChanged"
+                    TextWrapping="NoWrap"
+                    VerticalAlignment="Stretch">
+                    <TextBox.ContextFlyout>
+                        <MenuFlyout Opening="OnControlCodeFlyoutOpening" />
+                    </TextBox.ContextFlyout>
+                </TextBox>
+
+            </Grid>
+        </Grid>
+
+        <Border
+            Grid.Row="2"
+            Padding="16,4"
+            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+            BorderThickness="0,1,0,0">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock
+                    x:Name="StatusText"
+                    Text=""
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    MaxLines="1"
+                    TextTrimming="CharacterEllipsis"
+                    VerticalAlignment="Center" />
+
+                <StackPanel
+                    x:Name="EditorOptionsPanel"
+                    Grid.Column="1"
+                    Orientation="Horizontal"
+                    Spacing="20"
+                    VerticalAlignment="Center">
+                    <StackPanel
+                        Orientation="Horizontal"
+                        Spacing="10"
+                        VerticalAlignment="Center">
+                        <ToggleSwitch
+                            x:Name="WordWrapSwitch"
+                            Width="52"
+                            MinWidth="0"
+                            OffContent=""
+                            OnContent=""
+                            Toggled="OnWordWrapToggled" />
+                        <TextBlock
+                            Text="Word wrap"
+                            VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <StackPanel
+                        Orientation="Horizontal"
+                        Spacing="8"
+                        VerticalAlignment="Center">
+                        <ComboBox
+                            x:Name="EditorFontSizeBox"
+                            Width="76"
+                            MinWidth="76"
+                            MaxWidth="76"
+                            SelectedIndex="2"
+                            SelectionChanged="OnEditorFontSizeChanged">
+                            <ComboBoxItem Content="12" />
+                            <ComboBoxItem Content="14" />
+                            <ComboBoxItem Content="16" />
+                            <ComboBoxItem Content="18" />
+                            <ComboBoxItem Content="20" />
+                            <ComboBoxItem Content="22" />
+                            <ComboBoxItem Content="24" />
+                            <ComboBoxItem Content="28" />
+                            <ComboBoxItem Content="32" />
+                            <ComboBoxItem Content="36" />
+                        </ComboBox>
+                        <TextBlock
+                            Text="Font size"
+                            VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <Button
+                        x:Name="GlyphManagerButton"
+                        Content="Glyph Manager"
+                        Click="OnOpenCharacterProfiles"
+                        VerticalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid
+            x:Name="ProgressOverlay"
+            Grid.RowSpan="3"
+            Background="#99000000"
+            Visibility="Collapsed"
+            Canvas.ZIndex="10">
+            <Border
+                Width="340"
+                Padding="24"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+                BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8">
+                <Grid RowSpacing="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock
+                        x:Name="ProgressTitleText"
+                        Text="Saving ROM"
+                        Style="{ThemeResource SubtitleTextBlockStyle}"
+                        HorizontalAlignment="Center" />
+
+                    <TextBlock
+                        x:Name="ProgressPercentText"
+                        Grid.Row="1"
+                        Text="0%"
+                        Style="{ThemeResource BodyStrongTextBlockStyle}"
+                        HorizontalAlignment="Center" />
+
+                    <ProgressBar
+                        x:Name="ProgressModalBar"
+                        Grid.Row="2"
+                        Height="4"
+                        Minimum="0"
+                        Maximum="100"
+                        Value="0" />
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
